@@ -224,6 +224,7 @@ export const DataImportStafModal: React.FC<DataImportStafModalProps> = ({
     setIsProcessing(true);
 
     const staffToImport: StafSekolah[] = validRows.map((r, idx) => {
+      const cleanClassName = r.matchedKelasName || r.kelas || '';
       return {
         id: `staf-imp-${Date.now()}-${idx}`,
         nama: r.nama,
@@ -231,7 +232,7 @@ export const DataImportStafModal: React.FC<DataImportStafModalProps> = ({
         status_asn: r.status_asn,
         nip_atau_nik: r.nip_atau_nik,
         tanggal_lahir: r.tanggal_lahir,
-        kelas_id: r.role === 'wali_kelas' ? (r.matchedKelasId || null) : null,
+        kelas_id: r.role === 'wali_kelas' ? (cleanClassName || r.matchedKelasId || null) : null,
         scope: (r.role === 'wali_kelas' ? 'kelas' : 'sekolah') as 'kelas' | 'sekolah',
         sudah_ganti_password: false
       };

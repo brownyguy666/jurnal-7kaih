@@ -18,15 +18,15 @@ export class JournalService {
   static async initCloudSync(): Promise<void> {
     if (!isSupabaseConfigured) return;
     try {
-      // Parallel fetch dari Supabase Cloud
+      // Parallel fetch dari Supabase Cloud dengan limit besar (tanpa terpotong default 500)
       const [kebRes, kelasRes, siswaRes, stafRes, entriRes, arahanRes, fbRes] = await Promise.all([
         supabase.from('kebiasaan').select('*').order('urutan', { ascending: true }),
-        supabase.from('kelas').select('*').order('tingkat', { ascending: true }),
-        supabase.from('siswa').select('*'),
-        supabase.from('staf_sekolah').select('*'),
-        supabase.from('entri_jurnal').select('*'),
-        supabase.from('arahan_wali_kelas').select('*').order('created_at', { ascending: false }),
-        supabase.from('feedback').select('*')
+        supabase.from('kelas').select('*').order('nama_kelas', { ascending: true }),
+        supabase.from('siswa').select('*').order('nama', { ascending: true }).limit(5000),
+        supabase.from('staf_sekolah').select('*').order('nama', { ascending: true }).limit(500),
+        supabase.from('entri_jurnal').select('*').limit(10000),
+        supabase.from('arahan_wali_kelas').select('*').order('created_at', { ascending: false }).limit(500),
+        supabase.from('feedback').select('*').limit(1000)
       ]);
 
       if (kebRes.data && kebRes.data.length > 0) {
@@ -92,12 +92,17 @@ export class JournalService {
   }
 
   /**
-   * Mengambil data Siswa
+   * Mengambil data Siswa (hingga 5000 data tanpa batas limit 500)
    */
   static async getSiswa(kelasId?: string): Promise<Siswa[]> {
     if (isSupabaseConfigured) {
       try {
-        let query = supabase.from('siswa').select('*');
+        let query = supabase
+          .from('siswa')
+          .select('*')
+          .order('nama', { ascending: true })
+          .limit(5000);
+
         if (kelasId && kelasId !== 'all') {
           query = query.eq('kelas_id', kelasId);
         }
@@ -125,7 +130,9 @@ export class JournalService {
       try {
         const { data, error } = await supabase
           .from('staf_sekolah')
-          .select('*');
+          .select('*')
+          .order('nama', { ascending: true })
+          .limit(500);
         if (!error && data && data.length > 0) {
           MockDatabase.syncStafFromRemote(data as StafSekolah[]);
           return data as StafSekolah[];
@@ -143,7 +150,7 @@ export class JournalService {
   static async getEntriJurnal(tanggal?: string, siswaId?: string): Promise<EntriJurnal[]> {
     if (isSupabaseConfigured) {
       try {
-        let query = supabase.from('entri_jurnal').select('*');
+        let query = supabase.from('entri_jurnal').select('*').limit(10000);
         if (tanggal) query = query.eq('tanggal', tanggal);
         if (siswaId) query = query.eq('siswa_id', siswaId);
         const { data, error } = await query;
@@ -169,7 +176,8 @@ export class JournalService {
         let query = supabase
           .from('arahan_wali_kelas')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(500);
         if (kelasId) query = query.eq('kelas_id', kelasId);
         const { data, error } = await query;
         if (!error && data) return data as ArahanWaliKelas[];
@@ -245,32 +253,63 @@ export class JournalService {
   }
 
   /**
-   * Impor Massal Siswa ke Cloud Supabase & Local Cache
+   * Impor Massal Siswa ke Cloud Supabase & Local Cache dengan UUID Resolver
    */
   static async importSiswa(students: Siswa[], replaceAll: boolean): Promise<void> {
     MockDatabase.importSiswa(students, replaceAll);
 
     if (isSupabaseConfigured) {
       try {
-        if (replaceAll) {
-          // Bersihkan data lama jika mode replace
-          await supabase.from('siswa').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        // Ambil daftar kelas asli dari Supabase untuk mapping UUID yang valid
+        const { data: dbKelasList } = await supabase.from('kelas').select('id, nama_kelas');
+        const kelasUuidMap = new Map<string, string>();
+        
+        if (dbKelasList) {
+          dbKelasList.forEach(k => {
+            kelasUuidMap.set(k.nama_kelas.toUpperCase().trim(), k.id);
+          });
         }
 
-        // Format data untuk Supabase
-        const payload = students.map(s => ({
-          nisn: s.nisn,
-          nama: s.nama,
-          kelas_id: s.kelas_id,
-          tanggal_lahir: s.tanggal_lahir,
-          sudah_ganti_password: s.sudah_ganti_password || false
-        }));
+        const defaultKelas7AUuid = kelasUuidMap.get('7A') || dbKelasList?.[0]?.id;
 
-        // Batch insert dalam chunks of 100
-        const chunkSize = 100;
+        if (replaceAll) {
+          // Bersihkan data lama jika mode replace
+          await supabase.from('siswa').delete().neq('nama', '___RESERVED_NEVER_MATCH___');
+        }
+
+        // Format data untuk Supabase dengan UUID yang dipastikan valid
+        const payload = students.map(s => {
+          let resolvedKelasId = s.kelas_id;
+          
+          // Jika kelas_id berupa format string lokal (k-7a, 7A, dll), konversi ke UUID Supabase
+          if (!resolvedKelasId || resolvedKelasId.startsWith('k-') || resolvedKelasId.length < 30) {
+            const cleanName = (s as any).kelas_name || resolvedKelasId?.replace('k-', '').toUpperCase() || '7A';
+            resolvedKelasId = kelasUuidMap.get(cleanName) || defaultKelas7AUuid;
+          }
+
+          return {
+            nisn: String(s.nisn).trim(),
+            nama: String(s.nama).trim(),
+            kelas_id: resolvedKelasId,
+            tanggal_lahir: s.tanggal_lahir,
+            sudah_ganti_password: s.sudah_ganti_password || false
+          };
+        });
+
+        // Batch upsert dalam chunks of 50
+        const chunkSize = 50;
         for (let i = 0; i < payload.length; i += chunkSize) {
           const chunk = payload.slice(i, i + chunkSize);
-          await supabase.from('siswa').upsert(chunk, { onConflict: 'nisn' });
+          const { error } = await supabase.from('siswa').upsert(chunk, { onConflict: 'nisn' });
+          if (error) {
+            console.error(`Error import siswa chunk [${i}..${i + chunkSize}]:`, error.message);
+          }
+        }
+
+        // Re-sync local cache
+        const { data: refreshedSiswa } = await supabase.from('siswa').select('*').limit(5000);
+        if (refreshedSiswa) {
+          MockDatabase.syncSiswaFromRemote(refreshedSiswa as Siswa[]);
         }
       } catch (e) {
         console.error('Gagal sync import siswa ke Supabase Cloud:', e);
@@ -279,28 +318,60 @@ export class JournalService {
   }
 
   /**
-   * Impor Massal Staf ke Cloud Supabase & Local Cache
+   * Impor Massal Staf ke Cloud Supabase & Local Cache dengan UUID Resolver
    */
   static async importStaf(staffList: StafSekolah[], replaceAll: boolean): Promise<void> {
     MockDatabase.importStaf(staffList, replaceAll);
 
     if (isSupabaseConfigured) {
       try {
-        const payload = staffList.map(st => ({
-          nip_atau_nik: st.nip_atau_nik,
-          nama: st.nama,
-          role: st.role,
-          status_asn: st.status_asn,
-          tanggal_lahir: st.tanggal_lahir,
-          kelas_id: st.kelas_id,
-          scope: st.scope,
-          sudah_ganti_password: st.sudah_ganti_password || false
-        }));
+        // Ambil daftar kelas asli dari Supabase untuk mapping UUID yang valid
+        const { data: dbKelasList } = await supabase.from('kelas').select('id, nama_kelas');
+        const kelasUuidMap = new Map<string, string>();
+        
+        if (dbKelasList) {
+          dbKelasList.forEach(k => {
+            kelasUuidMap.set(k.nama_kelas.toUpperCase().trim(), k.id);
+          });
+        }
 
-        const chunkSize = 50;
+        if (replaceAll) {
+          // Jangan hapus akun superadmin saat replace
+          await supabase.from('staf_sekolah').delete().neq('role', 'superadmin');
+        }
+
+        const payload = staffList.map(st => {
+          let resolvedKelasId: string | null = null;
+          if (st.role === 'wali_kelas') {
+            const rawK = st.kelas_id ? String(st.kelas_id).replace('k-', '').toUpperCase().trim() : '';
+            resolvedKelasId = kelasUuidMap.get(rawK) || null;
+          }
+
+          return {
+            nip_atau_nik: String(st.nip_atau_nik).trim(),
+            nama: String(st.nama).trim(),
+            role: st.role,
+            status_asn: st.status_asn,
+            tanggal_lahir: st.tanggal_lahir,
+            kelas_id: resolvedKelasId,
+            scope: st.scope,
+            sudah_ganti_password: st.sudah_ganti_password || false
+          };
+        });
+
+        const chunkSize = 20;
         for (let i = 0; i < payload.length; i += chunkSize) {
           const chunk = payload.slice(i, i + chunkSize);
-          await supabase.from('staf_sekolah').upsert(chunk, { onConflict: 'nip_atau_nik' });
+          const { error } = await supabase.from('staf_sekolah').upsert(chunk, { onConflict: 'nip_atau_nik' });
+          if (error) {
+            console.error(`Error import staf chunk [${i}..${i + chunkSize}]:`, error.message);
+          }
+        }
+
+        // Re-sync local cache
+        const { data: refreshedStaf } = await supabase.from('staf_sekolah').select('*').limit(500);
+        if (refreshedStaf) {
+          MockDatabase.syncStafFromRemote(refreshedStaf as StafSekolah[]);
         }
       } catch (e) {
         console.error('Gagal sync import staf ke Supabase Cloud:', e);

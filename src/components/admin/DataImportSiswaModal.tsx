@@ -241,14 +241,16 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
     setIsProcessing(true);
 
     const studentsToImport: Siswa[] = validRows.map((r, idx) => {
-      return {
+      const item: any = {
         id: `s-imp-${Date.now()}-${idx}`,
         nisn: r.nisn,
         nama: r.nama,
         kelas_id: r.matchedKelasId || 'k-7a',
+        kelas_name: r.matchedKelasName || r.kelas || '7A',
         tanggal_lahir: r.tanggal_lahir,
         sudah_ganti_password: false
       };
+      return item as Siswa;
     });
 
     await JournalService.importSiswa(studentsToImport, replaceAll);
