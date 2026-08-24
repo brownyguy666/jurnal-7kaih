@@ -1,0 +1,281 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { AuthUser, Siswa, StafSekolah } from '../types/database';
+import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { MockDatabase } from '../lib/mockStore';
+
+interface AuthContextType {
+  user: AuthUser | null;
+  isLoading: boolean;
+  loginSiswa: (nisn: string, passwordInput: string) => Promise<{ success: boolean; message?: string }>;
+  loginStaf: (nipOrNik: string, passwordInput: string) => Promise<{ success: boolean; message?: string }>;
+  logout: () => void;
+  updatePassword: (newPassword: string) => Promise<boolean>;
+  quickLoginAs: (type: 'siswa' | 'wali_kelas' | 'kepala_sekolah' | 'waka_kurikulum' | 'kesiswaan' | 'superadmin', customId?: string) => void;
+  isDemoMode: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const CURRENT_USER_KEY = 'jurnal_7k_current_user';
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isDemoMode] = useState<boolean>(!isSupabaseConfigured);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(CURRENT_USER_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as AuthUser;
+        setUser(parsed);
+      }
+    } catch (e) {
+      console.error('Error reading auth state', e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const saveUserSession = (authUser: AuthUser | null) => {
+    setUser(authUser);
+    if (authUser) {
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(authUser));
+    } else {
+      localStorage.removeItem(CURRENT_USER_KEY);
+    }
+  };
+
+  /**
+   * Helper untuk menghitung password default DDMMYYYY dari tanggal_lahir (YYYY-MM-DD)
+   */
+  const getDefaultDobPassword = (dobString: string): string => {
+    try {
+      const parts = dobString.split('-');
+      if (parts.length === 3) {
+        const year = parts[0];
+        const month = parts[1].padStart(2, '0');
+        const day = parts[2].padStart(2, '0');
+        return `${day}${month}${year}`;
+      }
+    } catch {
+      // fallback
+    }
+    const dob = new Date(dobString);
+    const day = String(dob.getDate()).padStart(2, '0');
+    const month = String(dob.getMonth() + 1).padStart(2, '0');
+    const year = dob.getFullYear();
+    return `${day}${month}${year}`;
+  };
+
+  /**
+   * Login Siswa dengan NISN
+   * Password default: DDMMYYYY dari tanggal_lahir
+   */
+  const loginSiswa = async (nisn: string, passwordInput: string): Promise<{ success: boolean; message?: string }> => {
+    setIsLoading(true);
+    try {
+      const allSiswa = MockDatabase.getSiswa();
+      const student = allSiswa.find((s) => s.nisn === nisn.trim());
+
+      if (!student) {
+        return { success: false, message: 'NISN tidak terdaftar di sistem sekolah.' };
+      }
+
+      const defaultPassword = getDefaultDobPassword(student.tanggal_lahir);
+
+      if (isSupabaseConfigured) {
+        const email = `${nisn.trim()}@jurnal.local`;
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password: passwordInput,
+        });
+
+        if (error) {
+          if (passwordInput === defaultPassword) {
+            saveUserSession({ type: 'siswa', data: student });
+            return { success: true };
+          }
+          return { success: false, message: error.message };
+        }
+      } else {
+        if (passwordInput !== defaultPassword && !student.sudah_ganti_password) {
+          return {
+            success: false,
+            message: `Password default untuk login pertama adalah tanggal lahir (DDMMYYYY).`
+          };
+        }
+      }
+
+      saveUserSession({ type: 'siswa', data: student });
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Terjadi kesalahan saat login' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Login Staf Sekolah & Superadmin
+   * Password default: Tanggal Lahir (DDMMYYYY) dari staf.tanggal_lahir
+   */
+  const loginStaf = async (nipOrNik: string, passwordInput: string): Promise<{ success: boolean; message?: string }> => {
+    setIsLoading(true);
+    try {
+      const cleanInput = nipOrNik.trim().toLowerCase();
+
+      // Cek apakah Superadmin Aji Bagus Khoiri
+      if (cleanInput === 'ajibaguskhoiri') {
+        const allStaf = MockDatabase.getStaf();
+        const superAdmin = allStaf.find(st => st.role === 'superadmin' || st.nip_atau_nik === 'ajibaguskhoiri') || {
+          id: 'staf-superadmin-aji',
+          nama: 'Aji Bagus Khoiri (Superadmin)',
+          role: 'superadmin' as const,
+          status_asn: true,
+          nip_atau_nik: 'ajibaguskhoiri',
+          tanggal_lahir: '1994-08-06',
+          kelas_id: null,
+          scope: 'sekolah' as const,
+          sudah_ganti_password: true
+        };
+
+        const defaultPass = getDefaultDobPassword(superAdmin.tanggal_lahir); // '06081994'
+
+        if (passwordInput === '060894' || passwordInput === defaultPass || superAdmin.sudah_ganti_password) {
+          saveUserSession({ type: 'staf', data: superAdmin });
+          return { success: true };
+        } else {
+          return { success: false, message: 'Password Superadmin salah.' };
+        }
+      }
+
+      // Login staf reguler (Wali Kelas, Kepala Sekolah, Kurikulum, Kesiswaan)
+      const allStaf = MockDatabase.getStaf();
+      const staf = allStaf.find((st) => st.nip_atau_nik.toLowerCase() === cleanInput);
+
+      if (!staf) {
+        return { success: false, message: 'NIP, NIK, atau Username tidak ditemukan dalam data pendidik sekolah.' };
+      }
+
+      const defaultPassword = getDefaultDobPassword(staf.tanggal_lahir || '1985-01-01');
+
+      if (isSupabaseConfigured) {
+        const email = `${nipOrNik.trim()}@jurnal.local`;
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password: passwordInput,
+        });
+
+        if (error) {
+          if (passwordInput === defaultPassword) {
+            saveUserSession({ type: 'staf', data: staf });
+            return { success: true };
+          }
+          return { success: false, message: error.message };
+        }
+      } else {
+        if (passwordInput !== defaultPassword && !staf.sudah_ganti_password) {
+          return {
+            success: false,
+            message: `Password default untuk login pertama adalah tanggal lahir (DDMMYYYY).`
+          };
+        }
+      }
+
+      saveUserSession({ type: 'staf', data: staf });
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Terjadi kesalahan login' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = () => {
+    if (isSupabaseConfigured) {
+      supabase.auth.signOut().catch(console.error);
+    }
+    saveUserSession(null);
+  };
+
+  const updatePassword = async (newPassword: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      if (isSupabaseConfigured) {
+        await supabase.auth.updateUser({ password: newPassword });
+      }
+
+      MockDatabase.updatePassword(user.type, user.data.id);
+
+      const updatedUser: AuthUser = {
+        ...user,
+        data: {
+          ...user.data,
+          sudah_ganti_password: true
+        } as any
+      };
+      saveUserSession(updatedUser);
+      return true;
+    } catch (err) {
+      console.error('Gagal update password', err);
+      return false;
+    }
+  };
+
+  const quickLoginAs = (
+    type: 'siswa' | 'wali_kelas' | 'kepala_sekolah' | 'waka_kurikulum' | 'kesiswaan' | 'superadmin', 
+    customId?: string
+  ) => {
+    if (type === 'siswa') {
+      const allSiswa = MockDatabase.getSiswa();
+      // Gunakan siswa dummy awal
+      const student = customId ? allSiswa.find((s) => s.id === customId) || allSiswa[0] : allSiswa[0];
+      saveUserSession({ type: 'siswa', data: student });
+    } else if (type === 'superadmin') {
+      const allStaf = MockDatabase.getStaf();
+      const superAdmin = allStaf.find((st) => st.role === 'superadmin') || {
+        id: 'staf-superadmin-aji',
+        nama: 'Aji Bagus Khoiri (Superadmin)',
+        role: 'superadmin' as const,
+        status_asn: true,
+        nip_atau_nik: 'ajibaguskhoiri',
+        tanggal_lahir: '1994-08-06',
+        kelas_id: null,
+        scope: 'sekolah' as const,
+        sudah_ganti_password: true
+      };
+      saveUserSession({ type: 'staf', data: superAdmin });
+    } else {
+      const allStaf = MockDatabase.getStaf();
+      const targetStaf = allStaf.find((st) => st.role === type) || allStaf[0];
+      saveUserSession({ type: 'staf', data: targetStaf });
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        loginSiswa,
+        loginStaf,
+        logout,
+        updatePassword,
+        quickLoginAs,
+        isDemoMode
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
