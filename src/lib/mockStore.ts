@@ -1,32 +1,44 @@
-import { ArahanWaliKelas, EntriJurnal, Feedback, Kebiasaan, Kelas, LogHapus, Siswa, StafSekolah } from '../types/database';
 import { 
-  ALL_INITIAL_SISWA, 
-  INITIAL_ARAHAN, 
-  INITIAL_ENTRI, 
-  INITIAL_FEEDBACK, 
+  Kebiasaan, 
+  Kelas, 
+  Siswa, 
+  StafSekolah, 
+  EntriJurnal, 
+  Feedback, 
+  ArahanWaliKelas, 
+  LogHapus 
+} from '../types/database';
+import { 
   INITIAL_KEBIASAAN, 
   INITIAL_KELAS, 
-  INITIAL_LOG_HAPUS, 
-  INITIAL_STAF 
+  INITIAL_SISWA_7A, 
+  INITIAL_STAF, 
+  INITIAL_ENTRI, 
+  INITIAL_FEEDBACK, 
+  INITIAL_ARAHAN 
 } from './mockData';
 
 const STORAGE_KEYS = {
   KEBIASAAN: 'jurnal_7k_kebiasaan',
   KELAS: 'jurnal_7k_kelas',
-  STAF: 'jurnal_7k_staf',
   SISWA: 'jurnal_7k_siswa',
+  STAF: 'jurnal_7k_staf',
   ENTRI: 'jurnal_7k_entri',
   FEEDBACK: 'jurnal_7k_feedback',
-  ARAHAN: 'jurnal_7k_arahan_wali_kelas',
+  ARAHAN: 'jurnal_7k_arahan',
   LOG_HAPUS: 'jurnal_7k_log_hapus'
 };
 
 function getStored<T>(key: string, fallback: T): T {
   try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw);
-  } catch {
+    const item = localStorage.getItem(key);
+    if (!item) {
+      localStorage.setItem(key, JSON.stringify(fallback));
+      return fallback;
+    }
+    return JSON.parse(item) as T;
+  } catch (e) {
+    console.error(`Error reading ${key} from localStorage`, e);
     return fallback;
   }
 }
@@ -35,56 +47,88 @@ function setStored<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (e) {
-    console.error('Failed saving to localStorage', e);
+    console.error(`Error writing ${key} to localStorage`, e);
   }
 }
 
 export class MockDatabase {
   static getKebiasaan(): Kebiasaan[] {
-    return getStored(STORAGE_KEYS.KEBIASAAN, INITIAL_KEBIASAAN);
+    return getStored<Kebiasaan[]>(STORAGE_KEYS.KEBIASAAN, INITIAL_KEBIASAAN);
   }
 
   static getKelas(): Kelas[] {
-    return getStored(STORAGE_KEYS.KELAS, INITIAL_KELAS);
-  }
-
-  static getStaf(): StafSekolah[] {
-    return getStored(STORAGE_KEYS.STAF, INITIAL_STAF);
+    return getStored<Kelas[]>(STORAGE_KEYS.KELAS, INITIAL_KELAS);
   }
 
   static getSiswa(): Siswa[] {
-    return getStored(STORAGE_KEYS.SISWA, ALL_INITIAL_SISWA);
+    return getStored<Siswa[]>(STORAGE_KEYS.SISWA, INITIAL_SISWA_7A);
+  }
+
+  static getStaf(): StafSekolah[] {
+    return getStored<StafSekolah[]>(STORAGE_KEYS.STAF, INITIAL_STAF);
   }
 
   static getEntriJurnal(): EntriJurnal[] {
-    return getStored(STORAGE_KEYS.ENTRI, INITIAL_ENTRI);
+    return getStored<EntriJurnal[]>(STORAGE_KEYS.ENTRI, INITIAL_ENTRI);
   }
 
   static getFeedback(): Feedback[] {
-    return getStored(STORAGE_KEYS.FEEDBACK, INITIAL_FEEDBACK);
+    return getStored<Feedback[]>(STORAGE_KEYS.FEEDBACK, INITIAL_FEEDBACK);
   }
 
   static getArahanWaliKelas(): ArahanWaliKelas[] {
-    return getStored(STORAGE_KEYS.ARAHAN, INITIAL_ARAHAN);
+    return getStored<ArahanWaliKelas[]>(STORAGE_KEYS.ARAHAN, INITIAL_ARAHAN);
   }
 
   static getLogHapus(): LogHapus[] {
-    return getStored(STORAGE_KEYS.LOG_HAPUS, INITIAL_LOG_HAPUS);
+    return getStored<LogHapus[]>(STORAGE_KEYS.LOG_HAPUS, []);
   }
 
-  static addEntriJurnal(newEntry: Omit<EntriJurnal, 'id' | 'waktu_submit'>): EntriJurnal {
+  // Cloud Sync Helpers
+  static syncSiswaFromRemote(remoteList: Siswa[]): void {
+    if (remoteList && remoteList.length > 0) {
+      setStored(STORAGE_KEYS.SISWA, remoteList);
+    }
+  }
+
+  static syncStafFromRemote(remoteList: StafSekolah[]): void {
+    if (remoteList && remoteList.length > 0) {
+      setStored(STORAGE_KEYS.STAF, remoteList);
+    }
+  }
+
+  static syncKelasFromRemote(remoteList: Kelas[]): void {
+    if (remoteList && remoteList.length > 0) {
+      setStored(STORAGE_KEYS.KELAS, remoteList);
+    }
+  }
+
+  static syncKebiasaanFromRemote(remoteList: Kebiasaan[]): void {
+    if (remoteList && remoteList.length > 0) {
+      setStored(STORAGE_KEYS.KEBIASAAN, remoteList);
+    }
+  }
+
+  static syncEntriFromRemote(remoteList: EntriJurnal[]): void {
+    if (remoteList && remoteList.length > 0) {
+      setStored(STORAGE_KEYS.ENTRI, remoteList);
+    }
+  }
+
+  static addEntriJurnal(entryData: Omit<EntriJurnal, 'id' | 'waktu_submit'>): EntriJurnal {
     const current = this.getEntriJurnal();
     const entry: EntriJurnal = {
-      ...newEntry,
-      id: 'entry-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+      ...entryData,
+      id: 'entri-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
       waktu_submit: new Date().toISOString()
     };
-    
+
     const existingIndex = current.findIndex(
-      (e) => e.siswa_id === entry.siswa_id && 
-             e.tanggal === entry.tanggal && 
-             e.kebiasaan_id === entry.kebiasaan_id && 
-             e.urutan_ke === entry.urutan_ke
+      (e) =>
+        e.siswa_id === entry.siswa_id &&
+        e.tanggal === entry.tanggal &&
+        e.kebiasaan_id === entry.kebiasaan_id &&
+        e.urutan_ke === entry.urutan_ke
     );
 
     let updated: EntriJurnal[];
@@ -193,67 +237,68 @@ export class MockDatabase {
     return false;
   }
 
-  /**
-   * Import Siswa (Opsi Replace all atau Merge)
-   */
-  static importSiswa(newStudents: Siswa[], replaceAll: boolean = true): void {
+  static updateKebiasaan(updated: Kebiasaan | Kebiasaan[]): void {
+    if (Array.isArray(updated)) {
+      setStored(STORAGE_KEYS.KEBIASAAN, updated);
+    } else {
+      const current = this.getKebiasaan();
+      const idx = current.findIndex(k => k.id === updated.id);
+      if (idx >= 0) {
+        current[idx] = updated;
+        setStored(STORAGE_KEYS.KEBIASAAN, current);
+      }
+    }
+  }
+
+  static importSiswa(newStudents: Siswa[], replaceAll: boolean = false): void {
     if (replaceAll) {
       setStored(STORAGE_KEYS.SISWA, newStudents);
     } else {
       const current = this.getSiswa();
-      const map = new Map<string, Siswa>();
-      current.forEach((s) => map.set(s.nisn, s));
-      newStudents.forEach((s) => map.set(s.nisn, s));
-      setStored(STORAGE_KEYS.SISWA, Array.from(map.values()));
+      const merged = [...current];
+      newStudents.forEach((ns) => {
+        const existIdx = merged.findIndex((s) => s.nisn === ns.nisn);
+        if (existIdx >= 0) {
+          merged[existIdx] = ns;
+        } else {
+          merged.push(ns);
+        }
+      });
+      setStored(STORAGE_KEYS.SISWA, merged);
     }
   }
 
-  /**
-   * Import Staf Sekolah (Opsi Replace all kecuali superadmin atau Merge)
-   */
-  static importStaf(newStaffList: StafSekolah[], replaceAll: boolean = true): void {
+  static importStaf(newStaff: StafSekolah[], replaceAll: boolean = false): void {
     if (replaceAll) {
-      // Pastikan Superadmin Aji Bagus Khoiri tetap terjaga
       const current = this.getStaf();
-      const superAdmin = current.find(s => s.role === 'superadmin' || s.nip_atau_nik === 'ajibaguskhoiri') || {
-        id: 'staf-superadmin-aji',
-        nama: 'Aji Bagus Khoiri (Superadmin)',
-        role: 'superadmin' as const,
-        status_asn: true,
-        nip_atau_nik: 'ajibaguskhoiri',
-        kelas_id: null,
-        scope: 'sekolah' as const,
-        sudah_ganti_password: true
-      };
-
-      const filtered = newStaffList.filter(s => s.nip_atau_nik !== 'ajibaguskhoiri');
-      setStored(STORAGE_KEYS.STAF, [superAdmin, ...filtered]);
+      const superadmin = current.find((s) => s.role === 'superadmin');
+      const staffList = superadmin && !newStaff.some(s => s.role === 'superadmin') 
+        ? [superadmin, ...newStaff] 
+        : newStaff;
+      setStored(STORAGE_KEYS.STAF, staffList);
     } else {
       const current = this.getStaf();
-      const map = new Map<string, StafSekolah>();
-      current.forEach((st) => map.set(st.nip_atau_nik, st));
-      newStaffList.forEach((st) => map.set(st.nip_atau_nik, st));
-      setStored(STORAGE_KEYS.STAF, Array.from(map.values()));
-    }
-  }
-
-  static updateKebiasaan(updatedHabit: Kebiasaan): void {
-    const current = this.getKebiasaan();
-    const idx = current.findIndex(k => k.id === updatedHabit.id);
-    if (idx >= 0) {
-      current[idx] = updatedHabit;
-      setStored(STORAGE_KEYS.KEBIASAAN, current);
+      const merged = [...current];
+      newStaff.forEach((ns) => {
+        const existIdx = merged.findIndex((s) => s.nip_atau_nik === ns.nip_atau_nik);
+        if (existIdx >= 0) {
+          merged[existIdx] = ns;
+        } else {
+          merged.push(ns);
+        }
+      });
+      setStored(STORAGE_KEYS.STAF, merged);
     }
   }
 
   static resetToDefault(): void {
-    setStored(STORAGE_KEYS.KEBIASAAN, INITIAL_KEBIASAAN);
-    setStored(STORAGE_KEYS.KELAS, INITIAL_KELAS);
-    setStored(STORAGE_KEYS.STAF, INITIAL_STAF);
-    setStored(STORAGE_KEYS.SISWA, ALL_INITIAL_SISWA);
-    setStored(STORAGE_KEYS.ENTRI, INITIAL_ENTRI);
-    setStored(STORAGE_KEYS.FEEDBACK, INITIAL_FEEDBACK);
-    setStored(STORAGE_KEYS.ARAHAN, INITIAL_ARAHAN);
-    setStored(STORAGE_KEYS.LOG_HAPUS, INITIAL_LOG_HAPUS);
+    localStorage.setItem(STORAGE_KEYS.KEBIASAAN, JSON.stringify(INITIAL_KEBIASAAN));
+    localStorage.setItem(STORAGE_KEYS.KELAS, JSON.stringify(INITIAL_KELAS));
+    localStorage.setItem(STORAGE_KEYS.SISWA, JSON.stringify(INITIAL_SISWA_7A));
+    localStorage.setItem(STORAGE_KEYS.STAF, JSON.stringify(INITIAL_STAF));
+    localStorage.setItem(STORAGE_KEYS.ENTRI, JSON.stringify(INITIAL_ENTRI));
+    localStorage.setItem(STORAGE_KEYS.FEEDBACK, JSON.stringify(INITIAL_FEEDBACK));
+    localStorage.setItem(STORAGE_KEYS.ARAHAN, JSON.stringify(INITIAL_ARAHAN));
+    localStorage.setItem(STORAGE_KEYS.LOG_HAPUS, JSON.stringify([]));
   }
 }

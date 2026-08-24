@@ -158,65 +158,22 @@ alter table feedback enable row level security;
 alter table arahan_wali_kelas enable row level security;
 alter table log_hapus enable row level security;
 
-create policy "Kebiasaan dapat dibaca semua user" on kebiasaan for select using (true);
-create policy "Superadmin dapat mengelola kebiasaan" on kebiasaan for all using (exists (select 1 from staf_sekolah st where st.auth_id = auth.uid() and st.role = 'superadmin'));
-create policy "Kelas dapat dibaca semua user" on kelas for select using (true);
-create policy "Superadmin dapat mengelola kelas" on kelas for all using (exists (select 1 from staf_sekolah st where st.auth_id = auth.uid() and st.role = 'superadmin'));
-create policy "Siswa dapat dibaca oleh user terautentikasi" on siswa for select using (true);
-create policy "Siswa dapat mengubah datanya sendiri" on siswa for update using (auth.uid() = auth_id);
-create policy "Superadmin dapat mengelola data siswa" on siswa for all using (exists (select 1 from staf_sekolah st where st.auth_id = auth.uid() and st.role = 'superadmin'));
-
-create policy "Staf dapat dibaca oleh user terautentikasi" on staf_sekolah for select using (true);
-create policy "Staf dapat mengubah datanya sendiri" on staf_sekolah for update using (auth.uid() = auth_id);
-create policy "Superadmin dapat mengelola data staf" on staf_sekolah for all using (exists (select 1 from staf_sekolah st where st.auth_id = auth.uid() and st.role = 'superadmin'));
-
-create policy "Akses entri jurnal siswa dan staf"
-  on entri_jurnal for select
-  using (
-    exists (select 1 from siswa s where s.id = entri_jurnal.siswa_id and s.auth_id = auth.uid())
-    or exists (select 1 from staf_sekolah st where st.auth_id = auth.uid())
-  );
-
-create policy "Siswa dapat insert entri sendiri"
-  on entri_jurnal for insert
-  with check (exists (select 1 from siswa s where s.id = entri_jurnal.siswa_id and s.auth_id = auth.uid()));
-
-create policy "Wali kelas dan superadmin dapat menghapus entri"
-  on entri_jurnal for delete
-  using (
-    exists (
-      select 1 from staf_sekolah st
-      left join siswa s on s.kelas_id = st.kelas_id
-      where st.auth_id = auth.uid() 
-      and (st.role = 'superadmin' or (st.role = 'wali_kelas' and s.id = entri_jurnal.siswa_id))
-    )
-  );
-
-create policy "Arahan dapat dibaca wali kelas terkait dan pimpinan sekolah"
-  on arahan_wali_kelas for select
-  using (
-    exists (
-      select 1 from staf_sekolah st
-      where st.auth_id = auth.uid()
-      and (st.scope = 'sekolah' or st.kelas_id = arahan_wali_kelas.kelas_id)
-    )
-  );
-
-create policy "Pimpinan sekolah dapat mengirim arahan ke wali kelas"
-  on arahan_wali_kelas for insert
-  with check (
-    exists (
-      select 1 from staf_sekolah st
-      where st.id = arahan_wali_kelas.staf_pengirim_id
-      and st.auth_id = auth.uid()
-      and st.scope = 'sekolah'
-    )
-  );
+create policy "Allow all kebiasaan" on kebiasaan for all using (true) with check (true);
+create policy "Allow all kelas" on kelas for all using (true) with check (true);
+create policy "Allow all siswa" on siswa for all using (true) with check (true);
+create policy "Allow all staf" on staf_sekolah for all using (true) with check (true);
+create policy "Allow all entri_jurnal" on entri_jurnal for all using (true) with check (true);
+create policy "Allow all feedback" on feedback for all using (true) with check (true);
+create policy "Allow all arahan_wali_kelas" on arahan_wali_kelas for all using (true) with check (true);
+create policy "Allow all log_hapus" on log_hapus for all using (true) with check (true);
 
 -- Storage bucket
 insert into storage.buckets (id, name, public)
 values ('bukti_foto', 'bukti_foto', true)
-on conflict (id) do nothing;
+on conflict (id) do update set public = true;
 
 create policy "Bukti foto dapat dibaca publik" on storage.objects for select using (bucket_id = 'bukti_foto');
-create policy "User terautentikasi dapat upload bukti foto" on storage.objects for insert with check (bucket_id = 'bukti_foto' and auth.role() = 'authenticated');
+create policy "Public upload bukti foto" on storage.objects for insert with check (bucket_id = 'bukti_foto');
+create policy "Public update bukti foto" on storage.objects for update using (bucket_id = 'bukti_foto');
+create policy "Public delete bukti foto" on storage.objects for delete using (bucket_id = 'bukti_foto');
+

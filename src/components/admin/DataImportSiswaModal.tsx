@@ -10,7 +10,7 @@ import {
   FileCheck
 } from 'lucide-react';
 import { Kelas, Siswa } from '../../types/database';
-import { MockDatabase } from '../../lib/mockStore';
+import { JournalService } from '../../lib/journalService';
 
 interface DataImportSiswaModalProps {
   isOpen: boolean;
@@ -77,7 +77,7 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [parsedRows, setParsedRows] = useState<ParsedSiswaRow[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [replaceAll, setReplaceAll] = useState(true); // Opsi hapus data dummy
+  const [replaceAll, setReplaceAll] = useState(true); // Default true agar data dummy tergantikan otomatis
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -85,12 +85,13 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
 
   const downloadTemplateExcel = () => {
     const templateData = [
-      ['NISN', 'Nama Siswa', 'Kelas', 'Tanggal Lahir'],
-      ['0081234567', 'Ahmad Faiz Al-Faruq', '7A', '2011-05-15'],
-      ['0081234568', 'Aisyah Putri Azzahra', '7A', '2011-08-20'],
-      ['0081234569', 'Bima Sakti Nugraha', '7B', '2011-04-10'],
-      ['0091234570', 'Citra Kirana Lestari', '8A', '2010-09-22'],
-      ['0101234571', 'Dian Pratama Putra', '9A', '2009-12-05']
+      ['NISN', 'Nama Siswa', 'Kelas', 'Tanggal_Lahir'],
+      ['0081234567', 'Aditya Pratama Putra', '7A', '2011-05-15'],
+      ['0081234568', 'Anisa Rahmawati', '7A', '2011-08-22'],
+      ['0081234569', 'Bagas Dwi Cahyo', '7B', '2011-02-10'],
+      ['0081234570', 'Cantika Dewi Lestari', '7B', '2011-11-04'],
+      ['0071234571', 'Dimas Arya Nugraha', '8A', '2010-06-18'],
+      ['0061234572', 'Eka Putri Handayani', '9A', '2009-09-30']
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(templateData);
@@ -102,12 +103,13 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
 
   const downloadTemplateCsv = () => {
     const csvContent = 
-      "NISN,Nama Siswa,Kelas,Tanggal Lahir\n" +
-      "0081234567,Ahmad Faiz Al-Faruq,7A,2011-05-15\n" +
-      "0081234568,Aisyah Putri Azzahra,7A,2011-08-20\n" +
-      "0081234569,Bima Sakti Nugraha,7B,2011-04-10\n" +
-      "0091234570,Citra Kirana Lestari,8A,2010-09-22\n" +
-      "0101234571,Dian Pratama Putra,9A,2009-12-05\n";
+      "NISN,Nama Siswa,Kelas,Tanggal_Lahir\n" +
+      "0081234567,Aditya Pratama Putra,7A,2011-05-15\n" +
+      "0081234568,Anisa Rahmawati,7A,2011-08-22\n" +
+      "0081234569,Bagas Dwi Cahyo,7B,2011-02-10\n" +
+      "0081234570,Cantika Dewi Lestari,7B,2011-11-04\n" +
+      "0071234571,Dimas Arya Nugraha,8A,2010-06-18\n" +
+      "0061234572,Eka Putri Handayani,9A,2009-09-30\n";
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -119,9 +121,11 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
     document.body.removeChild(link);
   };
 
+  // Normalisasi tanggal lahir ke format YYYY-MM-DD
   const normalizeDate = (rawDate: any): string => {
     if (!rawDate) return '2011-01-01';
     
+    // Jika dari excel berupa serial number
     if (typeof rawDate === 'number') {
       const date = new Date((rawDate - (25567 + 2)) * 86400 * 1000);
       return date.toISOString().split('T')[0];
@@ -132,6 +136,7 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
       return str;
     }
     
+    // Format DD/MM/YYYY atau DD-MM-YYYY
     if (/^\d{2}[\/\-]\d{2}[\/\-]\d{4}$/.test(str)) {
       const parts = str.split(/[\/\-]/);
       return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
@@ -165,11 +170,12 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
           return;
         }
 
+        // Header mapping
         const header = data[0].map((h: any) => String(h || '').trim().toLowerCase());
-        const nisnIdx = header.findIndex((h: string) => h.includes('nisn') || h.includes('induk') || h.includes('nis'));
+        const nisnIdx = header.findIndex((h: string) => h.includes('nisn') || h.includes('nis') || h.includes('nomor induk'));
         const namaIdx = header.findIndex((h: string) => h.includes('nama'));
         const kelasIdx = header.findIndex((h: string) => h.includes('kelas') || h.includes('rombel') || h.includes('tingkat'));
-        const tglIdx = header.findIndex((h: string) => h.includes('lahir') || h.includes('tgl') || h.includes('dob') || h.includes('tanggal'));
+        const dobIdx = header.findIndex((h: string) => h.includes('lahir') || h.includes('tanggal') || h.includes('tgl') || h.includes('dob'));
 
         if (nisnIdx === -1 || namaIdx === -1) {
           setErrorMessage('Format kolom tidak sesuai. Wajib terdapat kolom "NISN" dan "Nama Siswa".');
@@ -185,13 +191,11 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
 
           const rawNisn = String(row[nisnIdx] || '').trim();
           const rawNama = String(row[namaIdx] || '').trim();
-          const rawKelas = kelasIdx !== -1 ? String(row[kelasIdx] || '').trim() : '7A';
-          const dob = normalizeDate(tglIdx !== -1 ? row[tglIdx] : '2011-01-01');
+          const rawKelas = kelasIdx !== -1 ? String(row[kelasIdx] || '').trim() : '';
+          const rawDob = dobIdx !== -1 ? row[dobIdx] : '2011-01-01';
+          const dob = normalizeDate(rawDob);
 
-          // Pencocokan pintar ke 18 kelas
-          const matched = matchKelas(rawKelas, kelasList);
-          const matchedId = matched ? matched.id : (kelasList.find(k => k.nama_kelas === '7A')?.id || 'k-7a');
-          const matchedName = matched ? matched.nama_kelas : '7A';
+          const matchedK = matchKelas(rawKelas, kelasList);
 
           let isValid = true;
           let reason: string | undefined;
@@ -207,9 +211,9 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
           parsed.push({
             nisn: rawNisn,
             nama: rawNama,
-            kelas: rawKelas || '7A',
-            matchedKelasName: matchedName,
-            matchedKelasId: matchedId,
+            kelas: rawKelas,
+            matchedKelasName: matchedK?.nama_kelas || '7A',
+            matchedKelasId: matchedK?.id || 'k-7a',
             tanggal_lahir: dob,
             isValid,
             errorReason: reason
@@ -227,12 +231,14 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
     reader.readAsBinaryString(uploadedFile);
   };
 
-  const handleCommitImport = () => {
+  const handleCommitImport = async () => {
     const validRows = parsedRows.filter((r) => r.isValid);
     if (validRows.length === 0) {
       setErrorMessage('Tidak ada data siswa valid yang dapat diimpor.');
       return;
     }
+
+    setIsProcessing(true);
 
     const studentsToImport: Siswa[] = validRows.map((r, idx) => {
       return {
@@ -245,7 +251,7 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
       };
     });
 
-    MockDatabase.importSiswa(studentsToImport, replaceAll);
+    await JournalService.importSiswa(studentsToImport, replaceAll);
     const modeText = replaceAll ? 'menggantikan seluruh data dummy sebelumnya' : 'menambahkan ke data yang ada';
     
     // Hitung distribusi kelas
@@ -260,7 +266,8 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
       .map(([k, cnt]) => `${k}: ${cnt}`)
       .join(', ');
 
-    setSuccessMessage(`Berhasil mengimpor ${studentsToImport.length} data siswa (${modeText})! Tersebar di kelas (${summaryDist}...).`);
+    setSuccessMessage(`Berhasil mengimpor ${studentsToImport.length} data siswa ke database cloud (${modeText})! Tersebar di kelas (${summaryDist}...).`);
+    setIsProcessing(false);
     
     setTimeout(() => {
       onImportSuccess();

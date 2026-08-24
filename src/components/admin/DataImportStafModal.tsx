@@ -10,7 +10,7 @@ import {
   Briefcase
 } from 'lucide-react';
 import { Kelas, RoleStaf, StafSekolah } from '../../types/database';
-import { MockDatabase } from '../../lib/mockStore';
+import { JournalService } from '../../lib/journalService';
 import { matchKelas } from './DataImportSiswaModal';
 
 interface DataImportStafModalProps {
@@ -214,12 +214,14 @@ export const DataImportStafModal: React.FC<DataImportStafModalProps> = ({
     reader.readAsBinaryString(uploadedFile);
   };
 
-  const handleCommitImport = () => {
+  const handleCommitImport = async () => {
     const validRows = parsedRows.filter((r) => r.isValid);
     if (validRows.length === 0) {
       setErrorMessage('Tidak ada data staf valid yang dapat diimpor.');
       return;
     }
+
+    setIsProcessing(true);
 
     const staffToImport: StafSekolah[] = validRows.map((r, idx) => {
       return {
@@ -235,9 +237,10 @@ export const DataImportStafModal: React.FC<DataImportStafModalProps> = ({
       };
     });
 
-    MockDatabase.importStaf(staffToImport, replaceAll);
+    await JournalService.importStaf(staffToImport, replaceAll);
     const modeText = replaceAll ? 'menggantikan seluruh data guru dummy sebelumnya' : 'menambahkan ke data yang ada';
-    setSuccessMessage(`Berhasil mengimpor ${staffToImport.length} data Staf Sekolah SMPN 2 Glagah (${modeText})! Password default adalah Tanggal Lahir (DDMMYYYY).`);
+    setSuccessMessage(`Berhasil mengimpor ${staffToImport.length} data Staf Sekolah SMPN 2 Glagah ke cloud database (${modeText})! Password default adalah Tanggal Lahir (DDMMYYYY).`);
+    setIsProcessing(false);
 
     setTimeout(() => {
       onImportSuccess();

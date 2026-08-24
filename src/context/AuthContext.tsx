@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthUser, Siswa, StafSekolah } from '../types/database';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import { MockDatabase } from '../lib/mockStore';
+import { JournalService } from '../lib/journalService';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -24,17 +25,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isDemoMode] = useState<boolean>(!isSupabaseConfigured);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(CURRENT_USER_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as AuthUser;
-        setUser(parsed);
+    const initAuth = async () => {
+      try {
+        // Inisialisasi sinkronisasi cloud data Supabase ke local cache
+        await JournalService.initCloudSync();
+
+        const stored = localStorage.getItem(CURRENT_USER_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored) as AuthUser;
+          setUser(parsed);
+        }
+      } catch (e) {
+        console.error('Error reading auth state', e);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {
-      console.error('Error reading auth state', e);
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    initAuth();
   }, []);
 
   const saveUserSession = (authUser: AuthUser | null) => {
@@ -75,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginSiswa = async (nisn: string, passwordInput: string): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
     try {
-      const allSiswa = MockDatabase.getSiswa();
+      const allSiswa = await JournalService.getSiswa();
       const student = allSiswa.find((s) => s.nisn === nisn.trim());
 
       if (!student) {
@@ -84,27 +92,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const defaultPassword = getDefaultDobPassword(student.tanggal_lahir);
 
-      if (isSupabaseConfigured) {
-        const email = `${nisn.trim()}@jurnal.local`;
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password: passwordInput,
-        });
-
-        if (error) {
-          if (passwordInput === defaultPassword) {
-            saveUserSession({ type: 'siswa', data: student });
-            return { success: true };
-          }
-          return { success: false, message: error.message };
-        }
-      } else {
-        if (passwordInput !== defaultPassword && !student.sudah_ganti_password) {
-          return {
-            success: false,
-            message: `Password default untuk login pertama adalah tanggal lahir (DDMMYYYY).`
-          };
-        }
+      if (passwordInput !== defaultPassword && !student.sudah_ganti_password) {
+        return {
+          success: false,
+          message: `Password default untuk login pertama adalah tanggal lahir (DDMMYYYY).`
+        };
       }
 
       saveUserSession({ type: 'siswa', data: student });
@@ -127,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Cek apakah Superadmin Aji Bagus Khoiri
       if (cleanInput === 'ajibaguskhoiri') {
-        const allStaf = MockDatabase.getStaf();
+        const allStaf = await JournalService.getStaf();
         const superAdmin = allStaf.find(st => st.role === 'superadmin' || st.nip_atau_nik === 'ajibaguskhoiri') || {
           id: 'staf-superadmin-aji',
           nama: 'Aji Bagus Khoiri (Superadmin)',
@@ -151,106 +143,83 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Login staf reguler (Wali Kelas, Kepala Sekolah, Kurikulum, Kesiswaan)
-      const allStaf = MockDatabase.getStaf();
+      const allStaf = await JournalService.getStaf();
       const staf = allStaf.find((st) => st.nip_atau_nik.toLowerCase() === cleanInput);
 
       if (!staf) {
         return { success: false, message: 'NIP, NIK, atau Username tidak ditemukan dalam data pendidik sekolah.' };
       }
 
-      const defaultPassword = getDefaultDobPassword(staf.tanggal_lahir || '1985-01-01');
+      const defaultPassword = getDefaultDobPassword(staf.tanggal_lahir);
 
-      if (isSupabaseConfigured) {
-        const email = `${nipOrNik.trim()}@jurnal.local`;
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password: passwordInput,
-        });
-
-        if (error) {
-          if (passwordInput === defaultPassword) {
-            saveUserSession({ type: 'staf', data: staf });
-            return { success: true };
-          }
-          return { success: false, message: error.message };
-        }
-      } else {
-        if (passwordInput !== defaultPassword && !staf.sudah_ganti_password) {
-          return {
-            success: false,
-            message: `Password default untuk login pertama adalah tanggal lahir (DDMMYYYY).`
-          };
-        }
+      if (passwordInput !== defaultPassword && !staf.sudah_ganti_password) {
+        return {
+          success: false,
+          message: `Password default untuk login pertama adalah tanggal lahir (DDMMYYYY).`
+        };
       }
 
       saveUserSession({ type: 'staf', data: staf });
       return { success: true };
     } catch (err: any) {
-      return { success: false, message: err.message || 'Terjadi kesalahan login' };
+      return { success: false, message: err.message || 'Terjadi kesalahan saat login' };
     } finally {
       setIsLoading(false);
     }
   };
 
   const logout = () => {
-    if (isSupabaseConfigured) {
-      supabase.auth.signOut().catch(console.error);
-    }
     saveUserSession(null);
   };
 
   const updatePassword = async (newPassword: string): Promise<boolean> => {
     if (!user) return false;
-
-    try {
+    
+    if (user.type === 'siswa') {
+      MockDatabase.updatePassword('siswa', user.data.id);
       if (isSupabaseConfigured) {
-        await supabase.auth.updateUser({ password: newPassword });
+        try {
+          await supabase.from('siswa').update({ sudah_ganti_password: true }).eq('id', user.data.id);
+        } catch (e) {
+          console.warn(e);
+        }
       }
-
-      MockDatabase.updatePassword(user.type, user.data.id);
-
-      const updatedUser: AuthUser = {
+      setUser({
         ...user,
-        data: {
-          ...user.data,
-          sudah_ganti_password: true
-        } as any
-      };
-      saveUserSession(updatedUser);
+        data: { ...user.data, sudah_ganti_password: true }
+      });
       return true;
-    } catch (err) {
-      console.error('Gagal update password', err);
-      return false;
+    } else {
+      MockDatabase.updatePassword('staf', user.data.id);
+      if (isSupabaseConfigured) {
+        try {
+          await supabase.from('staf_sekolah').update({ sudah_ganti_password: true }).eq('id', user.data.id);
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+      setUser({
+        ...user,
+        data: { ...user.data, sudah_ganti_password: true }
+      });
+      return true;
     }
   };
 
   const quickLoginAs = (
-    type: 'siswa' | 'wali_kelas' | 'kepala_sekolah' | 'waka_kurikulum' | 'kesiswaan' | 'superadmin', 
+    type: 'siswa' | 'wali_kelas' | 'kepala_sekolah' | 'waka_kurikulum' | 'kesiswaan' | 'superadmin',
     customId?: string
   ) => {
     if (type === 'siswa') {
       const allSiswa = MockDatabase.getSiswa();
-      // Gunakan siswa dummy awal
-      const student = customId ? allSiswa.find((s) => s.id === customId) || allSiswa[0] : allSiswa[0];
-      saveUserSession({ type: 'siswa', data: student });
-    } else if (type === 'superadmin') {
-      const allStaf = MockDatabase.getStaf();
-      const superAdmin = allStaf.find((st) => st.role === 'superadmin') || {
-        id: 'staf-superadmin-aji',
-        nama: 'Aji Bagus Khoiri (Superadmin)',
-        role: 'superadmin' as const,
-        status_asn: true,
-        nip_atau_nik: 'ajibaguskhoiri',
-        tanggal_lahir: '1994-08-06',
-        kelas_id: null,
-        scope: 'sekolah' as const,
-        sudah_ganti_password: true
-      };
-      saveUserSession({ type: 'staf', data: superAdmin });
+      const s = customId ? allSiswa.find((item) => item.id === customId) : allSiswa[0];
+      if (s) saveUserSession({ type: 'siswa', data: s });
     } else {
       const allStaf = MockDatabase.getStaf();
-      const targetStaf = allStaf.find((st) => st.role === type) || allStaf[0];
-      saveUserSession({ type: 'staf', data: targetStaf });
+      const st = customId
+        ? allStaf.find((item) => item.id === customId)
+        : allStaf.find((item) => item.role === type) || allStaf[0];
+      if (st) saveUserSession({ type: 'staf', data: st });
     }
   };
 
@@ -272,7 +241,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
