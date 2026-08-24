@@ -14,7 +14,7 @@ import {
   Check,
   Sparkles
 } from 'lucide-react';
-import { ArahanWaliKelas, EntriJurnal, Feedback, Kebiasaan, Siswa, StafSekolah } from '../../types/database';
+import { ArahanWaliKelas, EntriJurnal, Feedback, Kebiasaan, Kelas, Siswa, StafSekolah } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
 import { MatrixRekapTable } from './MatrixRekapTable';
 import { StudentDetailModal } from './StudentDetailModal';
@@ -31,6 +31,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  const [currentKelas, setCurrentKelas] = useState<Kelas | null>(null);
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [kebiasaanList, setKebiasaanList] = useState<Kebiasaan[]>([]);
   const [entries, setEntries] = useState<EntriJurnal[]>([]);
@@ -45,17 +46,66 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
 
   const loadData = async () => {
     try {
-      const targetKelasId = staf.kelas_id || undefined;
-      const [allSiswa, habits, allEntries, allFeedbacks, allStaf, classArahan] = await Promise.all([
-        JournalService.getSiswa(targetKelasId),
+      const [allKelas, allSiswa, habits, allEntries, allFeedbacks, allStaf] = await Promise.all([
+        JournalService.getKelas(),
+        JournalService.getSiswa(),
         JournalService.getKebiasaan(),
         JournalService.getEntriJurnal(),
         JournalService.getFeedback(),
-        JournalService.getStaf(),
-        JournalService.getArahanWaliKelas(targetKelasId)
+        JournalService.getStaf()
       ]);
 
-      setSiswaList(allSiswa);
+      // 1. Temukan kelas yang diampu oleh Wali Kelas ini (dukung relasi UUID dan string nama kelas)
+      let matchedKelas = allKelas.find((k) => 
+        (staf.id && k.wali_kelas_id === staf.id) ||
+        (staf.kelas_id && k.id === staf.kelas_id) ||
+        (staf.kelas_id && (
+          k.nama_kelas.toUpperCase() === String(staf.kelas_id).toUpperCase().replace(/^K-/, '') ||
+          k.id === String(staf.kelas_id)
+        ))
+      );
+
+      // Fallback jika tidak ditemukan di list kelas (misal staf.kelas_id berupa string '7F')
+      if (!matchedKelas && staf.kelas_id) {
+        const rawName = String(staf.kelas_id).replace(/^k-/i, '').toUpperCase();
+        matchedKelas = {
+          id: staf.kelas_id,
+          nama_kelas: rawName || 'Kelas',
+          tingkat: parseInt(rawName.replace(/\D/g, '')) || 7,
+          wali_kelas_id: staf.id
+        };
+      }
+
+      setCurrentKelas(matchedKelas || null);
+
+      // 2. Kumpulkan seluruh kemungkinan ID / format kelas
+      const targetClassIds = new Set<string>();
+      if (matchedKelas?.id) targetClassIds.add(matchedKelas.id);
+      if (matchedKelas?.nama_kelas) {
+        targetClassIds.add(matchedKelas.nama_kelas.toUpperCase());
+        targetClassIds.add(`k-${matchedKelas.nama_kelas.toLowerCase()}`);
+      }
+      if (staf.kelas_id) {
+        targetClassIds.add(staf.kelas_id);
+        targetClassIds.add(String(staf.kelas_id).toUpperCase());
+        targetClassIds.add(String(staf.kelas_id).toUpperCase().replace(/^K-/, ''));
+        targetClassIds.add(`k-${String(staf.kelas_id).toLowerCase().replace(/^k-/, '')}`);
+      }
+
+      // 3. Filter siswa yang terdaftar di kelas wali kelas ini
+      const classStudents = allSiswa.filter((s) => {
+        if (!matchedKelas && !staf.kelas_id) return true;
+        if (targetClassIds.has(s.kelas_id)) return true;
+        if (s.kelas_id && targetClassIds.has(s.kelas_id.toUpperCase())) return true;
+        if (s.kelas_id && targetClassIds.has(s.kelas_id.toUpperCase().replace(/^K-/, ''))) return true;
+        return false;
+      });
+
+      // 4. Muat arahan pimpinan untuk kelas ini
+      const targetClassIdForArahan = matchedKelas?.id || staf.kelas_id || undefined;
+      const classArahan = await JournalService.getArahanWaliKelas(targetClassIdForArahan);
+
+      setSiswaList(classStudents);
       setKebiasaanList(habits.sort((a, b) => a.urutan - b.urutan));
       setEntries(allEntries);
       setFeedbacks(allFeedbacks);
@@ -127,13 +177,13 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
         <div>
           <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-block mb-1">
-            Portal Wali Kelas • Kelas 7A
+            Portal Wali Kelas • Kelas {currentKelas?.nama_kelas || staf.kelas_id || '7A'}
           </span>
           <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800">
             Rekap & Moderasi Jurnal Siswa
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Pantau kedisiplinan 32 siswa, tinjau keaslian bukti foto EXIF, dan berikan feedback apresiasi.
+            Pantau kedisiplinan {totalSiswa} siswa {currentKelas ? `kelas ${currentKelas.nama_kelas}` : ''}, tinjau keaslian bukti foto EXIF, dan berikan feedback apresiasi.
           </p>
         </div>
 
@@ -243,7 +293,9 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
             <Users className="w-4 h-4 text-blue-500" />
           </div>
           <p className="text-2xl font-extrabold text-slate-800">{totalSiswa}</p>
-          <span className="text-[11px] text-slate-400">Siswa Kelas 7A</span>
+          <span className="text-[11px] text-slate-400">
+            Siswa Kelas {currentKelas?.nama_kelas || staf.kelas_id || ''}
+          </span>
         </div>
 
         {/* Rata-rata Capaian */}
@@ -309,7 +361,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
 
       {/* Export & WhatsApp Share Panel */}
       <ExportSharePanel
-        namaKelas="Kelas 7A"
+        namaKelas={currentKelas ? `Kelas ${currentKelas.nama_kelas}` : (staf.kelas_id ? `Kelas ${staf.kelas_id}` : 'Kelas')}
         selectedDate={selectedDate}
         siswaList={siswaList}
         kebiasaanList={kebiasaanList}

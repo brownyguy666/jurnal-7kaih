@@ -40,8 +40,17 @@ export const ClassComparisonTable: React.FC<ClassComparisonTableProps> = ({
 
   // Generate metrics for all classes based on real student count
   const classSummaryRows: SchoolClassSummaryRow[] = filteredClasses.map((k, idx) => {
-    const classStudents = siswaList.filter((s) => s.kelas_id === k.id);
-    const wali = stafList.find((st) => st.id === k.wali_kelas_id);
+    const classStudents = siswaList.filter((s) => 
+      s.kelas_id === k.id || 
+      s.kelas_id?.toUpperCase() === k.nama_kelas.toUpperCase() ||
+      s.kelas_id?.toLowerCase() === `k-${k.nama_kelas.toLowerCase()}`
+    );
+    const wali = stafList.find((st) => 
+      st.id === k.wali_kelas_id || 
+      st.kelas_id === k.id || 
+      st.kelas_id?.toUpperCase() === k.nama_kelas.toUpperCase() ||
+      (st.kelas_id && String(st.kelas_id).toUpperCase().replace(/^K-/, '') === k.nama_kelas.toUpperCase())
+    );
 
     const classEntries = entries.filter(
       (e) => e.tanggal === selectedDate && classStudents.some((s) => s.id === e.siswa_id)

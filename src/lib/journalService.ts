@@ -43,6 +43,12 @@ export class JournalService {
       if (entriRes.data && entriRes.data.length > 0) {
         MockDatabase.syncEntriFromRemote(entriRes.data as EntriJurnal[]);
       }
+      if (arahanRes.data && arahanRes.data.length > 0) {
+        MockDatabase.syncArahanFromRemote(arahanRes.data as ArahanWaliKelas[]);
+      }
+      if (fbRes.data && fbRes.data.length > 0) {
+        MockDatabase.syncFeedbackFromRemote(fbRes.data as Feedback[]);
+      }
     } catch (e) {
       console.warn('initCloudSync warning:', e);
     }
@@ -121,8 +127,10 @@ export class JournalService {
           query = query.eq('kelas_id', kelasId);
         }
         const { data, error } = await query;
-        if (!error && data && data.length > 0) {
-          MockDatabase.syncSiswaFromRemote(data as Siswa[]);
+        if (!error && data) {
+          if (!kelasId || kelasId === 'all') {
+            MockDatabase.syncSiswaFromRemote(data as Siswa[]);
+          }
           return data as Siswa[];
         }
       } catch (e) {
@@ -131,7 +139,8 @@ export class JournalService {
     }
     const local = MockDatabase.getSiswa();
     if (kelasId && kelasId !== 'all') {
-      return local.filter((s) => s.kelas_id === kelasId);
+      const clean = kelasId.replace(/^k-/i, '').toUpperCase();
+      return local.filter((s) => s.kelas_id === kelasId || s.kelas_id?.replace(/^k-/i, '').toUpperCase() === clean);
     }
     return local;
   }
@@ -462,8 +471,8 @@ export class JournalService {
         const payload = staffList.map(st => {
           let resolvedKelasId: string | null = null;
           if (st.role === 'wali_kelas') {
-            const rawK = st.kelas_id ? String(st.kelas_id).replace('k-', '').toUpperCase().trim() : '';
-            resolvedKelasId = kelasUuidMap.get(rawK) || null;
+            const rawK = st.kelas_id ? String(st.kelas_id).replace(/^k-/i, '').toUpperCase().trim() : '';
+            resolvedKelasId = kelasUuidMap.get(rawK) || dbKelasList?.find(k => k.id === st.kelas_id)?.id || null;
           }
 
           return {
@@ -494,6 +503,12 @@ export class JournalService {
         const { data: refreshedStaf } = await supabase.from('staf_sekolah').select('*').limit(500);
         if (refreshedStaf && refreshedStaf.length > 0) {
           MockDatabase.syncStafFromRemote(refreshedStaf as StafSekolah[]);
+          // Update kelas.wali_kelas_id in Supabase
+          for (const st of refreshedStaf) {
+            if (st.role === 'wali_kelas' && st.kelas_id) {
+              await supabase.from('kelas').update({ wali_kelas_id: st.id }).eq('id', st.kelas_id);
+            }
+          }
         }
       } catch (e) {
         console.error('Gagal sync import staf ke Supabase Cloud:', e);

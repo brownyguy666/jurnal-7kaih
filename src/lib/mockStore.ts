@@ -12,6 +12,7 @@ import {
   INITIAL_KEBIASAAN, 
   INITIAL_KELAS, 
   INITIAL_SISWA_7A, 
+  ALL_INITIAL_SISWA,
   INITIAL_STAF, 
   INITIAL_ENTRI, 
   INITIAL_FEEDBACK, 
@@ -61,7 +62,7 @@ export class MockDatabase {
   }
 
   static getSiswa(): Siswa[] {
-    return getStored<Siswa[]>(STORAGE_KEYS.SISWA, INITIAL_SISWA_7A);
+    return getStored<Siswa[]>(STORAGE_KEYS.SISWA, ALL_INITIAL_SISWA);
   }
 
   static getStaf(): StafSekolah[] {
@@ -112,6 +113,18 @@ export class MockDatabase {
   static syncEntriFromRemote(remoteList: EntriJurnal[]): void {
     if (remoteList && remoteList.length > 0) {
       setStored(STORAGE_KEYS.ENTRI, remoteList);
+    }
+  }
+
+  static syncArahanFromRemote(remoteList: ArahanWaliKelas[]): void {
+    if (remoteList && remoteList.length > 0) {
+      setStored(STORAGE_KEYS.ARAHAN, remoteList);
+    }
+  }
+
+  static syncFeedbackFromRemote(remoteList: Feedback[]): void {
+    if (remoteList && remoteList.length > 0) {
+      setStored(STORAGE_KEYS.FEEDBACK, remoteList);
     }
   }
 
@@ -294,7 +307,7 @@ export class MockDatabase {
   static resetToDefault(): void {
     localStorage.setItem(STORAGE_KEYS.KEBIASAAN, JSON.stringify(INITIAL_KEBIASAAN));
     localStorage.setItem(STORAGE_KEYS.KELAS, JSON.stringify(INITIAL_KELAS));
-    localStorage.setItem(STORAGE_KEYS.SISWA, JSON.stringify(INITIAL_SISWA_7A));
+    localStorage.setItem(STORAGE_KEYS.SISWA, JSON.stringify(ALL_INITIAL_SISWA));
     localStorage.setItem(STORAGE_KEYS.STAF, JSON.stringify(INITIAL_STAF));
     localStorage.setItem(STORAGE_KEYS.ENTRI, JSON.stringify(INITIAL_ENTRI));
     localStorage.setItem(STORAGE_KEYS.FEEDBACK, JSON.stringify(INITIAL_FEEDBACK));
