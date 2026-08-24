@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { ArahanWaliKelas, EntriJurnal, Feedback, Kebiasaan, Kelas, Siswa, StafSekolah } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
+import { getTodayDateString } from '../../lib/timeCalculator';
 import { MatrixRekapTable } from './MatrixRekapTable';
 import { StudentDetailModal } from './StudentDetailModal';
 import { ModerationDeleteModal } from './ModerationDeleteModal';
@@ -27,7 +28,7 @@ interface WaliKelasDashboardProps {
 }
 
 export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayDateString();
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [searchQuery, setSearchQuery] = useState<string>('');
 

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { EntriJurnal, Feedback, Kebiasaan, Siswa } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
+import { getTodayDateString } from '../../lib/timeCalculator';
 import { HabitCard } from './HabitCard';
 import { HabitEntryModal } from './HabitEntryModal';
 import { PhotoViewerModal } from '../common/PhotoViewerModal';
@@ -23,7 +24,7 @@ interface SiswaDashboardProps {
 }
 
 export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayDateString();
   
   const [kebiasaanList, setKebiasaanList] = useState<Kebiasaan[]>([]);
   const [entries, setEntries] = useState<EntriJurnal[]>([]);

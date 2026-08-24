@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Kebiasaan, Kelas, Siswa, StafSekolah, EntriJurnal } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
+import { getTodayDateString } from '../../lib/timeCalculator';
 import { MockDatabase } from '../../lib/mockStore';
 import { DataImportSiswaModal } from './DataImportSiswaModal';
 import { DataImportStafModal } from './DataImportStafModal';
@@ -37,7 +38,7 @@ interface SuperadminDashboardProps {
 
 export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }) => {
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'siswa' | 'staf' | 'kebiasaan' | 'monitoring'>('leaderboard');
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayDateString();
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
 
   const [kelasList, setKelasList] = useState<Kelas[]>([]);

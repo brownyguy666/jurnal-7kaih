@@ -123,3 +123,15 @@ export function isDailyEntryWindowOpen(checkTime: Date = new Date()): {
   };
 }
 
+/**
+ * Mengambil tanggal lokal hari ini dalam format YYYY-MM-DD sesuai zona waktu pengguna/WIB
+ * Menghindari bug UTC toISOString() yang bergeser ke hari kemarin saat subuh (00:00 - 06:59 WIB)
+ */
+export function getTodayDateString(d: Date = new Date()): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+

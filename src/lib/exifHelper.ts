@@ -1,5 +1,6 @@
 import exifr from 'exifr';
 import { ExifAnalysisResult } from '../types/database';
+import { getTodayDateString } from './timeCalculator';
 
 /**
  * Menganalisis metadata EXIF dari file foto yang diunggah
@@ -8,7 +9,7 @@ import { ExifAnalysisResult } from '../types/database';
  */
 export async function analyzePhotoExif(
   file: File | Blob, 
-  targetDateStr: string = new Date().toISOString().split('T')[0]
+  targetDateStr: string = getTodayDateString()
 ): Promise<ExifAnalysisResult> {
   try {
     // Baca metadata EXIF menggunakan exifr (hanya tag penting: DateTimeOriginal, CreateDate, ModifyDate, Model, Make)
@@ -57,8 +58,8 @@ export async function analyzePhotoExif(
       };
     }
 
-    // Format tanggal foto ke YYYY-MM-DD
-    const photoDateStr = photoDate.toISOString().split('T')[0];
+    // Format tanggal foto ke YYYY-MM-DD sesuai waktu lokal
+    const photoDateStr = getTodayDateString(photoDate);
     
     // Periksa apakah tanggal foto sama dengan tanggal entri
     if (photoDateStr !== targetDateStr) {

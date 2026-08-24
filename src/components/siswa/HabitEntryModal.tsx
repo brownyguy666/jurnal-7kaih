@@ -13,7 +13,7 @@ import {
 import { EntriJurnal, Kebiasaan, SumberFoto } from '../../types/database';
 import { analyzePhotoExif } from '../../lib/exifHelper';
 import { compressImage } from '../../lib/imageCompressor';
-import { calculateStatusWaktu, getStatusWaktuLabel, isDailyEntryWindowOpen } from '../../lib/timeCalculator';
+import { calculateStatusWaktu, getStatusWaktuLabel, isDailyEntryWindowOpen, getTodayDateString } from '../../lib/timeCalculator';
 import { uploadBuktiFoto } from '../../lib/supabase';
 
 interface HabitEntryModalProps {
@@ -44,7 +44,7 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
 }) => {
   if (!isOpen || !kebiasaan) return null;
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayDateString();
   
   // State form
   const [sumberFoto, setSumberFoto] = useState<SumberFoto>('kamera');

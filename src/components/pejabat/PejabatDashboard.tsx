@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { ArahanWaliKelas, EntriJurnal, Feedback, KategoriArahan, Kebiasaan, Kelas, Siswa, StafSekolah } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
+import { getTodayDateString } from '../../lib/timeCalculator';
 import { MatrixRekapTable } from '../walikelas/MatrixRekapTable';
 import { SchoolStatsOverview } from './SchoolStatsOverview';
 import { StudentDetailModal } from '../walikelas/StudentDetailModal';
@@ -32,7 +33,7 @@ interface PejabatDashboardProps {
 }
 
 export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getTodayDateString();
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
