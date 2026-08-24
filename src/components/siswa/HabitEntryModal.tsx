@@ -13,7 +13,7 @@ import {
 import { EntriJurnal, Kebiasaan, SumberFoto } from '../../types/database';
 import { analyzePhotoExif } from '../../lib/exifHelper';
 import { compressImage } from '../../lib/imageCompressor';
-import { calculateStatusWaktu, getStatusWaktuLabel } from '../../lib/timeCalculator';
+import { calculateStatusWaktu, getStatusWaktuLabel, isDailyEntryWindowOpen } from '../../lib/timeCalculator';
 import { uploadBuktiFoto } from '../../lib/supabase';
 
 interface HabitEntryModalProps {
@@ -142,6 +142,12 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
     e.preventDefault();
     setErrorMessage(null);
 
+    const windowStatus = isDailyEntryWindowOpen(new Date());
+    if (!windowStatus.isOpen) {
+      setErrorMessage(windowStatus.message || 'Pengisian jurnal harian dibuka mulai pukul 01:00 s.d 24:00 WIB.');
+      return;
+    }
+
     if (!photoBlob && !photoPreview) {
       setErrorMessage('Wajib melampirkan foto bukti pelaksanaan kebiasaan!');
       return;
@@ -231,15 +237,20 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
               <span>Panduan Pelaksanaan:</span>
             </div>
             <p className="text-[11px] text-slate-500">{kebiasaan.deskripsi}</p>
-            {kebiasaan.jam_mulai && kebiasaan.jam_selesai && (
-              <div className="pt-1 flex items-center justify-between text-[11px]">
-                <span className="font-medium text-slate-700">
-                  Target Waktu: {kebiasaan.jam_mulai} - {kebiasaan.jam_selesai} WIB
-                  {kebiasaan.toleransi_menit > 0 && ` (+${kebiasaan.toleransi_menit}m toleransi)`}
-                </span>
+            <div className="pt-1 flex items-center justify-between text-[11px] border-t border-slate-200/60 mt-1">
+              <span className="font-medium text-slate-500">
+                ⏰ Jam Operasional Jurnal: <strong className="text-slate-700">01:00 - 24:00 WIB</strong>
+              </span>
+              {kebiasaan.jam_mulai && kebiasaan.jam_selesai && (
                 <span className={`px-2 py-0.5 rounded-full font-bold border text-[10px] ${statusBadgeColor}`}>
                   Status: {statusLabel}
                 </span>
+              )}
+            </div>
+            {kebiasaan.jam_mulai && kebiasaan.jam_selesai && (
+              <div className="text-[11px] text-slate-600">
+                🎯 Target Ideal: <strong>{kebiasaan.jam_mulai} - {kebiasaan.jam_selesai} WIB</strong>
+                {kebiasaan.toleransi_menit > 0 && ` (+${kebiasaan.toleransi_menit}m toleransi)`}
               </div>
             )}
           </div>

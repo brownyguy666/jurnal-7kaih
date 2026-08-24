@@ -119,34 +119,39 @@ export const KebiasaanConfigModal: React.FC<KebiasaanConfigModalProps> = ({
           </div>
 
           {/* Pengaturan Jam */}
-          <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
-            <div>
-              <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-amber-600" />
-                <span>Jam Mulai (HH:MM)</span>
-              </label>
-              <input
-                type="time"
-                value={jamMulai}
-                onChange={(e) => setJamMulai(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium"
-              />
-              <span className="text-[10px] text-slate-400 mt-0.5 block">Kosongkan jika fleksibel</span>
-            </div>
+          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Jam Mulai (HH:MM)</span>
+                </label>
+                <input
+                  type="time"
+                  value={jamMulai}
+                  onChange={(e) => setJamMulai(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">Kosongkan jika fleksibel</span>
+              </div>
 
-            <div>
-              <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-amber-600" />
-                <span>Jam Selesai (HH:MM)</span>
-              </label>
-              <input
-                type="time"
-                value={jamSelesai}
-                onChange={(e) => setJamSelesai(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium"
-              />
-              <span className="text-[10px] text-slate-400 mt-0.5 block">Batas akhir tepat waktu</span>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Jam Selesai (HH:MM)</span>
+                </label>
+                <input
+                  type="time"
+                  value={jamSelesai}
+                  onChange={(e) => setJamSelesai(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white font-medium"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">Batas akhir tepat waktu</span>
+              </div>
             </div>
+            <p className="text-[10px] text-slate-500 pt-1 border-t border-slate-200/60">
+              ℹ️ Sistem aktif menerima pengisian jurnal harian setiap hari dari <strong>pukul 01:00 s.d 24:00 WIB</strong>.
+            </p>
           </div>
 
           {/* Toleransi & Maks Input */}

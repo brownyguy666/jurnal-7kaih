@@ -509,13 +509,18 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
       {/* TAB 4: KONFIGURASI 7 KEBIASAAN */}
       {activeTab === 'kebiasaan' && (
         <div className="space-y-4">
-          <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="font-bold text-slate-800 text-sm">
-                Aturan Parameter 7 Kebiasaan Resmi Kemendikdasmen
-              </h3>
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-bold text-slate-800 text-sm">
+                  Aturan Parameter 7 Kebiasaan Resmi Kemendikdasmen
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
+                  Operasional: 01.00 - 24.00 WIB
+                </span>
+              </div>
               <p className="text-xs text-slate-400">
-                Klik ikon edit untuk menyesuaikan jam mulai/selesai, toleransi waktu, dan batas submisi harian.
+                Pengisian jurnal aktif setiap hari dari pukul 01:00 s.d 24:00 WIB. Klik ikon ubah aturan untuk menyesuaikan target jam ideal, toleransi waktu, dan batas submisi.
               </p>
             </div>
           </div>

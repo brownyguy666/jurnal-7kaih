@@ -102,3 +102,24 @@ export function getStatusWaktuLabel(status: StatusWaktu): {
       };
   }
 }
+
+/**
+ * Validasi Batas Waktu Operasional Pengisian Jurnal Harian (Pukul 01:00 - 24:00 WIB)
+ */
+export function isDailyEntryWindowOpen(checkTime: Date = new Date()): {
+  isOpen: boolean;
+  message?: string;
+} {
+  const hours = checkTime.getHours();
+  // 00:00 - 00:59 WIB adalah masa pergantian hari / sinkronisasi sistem
+  if (hours < 1) {
+    return {
+      isOpen: false,
+      message: 'Pengisian jurnal harian dibuka mulai pukul 01:00 WIB s.d 24:00 WIB (Pukul 00:00 - 01:00 WIB adalah jeda pergantian tanggal harian).'
+    };
+  }
+  return {
+    isOpen: true
+  };
+}
+
