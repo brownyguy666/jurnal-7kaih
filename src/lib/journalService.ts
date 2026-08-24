@@ -365,12 +365,17 @@ export class JournalService {
           const { error } = await supabase.from('staf_sekolah').upsert(chunk, { onConflict: 'nip_atau_nik' });
           if (error) {
             console.error(`Error import staf chunk [${i}..${i + chunkSize}]:`, error.message);
+            // Jika error karena kolom tanggal_lahir belum ditambahkan, coba fallback tanpa kolom tanggal_lahir
+            if (error.message.includes('tanggal_lahir')) {
+              const fallbackChunk = chunk.map(({ tanggal_lahir, ...rest }) => rest);
+              await supabase.from('staf_sekolah').upsert(fallbackChunk, { onConflict: 'nip_atau_nik' });
+            }
           }
         }
 
         // Re-sync local cache
         const { data: refreshedStaf } = await supabase.from('staf_sekolah').select('*').limit(500);
-        if (refreshedStaf) {
+        if (refreshedStaf && refreshedStaf.length > 0) {
           MockDatabase.syncStafFromRemote(refreshedStaf as StafSekolah[]);
         }
       } catch (e) {
