@@ -35,13 +35,15 @@ import { ClassReportModal } from './ClassReportModal';
 import { ClassComparisonTable } from '../pejabat/ClassComparisonTable';
 import { SchoolStatsOverview } from '../pejabat/SchoolStatsOverview';
 import { ArahanWaliKelasModal } from '../pejabat/ArahanWaliKelasModal';
+import { SuperadminLeaderboardView } from './SuperadminLeaderboardView';
+import { Trophy } from 'lucide-react';
 
 interface SuperadminDashboardProps {
   staf: StafSekolah;
 }
 
 export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }) => {
-  const [activeTab, setActiveTab] = useState<'siswa' | 'staf' | 'kebiasaan' | 'monitoring'>('siswa');
+  const [activeTab, setActiveTab] = useState<'leaderboard' | 'siswa' | 'staf' | 'kebiasaan' | 'monitoring'>('leaderboard');
   const todayStr = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
 
@@ -215,6 +217,18 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
       {/* Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
         <button
+          onClick={() => setActiveTab('leaderboard')}
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'leaderboard'
+              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/25 ring-2 ring-amber-400 font-extrabold'
+              : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Trophy className="w-4 h-4 text-amber-500 fill-amber-500" />
+          <span>🏆 Peringkat & Grafik Analitik</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('siswa')}
           className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'siswa'
@@ -262,6 +276,21 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
           <span>Konfigurasi 7 Kebiasaan</span>
         </button>
       </div>
+
+      {/* TAB 0: LEADERBOARD & GRAFIK ANALITIK */}
+      {activeTab === 'leaderboard' && (
+        <SuperadminLeaderboardView
+          kelasList={kelasList}
+          siswaList={siswaList}
+          entries={entries}
+          stafList={stafList}
+          kebiasaanList={kebiasaanList}
+          selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
+          onRefreshData={loadAllData}
+          onSelectClassReport={(k) => setSelectedClassForReport(k)}
+        />
+      )}
 
       {/* TAB 1: KELOLA & PASSWORD SISWA */}
       {activeTab === 'siswa' && (

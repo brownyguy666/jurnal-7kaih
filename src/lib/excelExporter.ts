@@ -306,3 +306,122 @@ export async function shareToWhatsApp(text: string): Promise<boolean> {
     return true;
   }
 }
+
+/**
+ * Ekspor Laporan Resmi Perangkingan Harian Sekolah ke Excel
+ */
+export function exportLeaderboardToExcel(
+  tanggalStr: string,
+  classRankings: import('../types/database').ClassRankingItem[],
+  topStudents: import('../types/database').StudentRankingItem[]
+) {
+  const formattedDate = new Date(tanggalStr).toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Peringkat Kelas
+  const classSheetData: any[][] = [
+    ['PAPAN PERINGKAT KELAS TERDISIPLIN 7 KEBIASAAN'],
+    [`Sekolah: ${SCHOOL_PROFILE.nama} (NPSN: ${SCHOOL_PROFILE.npsn})`],
+    [`Tanggal Rekapitulasi: ${formattedDate}`],
+    [`Waktu Generate: ${new Date().toLocaleString('id-ID')}`],
+    [],
+    ['Peringkat', 'Kelas', 'Tingkat', 'Wali Kelas', 'Total Siswa', 'Siswa Tuntas (7/7)', '% Kepatuhan', 'Skor Tertib']
+  ];
+
+  classRankings.forEach((c) => {
+    classSheetData.push([
+      `#${c.rank}`,
+      `Kelas ${c.namaKelas}`,
+      `Tingkat ${c.tingkat}`,
+      c.waliKelasNama,
+      c.totalSiswa,
+      `${c.siswaTuntasCount} Siswa (${c.tuntasPercentage}%)`,
+      `${c.persentaseKepatuhan}%`,
+      c.score
+    ]);
+  });
+
+  const wsClass = XLSX.utils.aoa_to_sheet(classSheetData);
+  wsClass['!cols'] = [{ wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 28 }, { wch: 14 }, { wch: 22 }, { wch: 16 }, { wch: 14 }];
+  XLSX.utils.book_append_sheet(wb, wsClass, 'Peringkat 18 Kelas');
+
+  // Sheet 2: Siswa Teladan Tercepat
+  const studentSheetData: any[][] = [
+    ['PAPAN SISWA TELADAN TERCEPAT & TERDISIPLIN (BEBAS FLAG EXIF)'],
+    [`Sekolah: ${SCHOOL_PROFILE.nama}`],
+    [`Tanggal Rekapitulasi: ${formattedDate}`],
+    [],
+    ['Peringkat', 'Nama Siswa', 'NISN', 'Kelas', 'Total Kebiasaan', 'Waktu Tuntas', 'Status Foto EXIF', 'Status Waktu']
+  ];
+
+  topStudents.forEach((s) => {
+    studentSheetData.push([
+      `#${s.rank}`,
+      s.nama,
+      s.nisn,
+      `Kelas ${s.namaKelas}`,
+      '7 / 7 Kebiasaan',
+      s.selesaiFormatted,
+      '100% Valid (Bersih)',
+      'Tepat Waktu'
+    ]);
+  });
+
+  const wsStudent = XLSX.utils.aoa_to_sheet(studentSheetData);
+  wsStudent['!cols'] = [{ wch: 10 }, { wch: 28 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 16 }];
+  XLSX.utils.book_append_sheet(wb, wsStudent, 'Siswa Teladan Tercepat');
+
+  const fileName = `Leaderboard_7Kebiasaan_${SCHOOL_PROFILE.nama.replace(/\s+/g, '_')}_${tanggalStr}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+}
+
+/**
+ * Format teks pengumuman perangkingan harian untuk WhatsApp
+ */
+export function generateLeaderboardWhatsAppText(
+  tanggalStr: string,
+  classRankings: import('../types/database').ClassRankingItem[],
+  topStudents: import('../types/database').StudentRankingItem[]
+): string {
+  const formattedDate = new Date(tanggalStr).toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const top3Class = classRankings.slice(0, 3);
+  const top3Students = topStudents.slice(0, 3);
+
+  let msg = `*🏆 PENGUMUMAN JUARA HARIAN 7 KEBIASAAN ANAK INDONESIA HEBAT*\n`;
+  msg += `🏫 *${SCHOOL_PROFILE.nama}*\n`;
+  msg += `📅 *Hari/Tanggal:* ${formattedDate}\n\n`;
+
+  msg += `*🥇 TOP 3 KELAS TERDISIPLIN HARI INI:*\n`;
+  top3Class.forEach((c, idx) => {
+    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+    msg += `${medal} *Kelas ${c.namaKelas}* (Kepatuhan: ${c.persentaseKepatuhan}% • ${c.siswaTuntasCount}/${c.totalSiswa} Siswa Tuntas • Skor: ${c.score})\n   _Wali Kelas: ${c.waliKelasNama}_\n`;
+  });
+
+  msg += `\n*🌟 TOP 3 SISWA TELADAN TERCEPAT & TERBERSIH:*\n`;
+  if (top3Students.length === 0) {
+    msg += `_Belum ada siswa yang memenuhi kriteria ketat tuntas 7 kebiasaan tepat waktu & bebas flag EXIF._\n`;
+  } else {
+    top3Students.forEach((s, idx) => {
+      const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+      msg += `${medal} *${s.nama}* (Kelas ${s.namaKelas})\n   ⏰ Selesai: *${s.selesaiFormatted}* • Foto EXIF: *100% Valid*\n`;
+    });
+  }
+
+  msg += `\n✨ _Selamat kepada para juara dan mari terus tingkatkan karakter pembiasaan luhur setiap hari!_\n`;
+  msg += `_Laporan resmi telah direkap otomatis oleh Sistem Jurnal 7 Kebiasaan ${SCHOOL_PROFILE.nama}._`;
+
+  return msg;
+}
+

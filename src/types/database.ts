@@ -123,3 +123,35 @@ export interface ExifAnalysisResult {
 export type AuthUser = 
   | { type: 'siswa'; data: Siswa }
   | { type: 'staf'; data: StafSekolah };
+
+export interface ClassRankingItem {
+  rank: number;
+  kelasId: string;
+  namaKelas: string;
+  tingkat: number;
+  waliKelasNama: string;
+  totalSiswa: number;
+  siswaTuntasCount: number;
+  tuntasPercentage: number;
+  totalEntri: number;
+  persentaseKepatuhan: number; // 0 - 100%
+  flaggedPhotosCount: number;
+  tepatWaktuCount: number;
+  score: number; // calculated overall compliance score
+}
+
+export interface StudentRankingItem {
+  rank: number;
+  siswaId: string;
+  nama: string;
+  nisn: string;
+  namaKelas: string;
+  tingkat: number;
+  totalKebiasaan: number; // 7
+  selesaiPada: string; // ISO string waktu submit entri ke-7
+  selesaiFormatted: string; // HH:mm:ss WIB
+  hasFlaggedPhoto: boolean; // Must be false to qualify
+  isTepatWaktu: boolean; // Must be true (no terlambat in habit 1 & 7)
+  scoreKerapian: number;
+}
+
