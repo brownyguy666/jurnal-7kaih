@@ -17,7 +17,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { ArahanWaliKelas, EntriJurnal, Feedback, KategoriArahan, Kebiasaan, Kelas, Siswa, StafSekolah } from '../../types/database';
-import { MockDatabase } from '../../lib/mockStore';
+import { JournalService } from '../../lib/journalService';
 import { MatrixRekapTable } from '../walikelas/MatrixRekapTable';
 import { SchoolStatsOverview } from './SchoolStatsOverview';
 import { StudentDetailModal } from '../walikelas/StudentDetailModal';
@@ -51,22 +51,28 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
   const [isArahanModalOpen, setIsArahanModalOpen] = useState(false);
   const [targetClassForArahan, setTargetClassForArahan] = useState<string>('');
 
-  const loadData = () => {
-    const allKelas = MockDatabase.getKelas();
-    const allStaf = MockDatabase.getStaf();
-    const allSiswa = MockDatabase.getSiswa();
-    const habits = MockDatabase.getKebiasaan().sort((a, b) => a.urutan - b.urutan);
-    const allEntries = MockDatabase.getEntriJurnal();
-    const allFeedbacks = MockDatabase.getFeedback();
-    const allArahan = MockDatabase.getArahanWaliKelas();
+  const loadData = async () => {
+    try {
+      const [allKelas, allStaf, allSiswa, habits, allEntries, allFeedbacks, allArahan] = await Promise.all([
+        JournalService.getKelas(),
+        JournalService.getStaf(),
+        JournalService.getSiswa(),
+        JournalService.getKebiasaan(),
+        JournalService.getEntriJurnal(),
+        JournalService.getFeedback(),
+        JournalService.getArahanWaliKelas()
+      ]);
 
-    setKelasList(allKelas);
-    setStafList(allStaf);
-    setSiswaList(allSiswa);
-    setKebiasaanList(habits);
-    setEntries(allEntries);
-    setFeedbacks(allFeedbacks);
-    setArahanList(allArahan);
+      setKelasList(allKelas);
+      setStafList(allStaf);
+      setSiswaList(allSiswa);
+      setKebiasaanList(habits.sort((a, b) => a.urutan - b.urutan));
+      setEntries(allEntries);
+      setFeedbacks(allFeedbacks);
+      setArahanList(allArahan);
+    } catch (e) {
+      console.warn('Error loading pejabat data:', e);
+    }
   };
 
   useEffect(() => {
@@ -117,19 +123,19 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
     return k ? `Kelas ${k.nama_kelas}` : 'Sekolah';
   };
 
-  const handleSendArahan = (
+  const handleSendArahan = async (
     kelasId: string, 
     kategori: KategoriArahan, 
     judul: string, 
     pesan: string
   ) => {
-    MockDatabase.addArahanWaliKelas(staf.id, kelasId, kategori, judul, pesan);
-    loadData();
+    await JournalService.sendArahanWaliKelas(staf.id, kelasId, kategori, judul, pesan);
+    await loadData();
   };
 
-  const handleDeleteArahan = (arahanId: string) => {
-    MockDatabase.deleteArahan(arahanId);
-    loadData();
+  const handleDeleteArahan = async (arahanId: string) => {
+    await JournalService.deleteArahan(arahanId);
+    await loadData();
   };
 
   const handleDrillDownClass = (kelasId: string) => {

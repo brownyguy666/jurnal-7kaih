@@ -20,6 +20,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { Kebiasaan, Kelas, Siswa, StafSekolah, EntriJurnal } from '../../types/database';
+import { JournalService } from '../../lib/journalService';
 import { MockDatabase } from '../../lib/mockStore';
 import { DataImportSiswaModal } from './DataImportSiswaModal';
 import { DataImportStafModal } from './DataImportStafModal';
@@ -55,12 +56,24 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
   const [isArahanModalOpen, setIsArahanModalOpen] = useState(false);
   const [targetClassForArahan, setTargetClassForArahan] = useState('');
 
-  const loadAllData = () => {
-    setKelasList(MockDatabase.getKelas());
-    setStafList(MockDatabase.getStaf());
-    setSiswaList(MockDatabase.getSiswa());
-    setKebiasaanList(MockDatabase.getKebiasaan().sort((a, b) => a.urutan - b.urutan));
-    setEntries(MockDatabase.getEntriJurnal());
+  const loadAllData = async () => {
+    try {
+      const [allKelas, allStaf, allSiswa, habits, allEntries] = await Promise.all([
+        JournalService.getKelas(),
+        JournalService.getStaf(),
+        JournalService.getSiswa(),
+        JournalService.getKebiasaan(),
+        JournalService.getEntriJurnal()
+      ]);
+
+      setKelasList(allKelas);
+      setStafList(allStaf);
+      setSiswaList(allSiswa);
+      setKebiasaanList(habits.sort((a, b) => a.urutan - b.urutan));
+      setEntries(allEntries);
+    } catch (e) {
+      console.warn('Error loading superadmin data:', e);
+    }
   };
 
   useEffect(() => {
@@ -513,9 +526,9 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         stafList={stafList}
         currentStaf={staf}
         selectedKelasIdDefault={targetClassForArahan}
-        onSendSuccess={(kId, kat, jud, pes) => {
-          MockDatabase.addArahanWaliKelas(staf.id, kId, kat, jud, pes);
-          loadAllData();
+        onSendSuccess={async (kId, kat, jud, pes) => {
+          await JournalService.sendArahanWaliKelas(staf.id, kId, kat, jud, pes);
+          await loadAllData();
         }}
       />
     </div>

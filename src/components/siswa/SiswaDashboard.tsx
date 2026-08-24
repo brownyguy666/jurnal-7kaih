@@ -12,7 +12,7 @@ import {
   Heart
 } from 'lucide-react';
 import { EntriJurnal, Feedback, Kebiasaan, Siswa } from '../../types/database';
-import { MockDatabase } from '../../lib/mockStore';
+import { JournalService } from '../../lib/journalService';
 import { HabitCard } from './HabitCard';
 import { HabitEntryModal } from './HabitEntryModal';
 import { PhotoViewerModal } from '../common/PhotoViewerModal';
@@ -35,15 +35,20 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
   const [selectedEntryForPhoto, setSelectedEntryForPhoto] = useState<EntriJurnal | null>(null);
 
   // Load data
-  const loadData = () => {
-    const habits = MockDatabase.getKebiasaan().sort((a, b) => a.urutan - b.urutan);
-    const allEntries = MockDatabase.getEntriJurnal();
-    const studentEntries = allEntries.filter((e) => e.siswa_id === siswa.id);
-    const studentFeedbacks = MockDatabase.getFeedback().filter((f) => f.siswa_id === siswa.id);
+  const loadData = async () => {
+    try {
+      const [habits, allEntries, studentFeedbacks] = await Promise.all([
+        JournalService.getKebiasaan(),
+        JournalService.getEntriJurnal(undefined, siswa.id),
+        JournalService.getFeedback(siswa.id)
+      ]);
 
-    setKebiasaanList(habits);
-    setEntries(studentEntries);
-    setFeedbacks(studentFeedbacks);
+      setKebiasaanList(habits.sort((a, b) => a.urutan - b.urutan));
+      setEntries(allEntries);
+      setFeedbacks(studentFeedbacks);
+    } catch (e) {
+      console.warn('Error loading student data:', e);
+    }
   };
 
   useEffect(() => {
@@ -68,9 +73,9 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
     }
   }, [distinctHabitsCompleted]);
 
-  const handleEntrySuccess = (newEntryData: Omit<EntriJurnal, 'id' | 'waktu_submit'>) => {
-    MockDatabase.addEntriJurnal(newEntryData);
-    loadData();
+  const handleEntrySuccess = async (newEntryData: Omit<EntriJurnal, 'id' | 'waktu_submit'>) => {
+    await JournalService.submitEntriJurnal(newEntryData);
+    await loadData();
   };
 
   return (

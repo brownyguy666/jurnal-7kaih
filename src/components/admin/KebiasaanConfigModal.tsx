@@ -9,7 +9,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Kebiasaan } from '../../types/database';
-import { MockDatabase } from '../../lib/mockStore';
+import { JournalService } from '../../lib/journalService';
 
 interface KebiasaanConfigModalProps {
   isOpen: boolean;
@@ -34,7 +34,7 @@ export const KebiasaanConfigModal: React.FC<KebiasaanConfigModalProps> = ({
   const [maksInput, setMaksInput] = useState(kebiasaan.maks_input_harian || 1);
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const updated: Kebiasaan = {
@@ -47,7 +47,7 @@ export const KebiasaanConfigModal: React.FC<KebiasaanConfigModalProps> = ({
       maks_input_harian: Number(maksInput)
     };
 
-    MockDatabase.updateKebiasaan(updated);
+    await JournalService.updateKebiasaan(updated);
     setSuccess(true);
 
     setTimeout(() => {

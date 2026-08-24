@@ -18,15 +18,14 @@ export class JournalService {
   static async initCloudSync(): Promise<void> {
     if (!isSupabaseConfigured) return;
     try {
-      // Parallel fetch dari Supabase Cloud dengan limit besar (tanpa terpotong default 500)
       const [kebRes, kelasRes, siswaRes, stafRes, entriRes, arahanRes, fbRes] = await Promise.all([
         supabase.from('kebiasaan').select('*').order('urutan', { ascending: true }),
         supabase.from('kelas').select('*').order('nama_kelas', { ascending: true }),
         supabase.from('siswa').select('*').order('nama', { ascending: true }).limit(5000),
         supabase.from('staf_sekolah').select('*').order('nama', { ascending: true }).limit(500),
-        supabase.from('entri_jurnal').select('*').limit(10000),
+        supabase.from('entri_jurnal').select('*').order('waktu_submit', { ascending: false }).limit(10000),
         supabase.from('arahan_wali_kelas').select('*').order('created_at', { ascending: false }).limit(500),
-        supabase.from('feedback').select('*').limit(1000)
+        supabase.from('feedback').select('*').order('created_at', { ascending: false }).limit(1000)
       ]);
 
       if (kebRes.data && kebRes.data.length > 0) {
@@ -68,6 +67,21 @@ export class JournalService {
       }
     }
     return MockDatabase.getKebiasaan();
+  }
+
+  /**
+   * Mengupdate data Kebiasaan
+   */
+  static async updateKebiasaan(updated: Kebiasaan | Kebiasaan[]): Promise<void> {
+    MockDatabase.updateKebiasaan(updated);
+    if (isSupabaseConfigured) {
+      try {
+        const list = Array.isArray(updated) ? updated : [updated];
+        await supabase.from('kebiasaan').upsert(list);
+      } catch (e) {
+        console.warn('Failed remote update kebiasaan:', e);
+      }
+    }
   }
 
   /**
@@ -145,16 +159,17 @@ export class JournalService {
   }
 
   /**
-   * Mengambil Entri Jurnal
+   * Mengambil Entri Jurnal dari Cloud Supabase & Local Cache
    */
   static async getEntriJurnal(tanggal?: string, siswaId?: string): Promise<EntriJurnal[]> {
     if (isSupabaseConfigured) {
       try {
-        let query = supabase.from('entri_jurnal').select('*').limit(10000);
+        let query = supabase.from('entri_jurnal').select('*').order('waktu_submit', { ascending: false }).limit(10000);
         if (tanggal) query = query.eq('tanggal', tanggal);
         if (siswaId) query = query.eq('siswa_id', siswaId);
         const { data, error } = await query;
         if (!error && data) {
+          MockDatabase.syncEntriFromRemote(data as EntriJurnal[]);
           return data as EntriJurnal[];
         }
       } catch (e) {
@@ -165,6 +180,120 @@ export class JournalService {
     if (tanggal) local = local.filter((e) => e.tanggal === tanggal);
     if (siswaId) local = local.filter((e) => e.siswa_id === siswaId);
     return local;
+  }
+
+  /**
+   * Menyimpan Entri Jurnal Siswa ke Cloud & Local
+   */
+  static async submitEntriJurnal(
+    entry: Omit<EntriJurnal, 'id' | 'waktu_submit'>
+  ): Promise<EntriJurnal> {
+    const localEntry = MockDatabase.addEntriJurnal(entry);
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('entri_jurnal')
+          .upsert({
+            siswa_id: entry.siswa_id,
+            kebiasaan_id: entry.kebiasaan_id,
+            tanggal: entry.tanggal,
+            urutan_ke: entry.urutan_ke,
+            sub_tipe: entry.sub_tipe || null,
+            nama_kegiatan: entry.nama_kegiatan || null,
+            foto_url: entry.foto_url,
+            sumber_foto: entry.sumber_foto,
+            waktu_ambil_foto: entry.waktu_ambil_foto ? new Date(entry.waktu_ambil_foto).toISOString() : null,
+            status_waktu: entry.status_waktu,
+            flag_foto_mencurigakan: entry.flag_foto_mencurigakan || false,
+            alasan_flag: entry.alasan_flag || null,
+            catatan: entry.catatan || null
+          }, { onConflict: 'siswa_id, tanggal, kebiasaan_id, urutan_ke' })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error saving entry to Supabase:', error);
+        } else if (data) {
+          return data as EntriJurnal;
+        }
+      } catch (e) {
+        console.warn('Failed remote save entri:', e);
+      }
+    }
+    return localEntry;
+  }
+
+  /**
+   * Menghapus Entri Jurnal (Wali Kelas / Superadmin)
+   */
+  static async deleteEntriJurnal(entriId: string, stafId: string, alasan: string): Promise<boolean> {
+    MockDatabase.deleteEntriJurnal(entriId, stafId, alasan);
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('entri_jurnal').delete().eq('id', entriId);
+        await supabase.from('log_hapus').insert({
+          entri_id: entriId,
+          dihapus_oleh: stafId,
+          alasan: alasan,
+          waktu: new Date().toISOString()
+        });
+        return true;
+      } catch (e) {
+        console.warn('Failed remote delete entri:', e);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Mengambil Feedback Guru ke Siswa
+   */
+  static async getFeedback(siswaId?: string): Promise<Feedback[]> {
+    if (isSupabaseConfigured) {
+      try {
+        let query = supabase.from('feedback').select('*').order('created_at', { ascending: false }).limit(1000);
+        if (siswaId) query = query.eq('siswa_id', siswaId);
+        const { data, error } = await query;
+        if (!error && data) {
+          return data as Feedback[];
+        }
+      } catch (e) {
+        console.warn('Fallback to local store for feedback:', e);
+      }
+    }
+    const local = MockDatabase.getFeedback();
+    if (siswaId) return local.filter(f => f.siswa_id === siswaId);
+    return local;
+  }
+
+  /**
+   * Menambah Feedback dari Guru ke Siswa
+   */
+  static async addFeedback(
+    stafId: string, 
+    siswaId: string, 
+    entriId: string | null, 
+    komentar: string
+  ): Promise<Feedback> {
+    const localFb = MockDatabase.addFeedback(stafId, siswaId, entriId, komentar);
+    if (isSupabaseConfigured) {
+      try {
+        const { data } = await supabase
+          .from('feedback')
+          .insert({
+            staf_id: stafId,
+            siswa_id: siswaId,
+            entri_id: entriId,
+            komentar
+          })
+          .select()
+          .single();
+        if (data) return data as Feedback;
+      } catch (e) {
+        console.warn('Failed remote insert feedback:', e);
+      }
+    }
+    return localFb;
   }
 
   /**
@@ -191,39 +320,6 @@ export class JournalService {
   }
 
   /**
-   * Menyimpan Entri Jurnal Siswa ke Cloud & Local
-   */
-  static async submitEntriJurnal(
-    entry: Omit<EntriJurnal, 'id' | 'waktu_submit'>
-  ): Promise<EntriJurnal> {
-    const localEntry = MockDatabase.addEntriJurnal(entry);
-    if (isSupabaseConfigured) {
-      try {
-        await supabase
-          .from('entri_jurnal')
-          .upsert({
-            siswa_id: entry.siswa_id,
-            kebiasaan_id: entry.kebiasaan_id,
-            tanggal: entry.tanggal,
-            urutan_ke: entry.urutan_ke,
-            sub_tipe: entry.sub_tipe,
-            nama_kegiatan: entry.nama_kegiatan,
-            foto_url: entry.foto_url,
-            sumber_foto: entry.sumber_foto,
-            waktu_ambil_foto: entry.waktu_ambil_foto ? new Date(entry.waktu_ambil_foto).toISOString() : null,
-            status_waktu: entry.status_waktu,
-            flag_foto_mencurigakan: entry.flag_foto_mencurigakan,
-            alasan_flag: entry.alasan_flag,
-            catatan: entry.catatan
-          });
-      } catch (e) {
-        console.warn('Failed remote save entri:', e);
-      }
-    }
-    return localEntry;
-  }
-
-  /**
    * Mengirim Arahan ke Wali Kelas
    */
   static async sendArahanWaliKelas(
@@ -236,7 +332,7 @@ export class JournalService {
     const localArahan = MockDatabase.addArahanWaliKelas(stafPengirimId, kelasId, kategori, judul, pesan);
     if (isSupabaseConfigured) {
       try {
-        await supabase
+        const { data } = await supabase
           .from('arahan_wali_kelas')
           .insert({
             staf_pengirim_id: stafPengirimId,
@@ -244,12 +340,43 @@ export class JournalService {
             kategori,
             judul,
             pesan
-          });
+          })
+          .select()
+          .single();
+        if (data) return data as ArahanWaliKelas;
       } catch (e) {
         console.warn('Failed remote insert arahan:', e);
       }
     }
     return localArahan;
+  }
+
+  /**
+   * Menandai Arahan Terbaca
+   */
+  static async markArahanRead(arahanId: string): Promise<void> {
+    MockDatabase.markArahanRead(arahanId);
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('arahan_wali_kelas').update({ dibaca: true }).eq('id', arahanId);
+      } catch (e) {
+        console.warn('Failed remote mark arahan read:', e);
+      }
+    }
+  }
+
+  /**
+   * Menghapus Arahan Wali Kelas
+   */
+  static async deleteArahan(arahanId: string): Promise<void> {
+    MockDatabase.deleteArahan(arahanId);
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('arahan_wali_kelas').delete().eq('id', arahanId);
+      } catch (e) {
+        console.warn('Failed remote delete arahan:', e);
+      }
+    }
   }
 
   /**
@@ -260,7 +387,6 @@ export class JournalService {
 
     if (isSupabaseConfigured) {
       try {
-        // Ambil daftar kelas asli dari Supabase untuk mapping UUID yang valid
         const { data: dbKelasList } = await supabase.from('kelas').select('id, nama_kelas');
         const kelasUuidMap = new Map<string, string>();
         
@@ -273,15 +399,12 @@ export class JournalService {
         const defaultKelas7AUuid = kelasUuidMap.get('7A') || dbKelasList?.[0]?.id;
 
         if (replaceAll) {
-          // Bersihkan data lama jika mode replace
           await supabase.from('siswa').delete().neq('nama', '___RESERVED_NEVER_MATCH___');
         }
 
-        // Format data untuk Supabase dengan UUID yang dipastikan valid
         const payload = students.map(s => {
           let resolvedKelasId = s.kelas_id;
           
-          // Jika kelas_id berupa format string lokal (k-7a, 7A, dll), konversi ke UUID Supabase
           if (!resolvedKelasId || resolvedKelasId.startsWith('k-') || resolvedKelasId.length < 30) {
             const cleanName = (s as any).kelas_name || resolvedKelasId?.replace('k-', '').toUpperCase() || '7A';
             resolvedKelasId = kelasUuidMap.get(cleanName) || defaultKelas7AUuid;
@@ -296,7 +419,6 @@ export class JournalService {
           };
         });
 
-        // Batch upsert dalam chunks of 50
         const chunkSize = 50;
         for (let i = 0; i < payload.length; i += chunkSize) {
           const chunk = payload.slice(i, i + chunkSize);
@@ -306,7 +428,6 @@ export class JournalService {
           }
         }
 
-        // Re-sync local cache
         const { data: refreshedSiswa } = await supabase.from('siswa').select('*').limit(5000);
         if (refreshedSiswa) {
           MockDatabase.syncSiswaFromRemote(refreshedSiswa as Siswa[]);
@@ -325,7 +446,6 @@ export class JournalService {
 
     if (isSupabaseConfigured) {
       try {
-        // Ambil daftar kelas asli dari Supabase untuk mapping UUID yang valid
         const { data: dbKelasList } = await supabase.from('kelas').select('id, nama_kelas');
         const kelasUuidMap = new Map<string, string>();
         
@@ -336,7 +456,6 @@ export class JournalService {
         }
 
         if (replaceAll) {
-          // Jangan hapus akun superadmin saat replace
           await supabase.from('staf_sekolah').delete().neq('role', 'superadmin');
         }
 
@@ -365,7 +484,6 @@ export class JournalService {
           const { error } = await supabase.from('staf_sekolah').upsert(chunk, { onConflict: 'nip_atau_nik' });
           if (error) {
             console.error(`Error import staf chunk [${i}..${i + chunkSize}]:`, error.message);
-            // Jika error karena kolom tanggal_lahir belum ditambahkan, coba fallback tanpa kolom tanggal_lahir
             if (error.message.includes('tanggal_lahir')) {
               const fallbackChunk = chunk.map(({ tanggal_lahir, ...rest }) => rest);
               await supabase.from('staf_sekolah').upsert(fallbackChunk, { onConflict: 'nip_atau_nik' });
@@ -373,7 +491,6 @@ export class JournalService {
           }
         }
 
-        // Re-sync local cache
         const { data: refreshedStaf } = await supabase.from('staf_sekolah').select('*').limit(500);
         if (refreshedStaf && refreshedStaf.length > 0) {
           MockDatabase.syncStafFromRemote(refreshedStaf as StafSekolah[]);

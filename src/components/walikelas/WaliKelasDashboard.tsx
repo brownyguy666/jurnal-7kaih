@@ -15,7 +15,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { ArahanWaliKelas, EntriJurnal, Feedback, Kebiasaan, Siswa, StafSekolah } from '../../types/database';
-import { MockDatabase } from '../../lib/mockStore';
+import { JournalService } from '../../lib/journalService';
 import { MatrixRekapTable } from './MatrixRekapTable';
 import { StudentDetailModal } from './StudentDetailModal';
 import { ModerationDeleteModal } from './ModerationDeleteModal';
@@ -43,24 +43,27 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
   const [selectedEntryForPhoto, setSelectedEntryForPhoto] = useState<EntriJurnal | null>(null);
   const [entryToDelete, setEntryToDelete] = useState<EntriJurnal | null>(null);
 
-  const loadData = () => {
-    const allSiswa = MockDatabase.getSiswa().filter((s) => s.kelas_id === (staf.kelas_id || 'k-7a'));
-    const habits = MockDatabase.getKebiasaan().sort((a, b) => a.urutan - b.urutan);
-    const allEntries = MockDatabase.getEntriJurnal();
-    const allFeedbacks = MockDatabase.getFeedback();
-    const allStaf = MockDatabase.getStaf();
-    
-    // Ambil arahan khusus untuk kelas ini
-    const classArahan = MockDatabase.getArahanWaliKelas().filter(
-      (a) => a.kelas_id === (staf.kelas_id || 'k-7a')
-    );
+  const loadData = async () => {
+    try {
+      const targetKelasId = staf.kelas_id || undefined;
+      const [allSiswa, habits, allEntries, allFeedbacks, allStaf, classArahan] = await Promise.all([
+        JournalService.getSiswa(targetKelasId),
+        JournalService.getKebiasaan(),
+        JournalService.getEntriJurnal(),
+        JournalService.getFeedback(),
+        JournalService.getStaf(),
+        JournalService.getArahanWaliKelas(targetKelasId)
+      ]);
 
-    setSiswaList(allSiswa);
-    setKebiasaanList(habits);
-    setEntries(allEntries);
-    setFeedbacks(allFeedbacks);
-    setArahanList(classArahan);
-    setStafList(allStaf);
+      setSiswaList(allSiswa);
+      setKebiasaanList(habits.sort((a, b) => a.urutan - b.urutan));
+      setEntries(allEntries);
+      setFeedbacks(allFeedbacks);
+      setArahanList(classArahan);
+      setStafList(allStaf);
+    } catch (e) {
+      console.warn('Error loading wali kelas data:', e);
+    }
   };
 
   useEffect(() => {
@@ -88,19 +91,19 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
     : 0;
 
   // Handlers
-  const handleConfirmDelete = (entriId: string, alasan: string) => {
-    MockDatabase.deleteEntriJurnal(entriId, staf.id, alasan);
-    loadData();
+  const handleConfirmDelete = async (entriId: string, alasan: string) => {
+    await JournalService.deleteEntriJurnal(entriId, staf.id, alasan);
+    await loadData();
   };
 
-  const handleAddFeedback = (siswaId: string, komentar: string) => {
-    MockDatabase.addFeedback(staf.id, siswaId, null, komentar);
-    loadData();
+  const handleAddFeedback = async (siswaId: string, komentar: string) => {
+    await JournalService.addFeedback(staf.id, siswaId, null, komentar);
+    await loadData();
   };
 
-  const handleMarkArahanRead = (arahanId: string) => {
-    MockDatabase.markArahanRead(arahanId);
-    loadData();
+  const handleMarkArahanRead = async (arahanId: string) => {
+    await JournalService.markArahanRead(arahanId);
+    await loadData();
   };
 
   const getKategoriBadge = (kategori: string) => {
