@@ -101,9 +101,14 @@ export const LoginView: React.FC = () => {
               </a>
             </div>
 
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-100/80 text-emerald-800 text-xs font-bold border border-emerald-200 shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Program Resmi Kemendikdasmen RI</span>
+            <div className="inline-flex items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-100/80 text-emerald-800 text-xs font-bold border border-emerald-200 shadow-sm">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Program Resmi Kemendikdasmen RI</span>
+              </div>
+              <span className="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 text-[11px] font-bold border border-purple-200 shadow-xs">
+                v0.3.1 (Rev 03)
+              </span>
             </div>
 
             <div>

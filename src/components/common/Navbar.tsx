@@ -85,9 +85,14 @@ export const Navbar: React.FC = () => {
                     {SCHOOL_PROFILE.nama}
                   </a>
                 </h1>
-                <p className="text-[11px] font-medium text-emerald-700 leading-none">
-                  Anak Indonesia Hebat • Kemendikdasmen RI
-                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <p className="text-[11px] font-medium text-emerald-700 leading-none">
+                    Anak Indonesia Hebat • Kemendikdasmen RI
+                  </p>
+                  <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-200">
+                    v0.3.1
+                  </span>
+                </div>
               </div>
             </div>
 
