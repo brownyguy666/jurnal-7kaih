@@ -129,6 +129,37 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
         </div>
       </div>
 
+      {/* Motivational Feedback Banner from Teachers */}
+      {feedbacks.length > 0 && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200/80 shadow-sm flex items-start gap-3.5 animate-slide-up">
+          <div className="w-10 h-10 rounded-2xl bg-amber-400 text-amber-950 font-bold flex items-center justify-center shrink-0 shadow-xs">
+            💬
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-0.5">
+              <span className="text-xs font-bold text-amber-900">
+                Pesan Apresiasi & Motivasi dari Guru:
+              </span>
+              <span className="text-[10px] text-amber-700/70 font-medium">
+                {new Date(feedbacks[0].created_at).toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'short'
+                })}
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm font-bold text-slate-800 italic">
+              "{feedbacks[0].komentar}"
+            </p>
+          </div>
+          <button
+            onClick={() => setActiveTab('history')}
+            className="px-3 py-1.5 rounded-xl bg-amber-200/60 hover:bg-amber-200 text-amber-900 font-bold text-xs transition shrink-0 hidden sm:block"
+          >
+            Lihat Semua ({feedbacks.length})
+          </button>
+        </div>
+      )}
+
       {/* Navigation Tabs (Hari Ini vs Riwayat) */}
       <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
         <button

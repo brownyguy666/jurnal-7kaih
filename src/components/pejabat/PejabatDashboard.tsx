@@ -25,6 +25,7 @@ import { PhotoViewerModal } from '../common/PhotoViewerModal';
 import { ExportSharePanel } from '../walikelas/ExportSharePanel';
 import { ClassComparisonTable } from './ClassComparisonTable';
 import { ArahanWaliKelasModal } from './ArahanWaliKelasModal';
+import { ClassReportModal } from '../admin/ClassReportModal';
 
 interface PejabatDashboardProps {
   staf: StafSekolah;
@@ -50,6 +51,7 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
   const [selectedEntryForPhoto, setSelectedEntryForPhoto] = useState<EntriJurnal | null>(null);
   const [isArahanModalOpen, setIsArahanModalOpen] = useState(false);
   const [targetClassForArahan, setTargetClassForArahan] = useState<string>('');
+  const [selectedClassForReport, setSelectedClassForReport] = useState<Kelas | null>(null);
 
   const loadData = async () => {
     try {
@@ -139,8 +141,15 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
   };
 
   const handleDrillDownClass = (kelasId: string) => {
-    setSelectedClassId(kelasId);
-    setActiveTab('students');
+    const targetK = kelasList.find((c) => c.id === kelasId);
+    if (targetK) {
+      setSelectedClassForReport(targetK);
+    }
+  };
+
+  const handleAddStudentFeedback = async (siswaId: string, komentar: string) => {
+    await JournalService.addFeedback(staf.id, siswaId, null, komentar);
+    await loadData();
   };
 
   return (
@@ -458,13 +467,13 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
         onSendSuccess={handleSendArahan}
       />
 
-      {/* Read-Only Student Detail Modal */}
+      {/* Student Detail Modal (With direct feedback ability from School Leadership) */}
       <StudentDetailModal
         isOpen={Boolean(selectedStudent)}
         siswa={selectedStudent}
         entries={
           selectedStudent
-            ? entries.filter((e) => e.siswa_id === selectedStudent.id)
+            ? entries.filter((e) => e.siswa_id === selectedStudent.id && e.tanggal === selectedDate)
             : []
         }
         kebiasaanList={kebiasaanList}
@@ -472,14 +481,30 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
         onClose={() => setSelectedStudent(null)}
         onViewPhoto={(entry) => setSelectedEntryForPhoto(entry)}
         onDeleteEntry={() => {}}
-        onAddFeedback={() => {}}
-        isReadOnly={true}
+        onAddFeedback={handleAddStudentFeedback}
+        isReadOnly={false}
       />
 
       <PhotoViewerModal
         isOpen={Boolean(selectedEntryForPhoto)}
         entry={selectedEntryForPhoto}
         onClose={() => setSelectedEntryForPhoto(null)}
+      />
+
+      {/* Class Report Modal for Executive Leadership (KS, Kurikulum, Kesiswaan) */}
+      <ClassReportModal
+        isOpen={Boolean(selectedClassForReport)}
+        kelas={selectedClassForReport}
+        allKelas={kelasList}
+        siswaList={siswaList}
+        kebiasaanList={kebiasaanList}
+        entries={entries}
+        stafList={stafList}
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+        onDataRefresh={loadData}
+        currentStaf={staf}
+        onClose={() => setSelectedClassForReport(null)}
       />
     </div>
   );

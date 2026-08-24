@@ -185,60 +185,94 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
           {/* Section: Feedback & Komentar Wali Kelas */}
           <div className="pt-4 border-t border-slate-200 space-y-3">
-            <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-emerald-600" />
-              <span>Catatan / Feedback untuk Siswa</span>
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-emerald-600" />
+                <span>Catatan & Feedback Pembinaan untuk Siswa ({studentFeedbacks.length})</span>
+              </h4>
+            </div>
 
             {/* List Existing Feedbacks */}
             {studentFeedbacks.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
                 {studentFeedbacks.map((fb) => (
                   <div
                     key={fb.id}
-                    className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-100 text-xs space-y-1"
+                    className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50/80 to-teal-50/80 border border-emerald-200 text-xs space-y-1.5 shadow-xs"
                   >
-                    <div className="flex items-center justify-between text-[10px] text-emerald-800 font-semibold">
-                      <span>Wali Kelas VII-A</span>
-                      <span className="text-slate-400">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-emerald-900 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                        Pendidik / Wali Kelas
+                      </span>
+                      <span className="text-slate-400 font-medium">
                         {new Date(fb.created_at).toLocaleDateString('id-ID', {
                           day: 'numeric',
                           month: 'short',
-                          year: 'numeric'
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
                         })}
                       </span>
                     </div>
-                    <p className="text-slate-700 font-medium">"{fb.komentar}"</p>
+                    <p className="text-slate-700 font-semibold leading-relaxed">"{fb.komentar}"</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-400">Belum ada feedback yang diberikan untuk siswa ini.</p>
+              <div className="p-4 text-center rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-400">
+                Belum ada feedback yang diberikan untuk siswa ini. Berikan motivasi atau apresiasi di bawah!
+              </div>
             )}
 
-            {/* Add Feedback Input (Disabled if ReadOnly) */}
+            {/* Quick Feedback Preset Chips */}
             {!isReadOnly && (
-              <form onSubmit={handleSendFeedback} className="pt-2">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newFeedbackText}
-                    onChange={(e) => setNewFeedbackText(e.target.value)}
-                    placeholder="Beri apresiasi atau motivasi untuk siswa..."
-                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5 shrink-0"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Kirim</span>
-                  </button>
+              <div className="space-y-2 pt-1">
+                <span className="text-[11px] font-semibold text-slate-500 block">
+                  Pilih Cepat Template Motivasi:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    '✨ Hebat! Pertahankan kebiasaan baikmu.',
+                    '🌅 Bagus sekali, selalu bangun pagi tepat waktu!',
+                    '🙏 Terus istiqomah dalam menjalankan ibadah ya!',
+                    '🥗 Keren! Tetap jaga pola makan sehat bergizi.',
+                    '📚 Tetap semangat belajarnya, anak hebat!'
+                  ].map((preset, pIdx) => (
+                    <button
+                      key={pIdx}
+                      type="button"
+                      onClick={() => setNewFeedbackText(preset)}
+                      className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 text-[11px] font-medium transition border border-slate-200 hover:border-emerald-300 active:scale-95"
+                    >
+                      {preset}
+                    </button>
+                  ))}
                 </div>
-                {feedbackSent && (
-                  <p className="text-xs text-emerald-600 font-medium mt-1">✓ Feedback berhasil dikirim!</p>
-                )}
-              </form>
+
+                {/* Add Feedback Form */}
+                <form onSubmit={handleSendFeedback} className="pt-1.5">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newFeedbackText}
+                      onChange={(e) => setNewFeedbackText(e.target.value)}
+                      placeholder="Ketik catatan motivasi atau apresiasi untuk siswa..."
+                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition flex items-center gap-1.5 shrink-0 active:scale-95"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Kirim Feedback</span>
+                    </button>
+                  </div>
+                  {feedbackSent && (
+                    <p className="text-xs text-emerald-600 font-medium mt-1">✓ Feedback berhasil dikirim dan tersimpan di cloud!</p>
+                  )}
+                </form>
+              </div>
             )}
           </div>
         </div>

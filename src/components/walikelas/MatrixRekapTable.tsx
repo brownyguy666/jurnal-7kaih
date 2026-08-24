@@ -4,6 +4,7 @@ import {
   AlertTriangle, 
   Clock, 
   Eye,
+  MessageSquare,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -207,13 +208,22 @@ export const MatrixRekapTable: React.FC<MatrixRekapTableProps> = ({
 
                     {/* Aksi */}
                     <td className="py-3 px-3 text-center border-l border-slate-100">
-                      <button
-                        onClick={() => onSelectStudent(siswa)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition"
-                        title="Lihat Detail & Bukti Foto"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => onSelectStudent(siswa)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 transition"
+                          title="Lihat Detail & Bukti Foto"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => onSelectStudent(siswa)}
+                          className="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition"
+                          title="Beri Catatan / Feedback untuk Siswa Ini"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

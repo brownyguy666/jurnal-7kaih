@@ -500,4 +500,62 @@ export class JournalService {
       }
     }
   }
+
+  /**
+   * Mengubah Password / Tanggal Lahir Siswa atau Staf (Akses Khusus Superadmin)
+   */
+  static async adminUpdatePassword(
+    type: 'siswa' | 'staf',
+    userId: string,
+    newTanggalLahir: string,
+    _newPasswordText?: string
+  ): Promise<boolean> {
+    if (type === 'siswa') {
+      const allSiswa = MockDatabase.getSiswa();
+      const idx = allSiswa.findIndex(s => s.id === userId);
+      if (idx >= 0) {
+        allSiswa[idx].tanggal_lahir = newTanggalLahir;
+        allSiswa[idx].sudah_ganti_password = true;
+        MockDatabase.syncSiswaFromRemote(allSiswa);
+      }
+
+      if (isSupabaseConfigured) {
+        try {
+          await supabase
+            .from('siswa')
+            .update({ 
+              tanggal_lahir: newTanggalLahir, 
+              sudah_ganti_password: true 
+            })
+            .eq('id', userId);
+        } catch (e) {
+          console.warn('Failed admin update password siswa:', e);
+        }
+      }
+      return true;
+    } else {
+      const allStaf = MockDatabase.getStaf();
+      const idx = allStaf.findIndex(st => st.id === userId);
+      if (idx >= 0) {
+        allStaf[idx].tanggal_lahir = newTanggalLahir;
+        allStaf[idx].sudah_ganti_password = true;
+        MockDatabase.syncStafFromRemote(allStaf);
+      }
+
+      if (isSupabaseConfigured) {
+        try {
+          await supabase
+            .from('staf_sekolah')
+            .update({ 
+              tanggal_lahir: newTanggalLahir, 
+              sudah_ganti_password: true 
+            })
+            .eq('id', userId);
+        } catch (e) {
+          console.warn('Failed admin update password staf:', e);
+        }
+      }
+      return true;
+    }
+  }
 }
