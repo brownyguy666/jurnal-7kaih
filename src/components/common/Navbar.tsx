@@ -113,7 +113,7 @@ export const Navbar: React.FC = () => {
                     {user.data.nama.charAt(0)}
                   </div>
                   <div className="hidden sm:block text-left">
-                    <span className="text-xs font-bold text-slate-800 block truncate max-w-[130px]">
+                    <span className="text-xs font-bold text-slate-800 block truncate max-w-32.5">
                       {user.data.nama}
                     </span>
                     <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded border ${getRoleBadgeStyle()}`}>

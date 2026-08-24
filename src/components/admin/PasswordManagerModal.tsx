@@ -111,7 +111,7 @@ export const PasswordManagerModal: React.FC<PasswordManagerModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 flex flex-col animate-slide-up">
         {/* Header Modal */}
-        <div className="p-4 sm:px-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-slate-100">
+        <div className="p-4 sm:px-6 border-b border-slate-100 flex items-center justify-between bg-linear-to-r from-slate-50 to-slate-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white font-bold flex items-center justify-center shadow-sm">
               <KeyRound className="w-5 h-5" />

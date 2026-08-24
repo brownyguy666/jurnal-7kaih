@@ -157,17 +157,17 @@ export const ClassComparisonTable: React.FC<ClassComparisonTableProps> = ({
                 <th className="py-3.5 px-3 sm:px-4 w-12 text-center sticky left-0 bg-slate-50 z-20 shadow-[1px_0_0_0_#e2e8f0]">
                   No
                 </th>
-                <th className="py-3.5 px-3 sm:px-4 min-w-[110px] sticky left-12 bg-slate-50 z-20 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
+                <th className="py-3.5 px-3 sm:px-4 min-w-27.5 sticky left-12 bg-slate-50 z-20 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">
                   Kelas
                 </th>
-                <th className="py-3.5 px-3 sm:px-4 min-w-[180px]">Wali Kelas</th>
-                <th className="py-3.5 px-3 sm:px-4 text-center min-w-[100px]">Jumlah Siswa</th>
-                <th className="py-3.5 px-3 sm:px-4 text-center min-w-[120px]">Tuntas 7 Kebiasaan</th>
-                <th className="py-3.5 px-3 sm:px-4 text-center min-w-[100px]">Flag Foto</th>
-                <th className="py-3.5 px-3 sm:px-4 text-center min-w-[120px] text-purple-900 font-extrabold">
+                <th className="py-3.5 px-3 sm:px-4 min-w-45">Wali Kelas</th>
+                <th className="py-3.5 px-3 sm:px-4 text-center min-w-25">Jumlah Siswa</th>
+                <th className="py-3.5 px-3 sm:px-4 text-center min-w-30">Tuntas 7 Kebiasaan</th>
+                <th className="py-3.5 px-3 sm:px-4 text-center min-w-25">Flag Foto</th>
+                <th className="py-3.5 px-3 sm:px-4 text-center min-w-30 text-purple-900 font-extrabold">
                   Tingkat Kepatuhan
                 </th>
-                <th className="py-3.5 px-3 sm:px-4 text-center min-w-[180px]">Aksi Pimpinan</th>
+                <th className="py-3.5 px-3 sm:px-4 text-center min-w-45">Aksi Pimpinan</th>
               </tr>
             </thead>
 

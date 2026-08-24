@@ -251,11 +251,11 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
                     <th className="py-3.5 px-4 w-14 text-center">Rank</th>
-                    <th className="py-3.5 px-4 min-w-[110px]">Kelas</th>
-                    <th className="py-3.5 px-4 min-w-[180px]">Wali Kelas</th>
+                    <th className="py-3.5 px-4 min-w-27.5">Kelas</th>
+                    <th className="py-3.5 px-4 min-w-45">Wali Kelas</th>
                     <th className="py-3.5 px-4 text-center">Total Siswa</th>
                     <th className="py-3.5 px-4 text-center">Tuntas (7/7)</th>
-                    <th className="py-3.5 px-4 text-center min-w-[130px]">Tingkat Kepatuhan</th>
+                    <th className="py-3.5 px-4 text-center min-w-32.5">Tingkat Kepatuhan</th>
                     <th className="py-3.5 px-4 text-center">Foto Flag</th>
                     <th className="py-3.5 px-4 text-center">Skor Tertib</th>
                     <th className="py-3.5 px-4 text-center w-20">Aksi</th>
@@ -336,7 +336,7 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
 
                           {/* Persentase Kepatuhan & Progress */}
                           <td className="py-3 px-4">
-                            <div className="space-y-1 max-w-[120px] mx-auto">
+                            <div className="space-y-1 max-w-30 mx-auto">
                               <div className="flex items-center justify-between text-[11px] font-bold">
                                 <span className="text-slate-700">{c.persentaseKepatuhan}%</span>
                               </div>
@@ -459,11 +459,11 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
                     <th className="py-3.5 px-4 w-14 text-center">Rank</th>
-                    <th className="py-3.5 px-4 min-w-[180px]">Nama Lengkap Siswa</th>
-                    <th className="py-3.5 px-4 min-w-[120px]">NISN</th>
+                    <th className="py-3.5 px-4 min-w-45">Nama Lengkap Siswa</th>
+                    <th className="py-3.5 px-4 min-w-30">NISN</th>
                     <th className="py-3.5 px-4 text-center">Kelas</th>
-                    <th className="py-3.5 px-4 text-center min-w-[140px]">Waktu Selesai (7/7)</th>
-                    <th className="py-3.5 px-4 text-center min-w-[130px]">Status Foto EXIF</th>
+                    <th className="py-3.5 px-4 text-center min-w-35">Waktu Selesai (7/7)</th>
+                    <th className="py-3.5 px-4 text-center min-w-32.5">Status Foto EXIF</th>
                     <th className="py-3.5 px-4 text-center">Ketepatan Waktu</th>
                     <th className="py-3.5 px-4 text-center">Badge Prestasi</th>
                   </tr>
