@@ -9,7 +9,6 @@ import {
   Save, 
   Copy, 
   Check, 
-  User, 
   ShieldAlert 
 } from 'lucide-react';
 import { Siswa, StafSekolah } from '../../types/database';
@@ -31,13 +30,7 @@ export const PasswordManagerModal: React.FC<PasswordManagerModalProps> = ({
   targetUser,
   onSuccess
 }) => {
-  if (!isOpen || !targetUser) return null;
-
-  const isSiswa = targetUser.type === 'siswa';
-  const siswaData = isSiswa ? (targetUser.data as Siswa) : null;
-  const stafData = !isSiswa ? (targetUser.data as StafSekolah) : null;
-
-  const currentDob = targetUser.data.tanggal_lahir || '2011-01-01';
+  const currentDob = targetUser?.data?.tanggal_lahir || '2011-01-01';
 
   // Format default password DDMMYYYY
   const getDefaultDobPassword = (dobStr: string) => {
@@ -61,6 +54,12 @@ export const PasswordManagerModal: React.FC<PasswordManagerModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  if (!isOpen || !targetUser) return null;
+
+  const isSiswa = targetUser.type === 'siswa';
+  const siswaData = isSiswa ? (targetUser.data as Siswa) : null;
+  const stafData = !isSiswa ? (targetUser.data as StafSekolah) : null;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(defaultPassword);

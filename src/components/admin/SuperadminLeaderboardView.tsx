@@ -2,27 +2,17 @@ import React, { useState, useMemo } from 'react';
 import { 
   Trophy, 
   Crown, 
-  Sparkles, 
   Calendar, 
-  Download, 
-  Share2, 
   RefreshCw, 
   BarChart3, 
-  Users, 
-  CheckCircle2, 
-  ShieldCheck, 
-  AlertTriangle, 
-  Flame, 
-  Clock, 
-  Building2, 
+  ShieldCheck,
   FileSpreadsheet, 
   MessageCircle, 
-  Check, 
-  Search, 
-  Eye,
-  Filter
+  Check,
+  Search,
+  Eye
 } from 'lucide-react';
-import { ClassRankingItem, EntriJurnal, Kebiasaan, Kelas, Siswa, StafSekolah, StudentRankingItem } from '../../types/database';
+import { ClassRankingItem, EntriJurnal, Kebiasaan, Kelas, Siswa, StafSekolah } from '../../types/database';
 import { LeaderboardService } from '../../lib/leaderboardService';
 import { LeaderboardPodium } from './LeaderboardPodium';
 import { AnalyticsCharts } from './AnalyticsCharts';
@@ -108,7 +98,7 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
   return (
     <div className="space-y-6 animate-fade-in">
       {/* 1. Header Card with Date Selector & Summary Stats */}
-      <div className="bg-gradient-to-br from-purple-950 via-indigo-950 to-slate-950 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-purple-900/40 relative overflow-hidden">
+      <div className="bg-linear-to-br from-purple-950 via-indigo-950 to-slate-950 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-purple-900/40 relative overflow-hidden">
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold border border-amber-400/30">

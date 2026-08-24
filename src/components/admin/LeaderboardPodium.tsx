@@ -35,16 +35,16 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
         onClick={() => onSelectItem?.(item)}
         className={`relative flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl cursor-pointer transition-all duration-300 transform hover:-translate-y-1.5 shadow-lg ${
           isGold
-            ? 'bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 text-slate-950 ring-4 ring-amber-300/60 shadow-amber-500/30 order-1 md:order-2 h-72 sm:h-80 z-20'
+            ? 'bg-linear-to-b from-amber-400 via-amber-500 to-amber-600 text-slate-950 ring-4 ring-amber-300/60 shadow-amber-500/30 order-1 md:order-2 h-72 sm:h-80 z-20'
             : isSilver
-            ? 'bg-gradient-to-b from-slate-200 via-slate-300 to-slate-400 text-slate-900 ring-2 ring-slate-200 shadow-slate-300/40 order-2 md:order-1 h-64 sm:h-72 mt-0 md:mt-8 z-10'
-            : 'bg-gradient-to-b from-amber-700/80 via-amber-800 to-amber-900 text-amber-50 ring-2 ring-amber-700/50 shadow-amber-900/40 order-3 h-60 sm:h-68 mt-0 md:mt-12 z-10'
+            ? 'bg-linear-to-b from-slate-200 via-slate-300 to-slate-400 text-slate-900 ring-2 ring-slate-200 shadow-slate-300/40 order-2 md:order-1 h-64 sm:h-72 mt-0 md:mt-8 z-10'
+            : 'bg-linear-to-b from-amber-700/80 via-amber-800 to-amber-900 text-amber-50 ring-2 ring-amber-700/50 shadow-amber-900/40 order-3 h-60 sm:h-68 mt-0 md:mt-12 z-10'
         }`}
       >
         {/* Crown Badge */}
         <div className="absolute -top-4 flex items-center justify-center">
           {isGold && (
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-yellow-200 to-amber-400 text-amber-950 flex items-center justify-center shadow-lg border-2 border-white animate-bounce">
+            <div className="w-9 h-9 rounded-2xl bg-linear-to-br from-yellow-200 to-amber-400 text-amber-950 flex items-center justify-center shadow-lg border-2 border-white animate-bounce">
               <Crown className="w-5 h-5 fill-amber-950" />
             </div>
           )}
@@ -70,7 +70,7 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
           <h4 className="text-xl sm:text-2xl font-black tracking-tight mt-1">
             Kelas {item.namaKelas}
           </h4>
-          <p className={`text-[11px] font-semibold truncate max-w-[170px] mx-auto ${
+          <p className={`text-[11px] font-semibold truncate max-w-42.5 mx-auto ${
             isGold ? 'text-slate-900/90' : isSilver ? 'text-slate-700' : 'text-amber-200/90'
           }`}>
             Wali: {item.waliKelasNama}
@@ -117,16 +117,16 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
         onClick={() => onSelectItem?.(item)}
         className={`relative flex flex-col items-center justify-between p-4 sm:p-5 rounded-3xl cursor-pointer transition-all duration-300 transform hover:-translate-y-1.5 shadow-lg ${
           isGold
-            ? 'bg-gradient-to-b from-emerald-400 via-emerald-500 to-teal-700 text-white ring-4 ring-emerald-300/60 shadow-emerald-600/30 order-1 md:order-2 h-76 sm:h-84 z-20'
+            ? 'bg-linear-to-b from-emerald-400 via-emerald-500 to-teal-700 text-white ring-4 ring-emerald-300/60 shadow-emerald-600/30 order-1 md:order-2 h-76 sm:h-84 z-20'
             : isSilver
-            ? 'bg-gradient-to-b from-indigo-400 via-indigo-500 to-indigo-700 text-white ring-2 ring-indigo-300 shadow-indigo-500/30 order-2 md:order-1 h-68 sm:h-76 mt-0 md:mt-8 z-10'
-            : 'bg-gradient-to-b from-purple-500 via-purple-600 to-purple-800 text-white ring-2 ring-purple-400/50 shadow-purple-600/30 order-3 h-64 sm:h-72 mt-0 md:mt-12 z-10'
+            ? 'bg-linear-to-b from-indigo-400 via-indigo-500 to-indigo-700 text-white ring-2 ring-indigo-300 shadow-indigo-500/30 order-2 md:order-1 h-68 sm:h-76 mt-0 md:mt-8 z-10'
+            : 'bg-linear-to-b from-purple-500 via-purple-600 to-purple-800 text-white ring-2 ring-purple-400/50 shadow-purple-600/30 order-3 h-64 sm:h-72 mt-0 md:mt-12 z-10'
         }`}
       >
         {/* Crown Badge */}
         <div className="absolute -top-4 flex items-center justify-center">
           {isGold && (
-            <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-amber-300 to-yellow-500 text-amber-950 flex items-center justify-center shadow-lg border-2 border-white animate-bounce">
+            <div className="w-9 h-9 rounded-2xl bg-linear-to-br from-amber-300 to-yellow-500 text-amber-950 flex items-center justify-center shadow-lg border-2 border-white animate-bounce">
               <Crown className="w-5 h-5 fill-amber-950" />
             </div>
           )}

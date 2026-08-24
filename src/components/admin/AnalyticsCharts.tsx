@@ -61,7 +61,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
       {/* 1. Grade Comparison Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Kelas 7 */}
-        <div className="bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-950 text-white rounded-3xl p-5 border border-emerald-700/40 shadow-sm space-y-3">
+        <div className="bg-linear-to-br from-emerald-900 via-emerald-800 to-teal-950 text-white rounded-3xl p-5 border border-emerald-700/40 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-200 px-3 py-1 rounded-full border border-emerald-400/30">
               Tingkat Kelas 7 (7A - 7F)
@@ -74,7 +74,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           </div>
           <div className="w-full h-2.5 bg-black/30 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-emerald-300 to-teal-200 rounded-full transition-all duration-700"
+              className="h-full bg-linear-to-r from-emerald-300 to-teal-200 rounded-full transition-all duration-700"
               style={{ width: `${avgGrade7}%` }}
             />
           </div>
@@ -84,7 +84,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
         </div>
 
         {/* Kelas 8 */}
-        <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-950 text-white rounded-3xl p-5 border border-indigo-700/40 shadow-sm space-y-3">
+        <div className="bg-linear-to-br from-indigo-900 via-indigo-800 to-slate-950 text-white rounded-3xl p-5 border border-indigo-700/40 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-200 px-3 py-1 rounded-full border border-indigo-400/30">
               Tingkat Kelas 8 (8A - 8F)
@@ -97,7 +97,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           </div>
           <div className="w-full h-2.5 bg-black/30 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-indigo-300 to-purple-200 rounded-full transition-all duration-700"
+              className="h-full bg-linear-to-r from-indigo-300 to-purple-200 rounded-full transition-all duration-700"
               style={{ width: `${avgGrade8}%` }}
             />
           </div>
@@ -107,7 +107,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
         </div>
 
         {/* Kelas 9 */}
-        <div className="bg-gradient-to-br from-purple-900 via-purple-800 to-slate-950 text-white rounded-3xl p-5 border border-purple-700/40 shadow-sm space-y-3">
+        <div className="bg-linear-to-br from-purple-900 via-purple-800 to-slate-950 text-white rounded-3xl p-5 border border-purple-700/40 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider bg-purple-500/20 text-purple-200 px-3 py-1 rounded-full border border-purple-400/30">
               Tingkat Kelas 9 (9A - 9F)
@@ -120,7 +120,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           </div>
           <div className="w-full h-2.5 bg-black/30 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-purple-300 to-pink-200 rounded-full transition-all duration-700"
+              className="h-full bg-linear-to-r from-purple-300 to-pink-200 rounded-full transition-all duration-700"
               style={{ width: `${avgGrade9}%` }}
             />
           </div>
@@ -259,7 +259,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                 {/* Progress Bar Line */}
                 <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5">
                   <div
-                    className={`h-full rounded-full bg-gradient-to-r ${barGradient} transition-all duration-700 shadow-xs`}
+                    className={`h-full rounded-full bg-linear-to-r ${barGradient} transition-all duration-700 shadow-xs`}
                     style={{ width: `${Math.max(4, c.persentaseKepatuhan)}%` }}
                   />
                 </div>
@@ -301,7 +301,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                       <span className="text-[11px] text-slate-400">
                         {distinctSiswaCompleted} dari {totalSiswaSekolah} siswa
                       </span>
-                      <strong className="text-xs font-black text-slate-800 min-w-[36px] text-right">
+                      <strong className="text-xs font-black text-slate-800 min-w-9 text-right">
                         {percentage}%
                       </strong>
                     </div>
@@ -309,7 +309,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
 
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500"
+                      className="h-full bg-linear-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
@@ -320,7 +320,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
         </div>
 
         {/* EXIF Integrity Card */}
-        <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 shadow-xl border border-slate-800 space-y-4 flex flex-col justify-between">
+        <div className="bg-linear-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl p-6 shadow-xl border border-slate-800 space-y-4 flex flex-col justify-between">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-400/30">
               <ShieldCheck className="w-3.5 h-3.5" />

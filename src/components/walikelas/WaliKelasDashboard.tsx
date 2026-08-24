@@ -211,7 +211,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
 
       {/* Directives from School Leaders Banner (Arahan Pimpinan Sekolah) */}
       {arahanList.length > 0 && (
-        <div className="bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-6 shadow-xl border border-purple-800/40 space-y-4 animate-fade-in">
+        <div className="bg-linear-to-br from-purple-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-6 shadow-xl border border-purple-800/40 space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-2xl bg-purple-500/30 border border-purple-400/40 flex items-center justify-center text-purple-200">

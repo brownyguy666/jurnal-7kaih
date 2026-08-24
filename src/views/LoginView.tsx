@@ -183,7 +183,7 @@ export const LoginView: React.FC = () => {
                       value={nisn}
                       onChange={(e) => setNisn(e.target.value)}
                       placeholder="Contoh: 0081234567"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
                     />
                     <GraduationCap className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   </div>
@@ -200,7 +200,7 @@ export const LoginView: React.FC = () => {
                       value={siswaPassword}
                       onChange={(e) => setSiswaPassword(e.target.value)}
                       placeholder="Default: Tanggal Lahir (DDMMYYYY)"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
                     />
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   </div>
@@ -237,7 +237,7 @@ export const LoginView: React.FC = () => {
                       value={nipNik}
                       onChange={(e) => setNipNik(e.target.value)}
                       placeholder="Masukkan NIP, NIK, atau Username"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
                     />
                     <UserCheck className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   </div>
@@ -254,7 +254,7 @@ export const LoginView: React.FC = () => {
                       value={stafPassword}
                       onChange={(e) => setStafPassword(e.target.value)}
                       placeholder="Default: Tanggal Lahir (DDMMYYYY)"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
                     />
                     <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   </div>

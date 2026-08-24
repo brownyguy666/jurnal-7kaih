@@ -5,7 +5,6 @@ import {
   Briefcase, 
   Sliders, 
   FileSpreadsheet, 
-  Download, 
   UploadCloud, 
   Search, 
   Filter, 
@@ -13,16 +12,10 @@ import {
   Settings2, 
   Building2, 
   Layers, 
-  AlertTriangle,
   RotateCcw,
-  Sparkles,
-  CheckCircle2,
-  Trash2,
   KeyRound,
   Eye,
-  EyeOff,
-  Copy,
-  Check
+  EyeOff
 } from 'lucide-react';
 import { Kebiasaan, Kelas, Siswa, StafSekolah, EntriJurnal } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
@@ -142,7 +135,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in">
       {/* Top Banner Dashboard Superadmin */}
-      <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-purple-900 via-indigo-950 to-slate-900 text-white shadow-xl shadow-purple-900/20 border border-purple-800/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="rounded-3xl p-6 sm:p-8 bg-linear-to-br from-purple-900 via-indigo-950 to-slate-900 text-white shadow-xl shadow-purple-900/20 border border-purple-800/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-200 text-xs font-semibold backdrop-blur-sm border border-purple-400/30 mb-2">
             <ShieldCheck className="w-3.5 h-3.5 text-purple-300" />
@@ -220,7 +213,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
           onClick={() => setActiveTab('leaderboard')}
           className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'leaderboard'
-              ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/25 ring-2 ring-amber-400 font-extrabold'
+              ? 'bg-linear-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/25 ring-2 ring-amber-400 font-extrabold'
               : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
           }`}
         >
