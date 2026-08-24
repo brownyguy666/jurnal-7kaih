@@ -107,7 +107,7 @@ export const LoginView: React.FC = () => {
                 <span>Program Resmi Kemendikdasmen RI</span>
               </div>
               <span className="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 text-[11px] font-bold border border-purple-200 shadow-xs">
-                v0.3.1 (Rev 03)
+                v0.4.0 (Rev 04)
               </span>
             </div>
 

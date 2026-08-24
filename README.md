@@ -1,6 +1,6 @@
 # 🇮🇩 Jurnal 7 Kebiasaan Anak Indonesia Hebat (7 KAIH)
 ### SMP Negeri 2 Glagah — Banyuwangi, Jawa Timur
-> **Versi: `v0.3.1` (Revisi 03)**  
+> **Versi: `v0.4.0` (Revisi 04)**  
 > Platform Web Pencatatan & Evaluasi Pembiasaan Karakter Luhur Peserta Didik Berbasis Cloud Database Realtime.
 
 ---
@@ -141,7 +141,15 @@ npm run build
 
 ## 📜 Riwayat Rilis & Revisi
 
-### `v0.3.1` (Revisi 03 — Current)
+### `v0.4.0` (Revisi 04 — Current)
+- 🏆 **Sistem Perangkingan Harian (Leaderboard 18 Kelas)**: Evaluasi otomatis setelah pukul 24.00 WIB menghitung Skor Tertib Kelas berdasarkan persentase kepatuhan 7 kebiasaan, rasio siswa tuntas 100%, dan minimnya anomali foto.
+- 🌟 **Siswa Teladan Tercepat & Terbersih**: Algoritma kurasi murid terbaik yang menyelesaikan seluruh 7 kebiasaan paling awal dengan **100% foto asli sinkron (bebas peringatan EXIF)** dan **tepat waktu** saat Bangun Pagi (04.00–05.00) dan Tidur Cepat (20.00–22.00).
+- 📊 **Dashboard Grafik Dinamis Superadmin**: Visualisasi interaktif meliputi Animated Horizontal Bar Chart 18 Kelas, Komparasi Tingkat 7 vs 8 vs 9, Grafik Pemenuhan 7 Kebiasaan Sekolah, dan Pengukur Integritas Foto EXIF.
+- 🥇 **Podium Juara 3D/Glassmorphic**: Visualisasi podium penghargaan Juara 1 (Gold), Juara 2 (Silver), dan Juara 3 (Bronze) untuk kelas terdisiplin dan siswa teladan.
+- 📥 **Export Excel 2-Sheet & WhatsApp Broadcast**: Ekspor laporan klasemen harian ke Excel (.xlsx) dan format broadcast pengumuman resmi ke WhatsApp grup sekolah.
+- 🛠️ **Penyelarasan Dinamis Wali Kelas & Supabase**: Perbaikan integrasi relasi dua arah wali kelas (`wali_kelas_id` & `kelas_id`), memastikan guru (seperti Wali Kelas 7F) memuat data 31 siswa dan entri jurnal Supabase secara realtime dan dinamis.
+
+### `v0.3.1` (Revisi 03)
 - ⏰ **Jam Operasional Harian**: Penetapan jendela input jurnal setiap hari pukul **01.00 – 24.00 WIB** disertai pesan notifikasi jeda pergantian hari (00.00 – 01.00 WIB).
 - 💬 **Feedback Siswa Realtime**: Penambahan tombol feedback langsung pada tabel rekap wali kelas & pimpinan beserta template apresiasi cepat yang langsung tampil di HP siswa.
 - 🔑 **Superadmin Password Manager**: Fitur melihat password aktif (show/hide toggle) dan modal ubah/reset password siswa & staf langsung tersinkron ke Supabase Cloud.

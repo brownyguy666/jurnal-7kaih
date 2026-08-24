@@ -90,7 +90,7 @@ export const Navbar: React.FC = () => {
                     Anak Indonesia Hebat • Kemendikdasmen RI
                   </p>
                   <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-200">
-                    v0.3.1
+                    v0.4.0
                   </span>
                 </div>
               </div>
