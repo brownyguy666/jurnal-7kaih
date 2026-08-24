@@ -82,7 +82,7 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in">
       {/* Greeting & Motivation Card */}
-      <div className="rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white shadow-xl shadow-emerald-700/10 relative overflow-hidden">
+      <div className="rounded-3xl p-6 sm:p-8 bg-linear-to-br from-emerald-600 via-emerald-700 to-teal-800 text-white shadow-xl shadow-emerald-700/10 relative overflow-hidden">
         {/* Background decorative circles */}
         <div className="absolute -right-10 -bottom-10 w-48 h-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
         <div className="absolute right-20 top-0 w-32 h-32 rounded-full bg-emerald-400/20 blur-xl pointer-events-none" />
@@ -102,7 +102,7 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
           </div>
 
           {/* Quick Progress Badge */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 flex items-center gap-4 min-w-[220px]">
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 flex items-center gap-4 min-w-55">
             <div className="w-12 h-12 rounded-2xl bg-white text-emerald-700 flex items-center justify-center font-extrabold text-lg shadow-md shrink-0">
               {distinctHabitsCompleted}/7
             </div>
@@ -123,7 +123,7 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
           </div>
           <div className="w-full h-3 bg-black/20 rounded-full overflow-hidden p-0.5">
             <div
-              className="h-full bg-gradient-to-r from-amber-300 via-emerald-300 to-teal-200 rounded-full transition-all duration-500 shadow-sm"
+              className="h-full bg-linear-to-r from-amber-300 via-emerald-300 to-teal-200 rounded-full transition-all duration-500 shadow-sm"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
@@ -132,7 +132,7 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
 
       {/* Motivational Feedback Banner from Teachers */}
       {feedbacks.length > 0 && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200/80 shadow-sm flex items-start gap-3.5 animate-slide-up">
+        <div className="p-4 sm:p-5 rounded-3xl bg-linear-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200/80 shadow-sm flex items-start gap-3.5 animate-slide-up">
           <div className="w-10 h-10 rounded-2xl bg-amber-400 text-amber-950 font-bold flex items-center justify-center shrink-0 shadow-xs">
             💬
           </div>

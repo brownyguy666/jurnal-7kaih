@@ -210,7 +210,7 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-100 flex flex-col max-h-[92vh] animate-slide-up">
         {/* Header Modal */}
-        <div className="p-4 sm:px-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-emerald-50 to-teal-50">
+        <div className="p-4 sm:px-6 border-b border-slate-100 flex items-center justify-between bg-linear-to-r from-emerald-50 to-teal-50">
           <div>
             <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
               Isi Jurnal Kebiasaan #{kebiasaan.urutan}
