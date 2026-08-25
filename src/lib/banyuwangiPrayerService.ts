@@ -108,8 +108,8 @@ export class BanyuwangiPrayerService {
     const h_sunrise = radToDeg(Math.acos(Math.max(-1, Math.min(1, cosH_sunrise)))) / 15;
     const sunriseHour = solarNoonHour - h_sunrise - (2 / 60);
 
-    // 5. Ashar (Madzhab Syafi'i: Bayangan = 1 + tan|lat - decl|)
-    const asharAngleRad = -Math.atan(1 + Math.tan(Math.abs(latRad - declinationRad)));
+    // 5. Ashar (Madzhab Syafi'i: Bayangan = 1 + tan|lat - decl|, sudut di atas ufuk)
+    const asharAngleRad = Math.atan(1.0 / (1.0 + Math.tan(Math.abs(latRad - declinationRad))));
     const cosH_ashar = (Math.sin(asharAngleRad) - Math.sin(latRad) * Math.sin(declinationRad)) / (Math.cos(latRad) * Math.cos(declinationRad));
     const h_ashar = radToDeg(Math.acos(Math.max(-1, Math.min(1, cosH_ashar)))) / 15;
     const asharHour = solarNoonHour + h_ashar + (2 / 60); // + 2m ihtiyat
