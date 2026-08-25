@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, 
   Camera, 
@@ -13,7 +13,15 @@ import {
 import { EntriJurnal, Kebiasaan, SumberFoto } from '../../types/database';
 import { analyzePhotoExif } from '../../lib/exifHelper';
 import { compressImage } from '../../lib/imageCompressor';
-import { calculateStatusWaktu, getStatusWaktuLabel, isDailyEntryWindowOpen, getTodayDateString } from '../../lib/timeCalculator';
+import { 
+  calculateStatusWaktu, 
+  getStatusWaktuLabel, 
+  isDailyEntryWindowOpen, 
+  getTodayDateString,
+  getPrayerSchedule,
+  getCurrentActivePrayer,
+  PRAYER_SCHEDULES
+} from '../../lib/timeCalculator';
 import { uploadBuktiFoto } from '../../lib/supabase';
 
 interface HabitEntryModalProps {
@@ -65,8 +73,21 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
   // Sub-tipe yang sudah pernah diisi hari ini
   const usedSubTypes = existingEntries.map((e) => e.sub_tipe).filter(Boolean);
 
-  // Status waktu realtime
-  const estimatedStatusWaktu = calculateStatusWaktu(kebiasaan, waktuAmbilFoto);
+  // Otomatis pilih waktu sholat yang sedang aktif jika kebiasaan ibadah
+  useEffect(() => {
+    if (kebiasaan.butuh_sub_tipe && kebiasaan.daftar_sub_tipe && !subTipe) {
+      const active = getCurrentActivePrayer();
+      if (active && kebiasaan.daftar_sub_tipe.includes(active.name) && !usedSubTypes.includes(active.name)) {
+        setSubTipe(active.name);
+      } else {
+        const firstAvailable = kebiasaan.daftar_sub_tipe.find((t) => !usedSubTypes.includes(t));
+        if (firstAvailable) setSubTipe(firstAvailable);
+      }
+    }
+  }, [kebiasaan.id, isOpen]);
+
+  // Status waktu realtime (memperhitungkan subTipe waktu sholat jika ada)
+  const estimatedStatusWaktu = calculateStatusWaktu(kebiasaan, waktuAmbilFoto, subTipe);
   const { label: statusLabel, badgeColor: statusBadgeColor } = getStatusWaktuLabel(estimatedStatusWaktu);
 
   // Handle pemilihan foto kamera
@@ -363,14 +384,23 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
 
           {/* 2. Sub-Tipe (Khusus Beribadah: Sholat 5 Waktu) */}
           {kebiasaan.butuh_sub_tipe && kebiasaan.daftar_sub_tipe && (
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-2">
-                Pilih Waktu Sholat / Ibadah
-              </label>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700">
+                  Pilih Waktu Sholat Wajib (5 Waktu)
+                </label>
+                <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Sesuai Jadwal Sholat WIB
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 {kebiasaan.daftar_sub_tipe.map((tipe) => {
                   const isUsed = usedSubTypes.includes(tipe);
                   const isSelected = subTipe === tipe;
+                  const prayerInfo = getPrayerSchedule(tipe);
+                  const activePrayer = getCurrentActivePrayer(waktuAmbilFoto);
+                  const isCurrentlyActive = activePrayer?.name.toLowerCase() === tipe.toLowerCase();
 
                   return (
                     <button
@@ -378,20 +408,84 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
                       type="button"
                       disabled={isUsed}
                       onClick={() => setSubTipe(tipe)}
-                      className={`py-2 px-2 rounded-xl text-xs font-semibold border transition text-center ${
+                      className={`p-2.5 rounded-2xl text-xs font-semibold border transition text-center flex flex-col justify-between items-center relative overflow-hidden ${
                         isSelected
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20 scale-[1.02]'
                           : isUsed
-                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                          : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300'
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                          : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40'
                       }`}
                     >
-                      <span>{tipe}</span>
-                      {isUsed && <span className="block text-[9px] font-normal text-slate-400">Sudah</span>}
+                      {isCurrentlyActive && !isUsed && (
+                        <span className={`absolute top-0 right-0 left-0 text-[8px] py-0.5 font-extrabold uppercase tracking-wider ${
+                          isSelected ? 'bg-amber-400 text-slate-950' : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          Waktu Sekarang
+                        </span>
+                      )}
+
+                      <div className={isCurrentlyActive && !isUsed ? 'pt-2' : ''}>
+                        <span className="font-bold text-sm block">{tipe}</span>
+                        {prayerInfo && (
+                          <span className={`text-[10px] block mt-0.5 ${
+                            isSelected ? 'text-emerald-100' : 'text-slate-500'
+                          }`}>
+                            {prayerInfo.displayWindow.replace(' WIB', '')}
+                          </span>
+                        )}
+                      </div>
+
+                      {isUsed ? (
+                        <span className="mt-1 text-[9px] font-bold text-slate-400 bg-slate-200 px-1.5 py-0.2 rounded-md">
+                          ✓ Sudah Diisi
+                        </span>
+                      ) : (
+                        <span className={`mt-1 text-[9px] font-medium ${
+                          isSelected ? 'text-emerald-200' : 'text-slate-400'
+                        }`}>
+                          WIB
+                        </span>
+                      )}
                     </button>
                   );
                 })}
               </div>
+
+              {/* Live Info Banner untuk Sholat yang Dipilih */}
+              {subTipe && getPrayerSchedule(subTipe) && (
+                <div className={`p-3 rounded-2xl border text-xs flex items-start gap-2.5 transition-all duration-300 ${
+                  estimatedStatusWaktu === 'tepat_waktu'
+                    ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
+                    : estimatedStatusWaktu === 'toleransi'
+                    ? 'bg-amber-50/80 border-amber-200 text-amber-900'
+                    : 'bg-rose-50/80 border-rose-200 text-rose-900'
+                }`}>
+                  <Clock className={`w-4 h-4 shrink-0 mt-0.5 ${
+                    estimatedStatusWaktu === 'tepat_waktu'
+                      ? 'text-emerald-600'
+                      : estimatedStatusWaktu === 'toleransi'
+                      ? 'text-amber-600'
+                      : 'text-rose-600'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold">
+                        Jadwal Sholat {subTipe}: {getPrayerSchedule(subTipe)?.displayWindow}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${statusBadgeColor}`}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                    <p className="text-[11px] mt-0.5 opacity-90">
+                      {estimatedStatusWaktu === 'tepat_waktu'
+                        ? `Alhamdulillah, foto diambil tepat pada rentang waktu Sholat ${subTipe}.`
+                        : estimatedStatusWaktu === 'toleransi'
+                        ? `Foto diambil pada batas toleransi (+15 menit setelah waktu Sholat ${subTipe} berakhir).`
+                        : `Foto diambil di luar rentang waktu Sholat ${subTipe} (${getPrayerSchedule(subTipe)?.displayWindow}). Tetap dapat dikirim untuk ditinjau guru.`}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

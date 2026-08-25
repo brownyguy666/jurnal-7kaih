@@ -124,6 +124,23 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           </div>
         )}
 
+        {/* Info Batasan Waktu Sholat 5 Waktu (Khusus Beribadah) */}
+        {kebiasaan.id === 2 && (
+          <div className="p-2 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-emerald-900 text-[11px] mb-3 space-y-1">
+            <div className="flex items-center gap-1 font-bold text-emerald-800">
+              <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>Jadwal Sholat Wajib (WIB):</span>
+            </div>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-emerald-700 pl-4">
+              <span>• Subuh: 04.00 - 05.45</span>
+              <span>• Dzuhur: 11.30 - 14.45</span>
+              <span>• Ashar: 15.00 - 17.30</span>
+              <span>• Maghrib: 17.30 - 18.45</span>
+              <span className="col-span-2">• Isya': 18.45 - 23.59</span>
+            </div>
+          </div>
+        )}
+
         {/* List Foto Bukti yang sudah diisi hari ini */}
         {entries.length > 0 && (
           <div className="space-y-2 mb-4 pt-2 border-t border-slate-200/60">
@@ -139,15 +156,15 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                   <button
                     type="button"
                     onClick={() => onViewPhoto(entry)}
-                    className="flex items-center gap-2.5 text-left hover:text-emerald-700 transition"
+                    className="flex items-center gap-2.5 text-left hover:text-emerald-700 transition flex-1 min-w-0"
                   >
                     <img
                       src={entry.foto_url}
                       alt="Thumbnail"
                       className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
                     />
-                    <div>
-                      <span className="font-semibold text-slate-800 block truncate max-w-[150px]">
+                    <div className="min-w-0">
+                      <span className="font-semibold text-slate-800 block truncate max-w-[130px] sm:max-w-[160px]">
                         {entry.sub_tipe || entry.nama_kegiatan || `Entri #${entry.urutan_ke}`}
                       </span>
                       <span className="text-[10px] text-slate-400">
@@ -159,7 +176,9 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                     </div>
                   </button>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <StatusBadge status={entry.status_waktu} />
+
                     {entry.flag_foto_mencurigakan && (
                       <FlagBadge
                         reason={entry.alasan_flag}
