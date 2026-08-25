@@ -168,18 +168,48 @@ export class JournalService {
   }
 
   /**
-   * Mengambil Entri Jurnal dari Cloud Supabase & Local Cache
+   * Mengambil Entri Jurnal dari Cloud Supabase & Local Cache dengan Pagination Lengkap
+   * Mengatasi batas 1.000 baris PostgREST agar data seluruh tanggal tidak terpotong
    */
   static async getEntriJurnal(tanggal?: string, siswaId?: string): Promise<EntriJurnal[]> {
     if (isSupabaseConfigured) {
       try {
-        let query = supabase.from('entri_jurnal').select('*').order('waktu_submit', { ascending: false }).limit(10000);
-        if (tanggal) query = query.eq('tanggal', tanggal);
-        if (siswaId) query = query.eq('siswa_id', siswaId);
-        const { data, error } = await query;
-        if (!error && data) {
-          MockDatabase.syncEntriFromRemote(data as EntriJurnal[]);
-          return data as EntriJurnal[];
+        let allData: EntriJurnal[] = [];
+        let from = 0;
+        const pageSize = 1000;
+        let hasMore = true;
+
+        while (hasMore) {
+          let query = supabase
+            .from('entri_jurnal')
+            .select('*')
+            .order('waktu_submit', { ascending: false })
+            .range(from, from + pageSize - 1);
+
+          if (tanggal) query = query.eq('tanggal', tanggal);
+          if (siswaId) query = query.eq('siswa_id', siswaId);
+
+          const { data, error } = await query;
+          if (error) {
+            console.error('Error fetching journal entries chunk:', error);
+            break;
+          }
+
+          if (data && data.length > 0) {
+            allData = allData.concat(data as EntriJurnal[]);
+            if (data.length < pageSize) {
+              hasMore = false;
+            } else {
+              from += pageSize;
+            }
+          } else {
+            hasMore = false;
+          }
+        }
+
+        if (allData.length > 0) {
+          MockDatabase.syncEntriFromRemote(allData);
+          return allData;
         }
       } catch (e) {
         console.warn('Fallback to local store for entries:', e);
