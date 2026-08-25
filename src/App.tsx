@@ -1,4 +1,5 @@
 import React from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginView } from './views/LoginView';
 import { DashboardRouter } from './views/DashboardRouter';
@@ -25,6 +26,7 @@ export default function App() {
   return (
     <AuthProvider>
       <MainApp />
+      <SpeedInsights />
     </AuthProvider>
   );
 }
