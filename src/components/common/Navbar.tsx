@@ -86,11 +86,9 @@ export const Navbar: React.FC = () => {
                   </a>
                 </h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <p className="text-[11px] font-medium text-emerald-700 leading-none">
-                    Anak Indonesia Hebat • Kemendikdasmen RI
-                  </p>
-                  <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-200">
-                    v0.4.0
+                  <span className="text-[11px] text-slate-400 font-medium">SMPN 2 Glagah</span>
+                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-md font-bold border border-emerald-200">
+                    v0.5.0
                   </span>
                 </div>
               </div>

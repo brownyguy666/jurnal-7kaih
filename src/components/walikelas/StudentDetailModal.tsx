@@ -9,7 +9,9 @@ import {
   AlertTriangle, 
   Send,
   ShieldCheck,
-  Clock
+  Clock,
+  Printer,
+  FileText
 } from 'lucide-react';
 import { EntriJurnal, Feedback, Kebiasaan, Siswa } from '../../types/database';
 import { StatusBadge, FlagBadge } from '../common/StatusBadge';
@@ -24,6 +26,7 @@ interface StudentDetailModalProps {
   onViewPhoto: (entry: EntriJurnal) => void;
   onDeleteEntry: (entry: EntriJurnal) => void;
   onAddFeedback: (siswaId: string, komentar: string) => void;
+  onOpenRapor?: (siswa: Siswa) => void;
   isReadOnly?: boolean;
 }
 
@@ -37,6 +40,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
   onViewPhoto,
   onDeleteEntry,
   onAddFeedback,
+  onOpenRapor,
   isReadOnly = false
 }) => {
   const [newFeedbackText, setNewFeedbackText] = useState('');
@@ -60,7 +64,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-100 flex flex-col max-h-[92vh] animate-slide-up">
         {/* Header Modal */}
-        <div className="p-4 sm:px-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-slate-100">
+        <div className="p-4 sm:px-6 border-b border-slate-100 flex items-center justify-between bg-linear-to-r from-slate-50 to-slate-100">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white font-bold flex items-center justify-center text-base shadow-sm">
               {siswa.nama.charAt(0)}
@@ -198,7 +202,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                 {studentFeedbacks.map((fb) => (
                   <div
                     key={fb.id}
-                    className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-50/80 to-teal-50/80 border border-emerald-200 text-xs space-y-1.5 shadow-xs"
+                    className="p-3.5 rounded-2xl bg-linear-to-r from-emerald-50/80 to-teal-50/80 border border-emerald-200 text-xs space-y-1.5 shadow-xs"
                   >
                     <div className="flex items-center justify-between text-[11px]">
                       <span className="font-bold text-emerald-900 flex items-center gap-1.5">
@@ -278,7 +282,20 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-100 flex justify-end bg-slate-50/50">
+        <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            {onOpenRapor && (
+              <button
+                type="button"
+                onClick={() => onOpenRapor(siswa)}
+                className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm active:scale-95"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Cetak Rapor Karakter Siswa</span>
+              </button>
+            )}
+          </div>
+
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold transition"

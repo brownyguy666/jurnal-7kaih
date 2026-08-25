@@ -14,11 +14,18 @@ import {
   MessageSquarePlus,
   Layers,
   Send,
-  Trash2
+  Trash2,
+  BookOpen,
+  ShieldAlert,
+  Crown,
+  Printer,
+  FileText,
+  Sparkles
 } from 'lucide-react';
-import { ArahanWaliKelas, EntriJurnal, Feedback, KategoriArahan, Kebiasaan, Kelas, Siswa, StafSekolah } from '../../types/database';
+import { ArahanWaliKelas, EntriJurnal, Feedback, KategoriArahan, Kebiasaan, Kelas, PiagamData, Siswa, StafSekolah } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
 import { getTodayDateString } from '../../lib/timeCalculator';
+import { LeaderboardService } from '../../lib/leaderboardService';
 import { MatrixRekapTable } from '../walikelas/MatrixRekapTable';
 import { SchoolStatsOverview } from './SchoolStatsOverview';
 import { StudentDetailModal } from '../walikelas/StudentDetailModal';
@@ -27,6 +34,10 @@ import { ExportSharePanel } from '../walikelas/ExportSharePanel';
 import { ClassComparisonTable } from './ClassComparisonTable';
 import { ArahanWaliKelasModal } from './ArahanWaliKelasModal';
 import { ClassReportModal } from '../admin/ClassReportModal';
+import { PortofolioLiterasiView } from './PortofolioLiterasiView';
+import { EarlyWarningRadar } from './EarlyWarningRadar';
+import { PiagamPenghargaanModal } from './PiagamPenghargaanModal';
+import { RaporKarakterModal } from '../common/RaporKarakterModal';
 
 interface PejabatDashboardProps {
   staf: StafSekolah;
@@ -37,7 +48,15 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'comparison' | 'students' | 'arahan'>('comparison');
+  
+  // Default tab berdasarkan peran spesifik
+  const defaultTab = staf.role === 'kesiswaan' 
+    ? 'early_warning' 
+    : staf.role === 'waka_kurikulum' 
+    ? 'literasi' 
+    : 'comparison';
+    
+  const [activeTab, setActiveTab] = useState<'comparison' | 'students' | 'arahan' | 'literasi' | 'early_warning' | 'piagam'>(defaultTab);
 
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [stafList, setStafList] = useState<StafSekolah[]>([]);
@@ -53,6 +72,8 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
   const [isArahanModalOpen, setIsArahanModalOpen] = useState(false);
   const [targetClassForArahan, setTargetClassForArahan] = useState<string>('');
   const [selectedClassForReport, setSelectedClassForReport] = useState<Kelas | null>(null);
+  const [piagamData, setPiagamData] = useState<PiagamData | null>(null);
+  const [studentForRapor, setStudentForRapor] = useState<Siswa | null>(null);
 
   const loadData = async () => {
     try {
@@ -248,11 +269,41 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      {/* Tabs Navigation (Disesuaikan berdasarkan peran / tupoksi) */}
+      <div className="flex items-center gap-1.5 overflow-x-auto border-b border-slate-200 pb-2 no-scrollbar">
+        {/* Tab Khusus Kesiswaan (Prioritas Radar) */}
+        {staf.role === 'kesiswaan' && (
+          <button
+            onClick={() => setActiveTab('early_warning')}
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'early_warning'
+                ? 'bg-rose-700 text-white shadow-md shadow-rose-700/20'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <ShieldAlert className="w-4 h-4 text-rose-300" />
+            <span>🚨 Radar Pembinaan & Disiplin</span>
+          </button>
+        )}
+
+        {/* Tab Khusus Waka Kurikulum (Prioritas Literasi) */}
+        {staf.role === 'waka_kurikulum' && (
+          <button
+            onClick={() => setActiveTab('literasi')}
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'literasi'
+                ? 'bg-indigo-700 text-white shadow-md shadow-indigo-700/20'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <BookOpen className="w-4 h-4 text-indigo-300" />
+            <span>📖 Portofolio Gemar Belajar (#5)</span>
+          </button>
+        )}
+
         <button
           onClick={() => setActiveTab('comparison')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'comparison'
               ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -262,9 +313,53 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
           <span>Rekap Per Kelas (7A - 9F)</span>
         </button>
 
+        {/* Tab Khusus Kepala Sekolah (Piagam Apresiasi) */}
+        {staf.role === 'kepala_sekolah' && (
+          <button
+            onClick={() => setActiveTab('piagam')}
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'piagam'
+                ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+            }`}
+          >
+            <Crown className="w-4 h-4 text-amber-200" />
+            <span>🏆 Piagam Penghargaan Juara</span>
+          </button>
+        )}
+
+        {/* Tab Tambahan untuk Kepala Sekolah (bisa akses semua) */}
+        {staf.role === 'kepala_sekolah' && (
+          <>
+            <button
+              onClick={() => setActiveTab('early_warning')}
+              className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'early_warning'
+                  ? 'bg-rose-700 text-white shadow-md shadow-rose-700/20'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <ShieldAlert className="w-4 h-4 text-rose-500" />
+              <span>Radar Disiplin</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('literasi')}
+              className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+                activeTab === 'literasi'
+                  ? 'bg-indigo-700 text-white shadow-md shadow-indigo-700/20'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <BookOpen className="w-4 h-4 text-indigo-500" />
+              <span>Portofolio Literasi</span>
+            </button>
+          </>
+        )}
+
         <button
           onClick={() => setActiveTab('students')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'students'
               ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -276,18 +371,203 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
 
         <button
           onClick={() => setActiveTab('arahan')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'arahan'
               ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
           }`}
         >
           <MessageSquarePlus className="w-4 h-4" />
-          <span>Riwayat Arahan ke Wali Kelas ({arahanList.length})</span>
+          <span>Riwayat Arahan ({arahanList.length})</span>
         </button>
       </div>
 
-      {/* TAB 1: REKAP PER KELAS 7A - 9F */}
+      {/* TAB: RADAR EARLY WARNING (KESISWAAN & BK) */}
+      {activeTab === 'early_warning' && (
+        <EarlyWarningRadar
+          entries={entries}
+          kelasList={kelasList}
+          siswaList={siswaList}
+          stafList={stafList}
+          onOpenArahanModal={(targetKId, prefill) => {
+            setTargetClassForArahan(targetKId);
+            setIsArahanModalOpen(true);
+          }}
+          onOpenStudentDetail={(s) => setSelectedStudent(s)}
+        />
+      )}
+
+      {/* TAB: PORTOFOLIO LITERASI (KURIKULUM) */}
+      {activeTab === 'literasi' && (
+        <PortofolioLiterasiView
+          entries={entries}
+          kelasList={kelasList}
+          siswaList={siswaList}
+          onViewPhoto={(entry) => setSelectedEntryForPhoto(entry)}
+        />
+      )}
+
+      {/* TAB: PIAGAM PENGHARGAAN JUARA (KEPALA SEKOLAH) */}
+      {activeTab === 'piagam' && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="rounded-3xl p-6 bg-linear-to-r from-amber-800 via-amber-900 to-slate-900 text-white shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/30 border border-amber-400/40 flex items-center justify-center text-amber-200 shrink-0">
+                <Crown className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/40 text-amber-200 border border-amber-400/30 uppercase">
+                  Hak Akses Kepala Sekolah
+                </span>
+                <h3 className="text-xl font-extrabold text-white mt-0.5">
+                  Penerbitan Piagam Penghargaan Karakter
+                </h3>
+                <p className="text-xs text-amber-200/80">
+                  Cetak sertifikat resmi 1-klik untuk penyerahan apresiasi saat apel/upacara bendera.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Kartu Piagam Kelas Terbaik */}
+            {(() => {
+              const classRankings = LeaderboardService.calculateClassRankings(kelasList, siswaList, entries, stafList, selectedDate);
+              const top1Class = classRankings[0];
+
+              return (
+                <div className="bg-white rounded-3xl p-6 border border-amber-200 shadow-sm space-y-4 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1.5">
+                        <Crown className="w-3.5 h-3.5" />
+                        <span>Juara 1 Kelas Terdisiplin Hari Ini</span>
+                      </span>
+                      <span className="text-xs text-slate-400 font-medium">
+                        Tanggal: {selectedDate}
+                      </span>
+                    </div>
+
+                    {top1Class ? (
+                      <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2">
+                        <h4 className="text-2xl font-extrabold text-slate-900">
+                          Kelas {top1Class.namaKelas}
+                        </h4>
+                        <p className="text-xs text-slate-600">
+                          Wali Kelas: <span className="font-semibold text-slate-900">{top1Class.waliKelasNama}</span>
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Kepatuhan</span>
+                            <span className="font-bold text-emerald-700">{top1Class.persentaseKepatuhan}%</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Skor Tertib</span>
+                            <span className="font-bold text-amber-900">{top1Class.score} Poin</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400">Belum ada data ranking kelas pada tanggal ini.</p>
+                    )}
+                  </div>
+
+                  <button
+                    disabled={!top1Class}
+                    onClick={() => {
+                      if (!top1Class) return;
+                      setPiagamData({
+                        tipe: 'kelas_terbaik',
+                        judul: 'PIAGAM PENGHARGAAN KELAS TERDISIPLIN',
+                        nomorSurat: `421.3 / 7KAIH-01 / SMPN2 / ${new Date().getFullYear()}`,
+                        diberikanKepada: `KELAS ${top1Class.namaKelas}`,
+                        keterangan: `Sebagai KELAS PALING TERTIB & BERKARAKTER JUARA 1 dalam pelaksanaan 7 Kebiasaan Anak Indonesia Hebat`,
+                        tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+                        namaKepalaSekolah: staf.nama,
+                        nipKepalaSekolah: staf.nip_atau_nik || '197508122002121003',
+                        skor: top1Class.score
+                      });
+                    }}
+                    className="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 text-xs font-extrabold shadow-sm transition flex items-center justify-center gap-2"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Terbitkan & Cetak Piagam Kelas Terbaik</span>
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Kartu Piagam Siswa Teladan */}
+            {(() => {
+              const topStudents = LeaderboardService.calculateTopStudents(siswaList, entries, kelasList, selectedDate);
+              const top1Student = topStudents.qualifiedStudents[0];
+
+              return (
+                <div className="bg-white rounded-3xl p-6 border border-amber-200 shadow-sm space-y-4 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Siswa Teladan Tercepat & Terbersih</span>
+                      </span>
+                      <span className="text-xs text-slate-400 font-medium">
+                        Tanggal: {selectedDate}
+                      </span>
+                    </div>
+
+                    {top1Student ? (
+                      <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-2">
+                        <h4 className="text-2xl font-extrabold text-slate-900">
+                          {top1Student.nama}
+                        </h4>
+                        <p className="text-xs text-slate-600">
+                          Kelas {top1Student.namaKelas} • NISN: {top1Student.nisn}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Tuntas 7/7 Pukul</span>
+                            <span className="font-bold text-indigo-700">{top1Student.selesaiFormatted} WIB</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block text-[10px]">Status Bukti Foto</span>
+                            <span className="font-bold text-emerald-700">100% Asli Valid</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400">Belum ada siswa yang tuntas sempurna pada tanggal ini.</p>
+                    )}
+                  </div>
+
+                  <button
+                    disabled={!top1Student}
+                    onClick={() => {
+                      if (!top1Student) return;
+                      setPiagamData({
+                        tipe: 'siswa_teladan',
+                        judul: 'PIAGAM PENGHARGAAN SISWA TELADAN',
+                        nomorSurat: `421.3 / 7KAIH-ST / SMPN2 / ${new Date().getFullYear()}`,
+                        diberikanKepada: top1Student.nama.toUpperCase(),
+                        keterangan: `Sebagai SISWA TELADAN BERKARAKTER HEBAT (Kelas ${top1Student.namaKelas}) atas ketepatan waktu, kejujuran, dan konsistensi 7 Kebiasaan`,
+                        tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+                        namaKepalaSekolah: staf.nama,
+                        nipKepalaSekolah: staf.nip_atau_nik || '197508122002121003',
+                        skor: `${top1Student.totalKebiasaan}/7 Tuntas`
+                      });
+                    }}
+                    className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-extrabold shadow-sm transition flex items-center justify-center gap-2"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Terbitkan & Cetak Piagam Siswa Teladan</span>
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* TAB: REKAP PER KELAS 7A - 9F */}
       {activeTab === 'comparison' && (
         <div className="space-y-6">
           <SchoolStatsOverview
@@ -312,7 +592,7 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
         </div>
       )}
 
-      {/* TAB 2: MONITORING DETAIL SISWA */}
+      {/* TAB: MONITORING DETAIL SISWA */}
       {activeTab === 'students' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -506,6 +786,26 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
         onDataRefresh={loadData}
         currentStaf={staf}
         onClose={() => setSelectedClassForReport(null)}
+      />
+
+      {/* Piagam Penghargaan Modal */}
+      <PiagamPenghargaanModal
+        isOpen={Boolean(piagamData)}
+        data={piagamData}
+        onClose={() => setPiagamData(null)}
+      />
+
+      {/* Rapor Karakter Modal */}
+      <RaporKarakterModal
+        isOpen={Boolean(studentForRapor)}
+        siswa={studentForRapor}
+        entries={entries}
+        kebiasaanList={kebiasaanList}
+        namaKelas={kelasList.find((k) => k.id === studentForRapor?.kelas_id)?.nama_kelas || '-'}
+        waliKelasNama={stafList.find((s) => s.id === kelasList.find((k) => k.id === studentForRapor?.kelas_id)?.wali_kelas_id)?.nama || 'Wali Kelas'}
+        kepalaSekolahNama={stafList.find((s) => s.role === 'kepala_sekolah')?.nama || 'H. Abdul Kirom, M.Pd.'}
+        kepalaSekolahNip={stafList.find((s) => s.role === 'kepala_sekolah')?.nip_atau_nik || '197508122002121003'}
+        onClose={() => setStudentForRapor(null)}
       />
     </div>
   );

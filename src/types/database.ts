@@ -155,3 +155,90 @@ export interface StudentRankingItem {
   scoreKerapian: number;
 }
 
+export interface BadgeItem {
+  id: string;
+  title: string;
+  category: 'fajar' | 'literasi' | 'sosial' | 'bugar' | 'spiritual' | 'istiqomah';
+  icon: string;
+  description: string;
+  requirement: string;
+  isUnlocked: boolean;
+  unlockedAt?: string;
+  currentProgress: number;
+  targetProgress: number;
+  tier: 'bronze' | 'silver' | 'gold' | 'diamond';
+}
+
+export interface GamificationProfile {
+  siswaId: string;
+  currentStreak: number; // hari berturut-turut
+  longestStreak: number;
+  totalDaysActive: number;
+  totalHabitsCompleted: number;
+  badges: BadgeItem[];
+}
+
+export interface HabitRaporDetail {
+  kebiasaanId: number;
+  urutan: number;
+  nama: string;
+  totalTerisi: number;
+  totalTargetHari: number;
+  persentase: number;
+  predikat: 'Sangat Baik' | 'Baik' | 'Cukup' | 'Perlu Bimbingan';
+  catatanKarakter: string;
+}
+
+export interface RaporKarakterData {
+  siswa: Siswa;
+  namaKelas: string;
+  waliKelasNama: string;
+  kepalaSekolahNama: string;
+  periodeLabel: string;
+  rentangTanggal: string;
+  totalHariAktif: number;
+  rataRataKepatuhan: number;
+  predikatUmum: 'Sangat Baik' | 'Baik' | 'Cukup' | 'Perlu Bimbingan';
+  habitsDetail: HabitRaporDetail[];
+  catatanWaliKelas: string;
+  pesanKepalaSekolah: string;
+}
+
+export interface LiterasiItem {
+  id: string;
+  siswaId: string;
+  siswaNama: string;
+  namaKelas: string;
+  tanggal: string;
+  subTipe: string | null;
+  namaKegiatan: string | null; // Judul buku / materi
+  catatan: string | null;
+  waktuSubmit: string;
+  fotoUrl: string | null;
+}
+
+export interface WarningStudentItem {
+  siswa: Siswa;
+  namaKelas: string;
+  waliKelasNama: string;
+  hariTanpaEntriCount: number;
+  terakhirMengisiTanggal: string | null;
+  flaggedPhotosTotal: number;
+  terlambatTotal: number;
+  kategoriWarning: 'pasif_berat' | 'pasif_sedang' | 'indikasi_anomali' | 'sering_terlambat';
+  rekomendasiTindakan: string;
+}
+
+export interface PiagamData {
+  tipe: 'kelas_terbaik' | 'siswa_teladan';
+  judul: string;
+  nomorSurat: string;
+  diberikanKepada: string; // Nama Kelas atau Nama Siswa
+  keterangan: string; // Misal: "Sebagai Kelas Paling Tertib & Berkarakter Juara 1..."
+  tanggal: string;
+  namaKepalaSekolah: string;
+  nipKepalaSekolah: string;
+  skor: number | string;
+}
+
+

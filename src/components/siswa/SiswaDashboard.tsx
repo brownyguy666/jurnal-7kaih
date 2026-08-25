@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   Sparkles, 
@@ -9,15 +9,19 @@ import {
   Clock, 
   ChevronRight,
   TrendingUp,
-  Heart
+  Heart,
+  Flame,
+  FileText
 } from 'lucide-react';
 import { EntriJurnal, Feedback, Kebiasaan, Siswa } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
 import { getTodayDateString } from '../../lib/timeCalculator';
+import { GamificationService } from '../../lib/gamificationService';
 import { HabitCard } from './HabitCard';
 import { HabitEntryModal } from './HabitEntryModal';
 import { PhotoViewerModal } from '../common/PhotoViewerModal';
 import { SiswaHistory } from './SiswaHistory';
+import { BadgesShowcaseModal } from './BadgesShowcaseModal';
 
 interface SiswaDashboardProps {
   siswa: Siswa;
@@ -34,6 +38,7 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
   // Modal states
   const [selectedKebiasaanForEntry, setSelectedKebiasaanForEntry] = useState<Kebiasaan | null>(null);
   const [selectedEntryForPhoto, setSelectedEntryForPhoto] = useState<EntriJurnal | null>(null);
+  const [isBadgesModalOpen, setIsBadgesModalOpen] = useState<boolean>(false);
 
   // Load data
   const loadData = async () => {
@@ -55,6 +60,11 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
   useEffect(() => {
     loadData();
   }, [siswa.id]);
+
+  // Gamifikasi: Hitung profil lencana dan streak
+  const gamificationProfile = useMemo(() => {
+    return GamificationService.getStudentProfile(siswa.id, entries);
+  }, [siswa.id, entries]);
 
   // Filter entri hari ini
   const todayEntries = entries.filter((e) => e.tanggal === todayStr);
@@ -79,6 +89,8 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
     await loadData();
   };
 
+  const unlockedBadgesCount = gamificationProfile.badges.filter((b) => b.isUnlocked).length;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in">
       {/* Greeting & Motivation Card */}
@@ -89,10 +101,31 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-emerald-100 text-xs font-semibold backdrop-blur-sm">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Semangat Berkarakter Luhur</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-emerald-100 text-xs font-semibold backdrop-blur-sm">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Semangat Berkarakter Luhur</span>
+              </div>
+              
+              {/* Streak Badge */}
+              <button
+                onClick={() => setIsBadgesModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-extrabold shadow-sm transition hover:scale-105"
+              >
+                <Flame className="w-3.5 h-3.5 text-orange-600 fill-orange-500 animate-pulse" />
+                <span>Streak: {gamificationProfile.currentStreak} Hari</span>
+              </button>
+
+              {/* Badges Counter Badge */}
+              <button
+                onClick={() => setIsBadgesModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition hover:scale-105"
+              >
+                <Award className="w-3.5 h-3.5 text-yellow-300" />
+                <span>{unlockedBadgesCount}/{gamificationProfile.badges.length} Lencana</span>
+              </button>
             </div>
+
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Halo, {siswa.nama}! 👋
             </h2>
@@ -251,6 +284,13 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
         isOpen={Boolean(selectedEntryForPhoto)}
         entry={selectedEntryForPhoto}
         onClose={() => setSelectedEntryForPhoto(null)}
+      />
+
+      <BadgesShowcaseModal
+        isOpen={isBadgesModalOpen}
+        onClose={() => setIsBadgesModalOpen(false)}
+        gamification={gamificationProfile}
+        studentName={siswa.nama}
       />
     </div>
   );

@@ -22,6 +22,7 @@ import { StudentDetailModal } from './StudentDetailModal';
 import { ModerationDeleteModal } from './ModerationDeleteModal';
 import { ExportSharePanel } from './ExportSharePanel';
 import { PhotoViewerModal } from '../common/PhotoViewerModal';
+import { RaporKarakterModal } from '../common/RaporKarakterModal';
 
 interface WaliKelasDashboardProps {
   staf: StafSekolah;
@@ -44,6 +45,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
   const [selectedStudent, setSelectedStudent] = useState<Siswa | null>(null);
   const [selectedEntryForPhoto, setSelectedEntryForPhoto] = useState<EntriJurnal | null>(null);
   const [entryToDelete, setEntryToDelete] = useState<EntriJurnal | null>(null);
+  const [studentForRapor, setStudentForRapor] = useState<Siswa | null>(null);
 
   const loadData = async () => {
     try {
@@ -384,6 +386,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
         onViewPhoto={(entry) => setSelectedEntryForPhoto(entry)}
         onDeleteEntry={(entry) => setEntryToDelete(entry)}
         onAddFeedback={handleAddFeedback}
+        onOpenRapor={(s) => setStudentForRapor(s)}
       />
 
       <PhotoViewerModal
@@ -397,6 +400,19 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
         entry={entryToDelete}
         onClose={() => setEntryToDelete(null)}
         onConfirmDelete={handleConfirmDelete}
+      />
+
+      {/* Modal Rapor Karakter 7KAIH */}
+      <RaporKarakterModal
+        isOpen={Boolean(studentForRapor)}
+        siswa={studentForRapor}
+        entries={entries}
+        kebiasaanList={kebiasaanList}
+        namaKelas={currentKelas?.nama_kelas || (staf.kelas_id ? staf.kelas_id.replace(/^k-/i, '').toUpperCase() : '-')}
+        waliKelasNama={staf.nama}
+        kepalaSekolahNama={stafList.find((s) => s.role === 'kepala_sekolah')?.nama || 'H. Abdul Kirom, M.Pd.'}
+        kepalaSekolahNip={stafList.find((s) => s.role === 'kepala_sekolah')?.nip_atau_nik || '197508122002121003'}
+        onClose={() => setStudentForRapor(null)}
       />
     </div>
   );

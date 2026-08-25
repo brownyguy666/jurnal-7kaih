@@ -106,8 +106,8 @@ export const LoginView: React.FC = () => {
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                 <span>Program Resmi Kemendikdasmen RI</span>
               </div>
-              <span className="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 text-[11px] font-bold border border-purple-200 shadow-xs">
-                v0.4.0 (Rev 04)
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                v0.5.0 (Rev 05)
               </span>
             </div>
 
