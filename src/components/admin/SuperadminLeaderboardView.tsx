@@ -10,13 +10,16 @@ import {
   MessageCircle, 
   Check,
   Search,
-  Eye
+  Eye,
+  Flame,
+  Sparkles
 } from 'lucide-react';
 import { ClassRankingItem, EntriJurnal, Kebiasaan, Kelas, Siswa, StafSekolah } from '../../types/database';
 import { LeaderboardService } from '../../lib/leaderboardService';
 import { LeaderboardPodium } from './LeaderboardPodium';
 import { AnalyticsCharts } from './AnalyticsCharts';
 import { exportLeaderboardToExcel, generateLeaderboardWhatsAppText, shareToWhatsApp } from '../../lib/excelExporter';
+import { HallOfFameSection } from './HallOfFameSection';
 
 interface SuperadminLeaderboardViewProps {
   kelasList: Kelas[];
@@ -28,6 +31,7 @@ interface SuperadminLeaderboardViewProps {
   onDateChange: (date: string) => void;
   onRefreshData: () => void;
   onSelectClassReport?: (kelas: Kelas) => void;
+  onSelectStudent?: (siswa: Siswa) => void;
 }
 
 export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps> = ({
@@ -39,9 +43,10 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
   selectedDate,
   onDateChange,
   onRefreshData,
-  onSelectClassReport
+  onSelectClassReport,
+  onSelectStudent
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'kelas' | 'siswa' | 'grafik'>('kelas');
+  const [activeSubTab, setActiveSubTab] = useState<'kelas' | 'siswa' | 'grafik' | 'hall_of_fame'>('kelas');
   const [searchQuery, setSearchQuery] = useState('');
   const [isExported, setIsExported] = useState(false);
   const [isShared, setIsShared] = useState(false);
@@ -152,7 +157,7 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
         </div>
       </div>
 
-      {/* 2. Sub-tab Switcher: Peringkat Kelas vs Siswa Teladan vs Grafik Analitik */}
+      {/* 2. Sub-tab Switcher */}
       <div className="flex items-center justify-between border-b border-slate-200 pb-2 overflow-x-auto gap-2">
         <div className="flex items-center gap-2">
           <button
@@ -164,7 +169,7 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
             }`}
           >
             <Trophy className="w-4 h-4 text-amber-400" />
-            <span>Peringkat 18 Kelas Terdisiplin</span>
+            <span>Peringkat 18 Kelas</span>
           </button>
 
           <button
@@ -176,7 +181,19 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
             }`}
           >
             <Crown className="w-4 h-4 text-amber-400" />
-            <span>Siswa Teladan Tercepat & Terbersih ({qualifiedStudents.length})</span>
+            <span>Siswa Teladan ({qualifiedStudents.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('hall_of_fame')}
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+              activeSubTab === 'hall_of_fame'
+                ? 'bg-linear-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/25 ring-2 ring-amber-400 font-extrabold'
+                : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 font-bold'
+            }`}
+          >
+            <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
+            <span>🌟 Konsistensi & Ter-Effort (Multi-Periode)</span>
           </button>
 
           <button
@@ -188,7 +205,7 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>Grafik Dinamis & Analitik</span>
+            <span>Grafik Dinamis</span>
           </button>
         </div>
 
@@ -196,6 +213,17 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
           Rekap Tanggal: <strong className="text-slate-700">{selectedDate}</strong>
         </span>
       </div>
+
+      {/* SUBTAB: HALL OF FAME & MULTI-PERIODE */}
+      {activeSubTab === 'hall_of_fame' && (
+        <HallOfFameSection
+          kelasList={kelasList}
+          siswaList={siswaList}
+          entries={entries}
+          stafList={stafList}
+          onSelectStudent={onSelectStudent}
+        />
+      )}
 
       {/* 3. SUBTAB 1: PERANGKINGAN 18 KELAS */}
       {activeSubTab === 'kelas' && (

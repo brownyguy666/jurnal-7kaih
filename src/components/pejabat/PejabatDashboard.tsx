@@ -38,6 +38,8 @@ import { PortofolioLiterasiView } from './PortofolioLiterasiView';
 import { EarlyWarningRadar } from './EarlyWarningRadar';
 import { PiagamPenghargaanModal } from './PiagamPenghargaanModal';
 import { RaporKarakterModal } from '../common/RaporKarakterModal';
+import { HallOfFameSection } from '../admin/HallOfFameSection';
+import { Flame } from 'lucide-react';
 
 interface PejabatDashboardProps {
   staf: StafSekolah;
@@ -56,7 +58,7 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
     ? 'literasi' 
     : 'comparison';
     
-  const [activeTab, setActiveTab] = useState<'comparison' | 'students' | 'arahan' | 'literasi' | 'early_warning' | 'piagam'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'comparison' | 'students' | 'arahan' | 'literasi' | 'early_warning' | 'piagam' | 'hall_of_fame'>(defaultTab);
 
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [stafList, setStafList] = useState<StafSekolah[]>([]);
@@ -358,6 +360,18 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
         )}
 
         <button
+          onClick={() => setActiveTab('hall_of_fame')}
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'hall_of_fame'
+              ? 'bg-linear-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/25 ring-2 ring-amber-400 font-extrabold'
+              : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
+          <span>🌟 Hall of Fame (Konsistensi & Effort)</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('students')}
           className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'students'
@@ -381,6 +395,17 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
           <span>Riwayat Arahan ({arahanList.length})</span>
         </button>
       </div>
+
+      {/* TAB: HALL OF FAME (KONSISTENSI, EFFORT & WALI KELAS ISTIQOMAH) */}
+      {activeTab === 'hall_of_fame' && (
+        <HallOfFameSection
+          kelasList={kelasList}
+          siswaList={siswaList}
+          entries={entries}
+          stafList={stafList}
+          onSelectStudent={(s) => setSelectedStudent(s)}
+        />
+      )}
 
       {/* TAB: RADAR EARLY WARNING (KESISWAAN & BK) */}
       {activeTab === 'early_warning' && (

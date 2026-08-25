@@ -87,8 +87,8 @@ export const Navbar: React.FC = () => {
                 </h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-[11px] text-slate-400 font-medium">SMPN 2 Glagah</span>
-                  <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-md font-bold border border-emerald-200">
-                    v0.5.0
+                  <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                    v0.6.0
                   </span>
                 </div>
               </div>

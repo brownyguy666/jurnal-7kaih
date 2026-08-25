@@ -1,27 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Calendar, 
-  Search, 
-  FileSpreadsheet, 
   TrendingUp, 
-  ShieldAlert,
-  Award,
+  Award, 
+  AlertTriangle, 
+  Search, 
+  Calendar,
+  MessageSquare,
   RefreshCw,
   Mail,
   Check,
-  Sparkles
+  Flame,
+  Crown,
+  Sparkles,
+  ArrowUpRight
 } from 'lucide-react';
-import { ArahanWaliKelas, EntriJurnal, Feedback, Kebiasaan, Kelas, Siswa, StafSekolah } from '../../types/database';
+import { 
+  EntriJurnal, 
+  Feedback, 
+  Kebiasaan, 
+  Kelas, 
+  Siswa, 
+  StafSekolah,
+  ArahanWaliKelas
+} from '../../types/database';
 import { JournalService } from '../../lib/journalService';
 import { getTodayDateString } from '../../lib/timeCalculator';
+import { PeriodAggregationService, PeriodType } from '../../lib/periodAggregationService';
 import { MatrixRekapTable } from './MatrixRekapTable';
 import { StudentDetailModal } from './StudentDetailModal';
-import { ModerationDeleteModal } from './ModerationDeleteModal';
-import { ExportSharePanel } from './ExportSharePanel';
 import { PhotoViewerModal } from '../common/PhotoViewerModal';
+import { ExportSharePanel } from './ExportSharePanel';
+import { ModerationDeleteModal } from './ModerationDeleteModal';
 import { RaporKarakterModal } from '../common/RaporKarakterModal';
 
 interface WaliKelasDashboardProps {
@@ -31,6 +41,7 @@ interface WaliKelasDashboardProps {
 export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) => {
   const todayStr = getTodayDateString();
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [period, setPeriod] = useState<PeriodType>('daily');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [currentKelas, setCurrentKelas] = useState<Kelas | null>(null);
@@ -47,6 +58,10 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
   const [entryToDelete, setEntryToDelete] = useState<EntriJurnal | null>(null);
   const [studentForRapor, setStudentForRapor] = useState<Siswa | null>(null);
 
+  const dateRange = useMemo(() => {
+    return PeriodAggregationService.getDateRange(period, selectedDate);
+  }, [period, selectedDate]);
+
   const loadData = async () => {
     try {
       const [allKelas, allSiswa, habits, allEntries, allFeedbacks, allStaf] = await Promise.all([
@@ -58,7 +73,6 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
         JournalService.getStaf()
       ]);
 
-      // 1. Temukan kelas yang diampu oleh Wali Kelas ini (dukung relasi UUID dan string nama kelas)
       let matchedKelas = allKelas.find((k) => 
         (staf.id && k.wali_kelas_id === staf.id) ||
         (staf.kelas_id && k.id === staf.kelas_id) ||
@@ -68,54 +82,34 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
         ))
       );
 
-      // Fallback jika tidak ditemukan di list kelas (misal staf.kelas_id berupa string '7F')
-      if (!matchedKelas && staf.kelas_id) {
-        const rawName = String(staf.kelas_id).replace(/^k-/i, '').toUpperCase();
-        matchedKelas = {
-          id: staf.kelas_id,
-          nama_kelas: rawName || 'Kelas',
-          tingkat: parseInt(rawName.replace(/\D/g, '')) || 7,
-          wali_kelas_id: staf.id
-        };
+      if (!matchedKelas && allKelas.length > 0) {
+        matchedKelas = allKelas[0];
       }
 
       setCurrentKelas(matchedKelas || null);
 
-      // 2. Kumpulkan seluruh kemungkinan ID / format kelas
-      const targetClassIds = new Set<string>();
-      if (matchedKelas?.id) targetClassIds.add(matchedKelas.id);
-      if (matchedKelas?.nama_kelas) {
-        targetClassIds.add(matchedKelas.nama_kelas.toUpperCase());
-        targetClassIds.add(`k-${matchedKelas.nama_kelas.toLowerCase()}`);
+      const targetClassId = matchedKelas ? matchedKelas.id : (staf.kelas_id || 'k-7a');
+      const targetClassClean = targetClassId.replace(/^k-/i, '').toUpperCase();
+      
+      const filteredSiswa = allSiswa.filter((s) => 
+        s.kelas_id === targetClassId || 
+        s.kelas_id?.replace(/^k-/i, '').toUpperCase() === targetClassClean ||
+        (matchedKelas && s.kelas_id?.toUpperCase() === matchedKelas.nama_kelas.toUpperCase())
+      );
+
+      let classArahan: ArahanWaliKelas[] = [];
+      if (matchedKelas) {
+        classArahan = await JournalService.getArahanWaliKelas(matchedKelas.id);
       }
-      if (staf.kelas_id) {
-        targetClassIds.add(staf.kelas_id);
-        targetClassIds.add(String(staf.kelas_id).toUpperCase());
-        targetClassIds.add(String(staf.kelas_id).toUpperCase().replace(/^K-/, ''));
-        targetClassIds.add(`k-${String(staf.kelas_id).toLowerCase().replace(/^k-/, '')}`);
-      }
 
-      // 3. Filter siswa yang terdaftar di kelas wali kelas ini
-      const classStudents = allSiswa.filter((s) => {
-        if (!matchedKelas && !staf.kelas_id) return true;
-        if (targetClassIds.has(s.kelas_id)) return true;
-        if (s.kelas_id && targetClassIds.has(s.kelas_id.toUpperCase())) return true;
-        if (s.kelas_id && targetClassIds.has(s.kelas_id.toUpperCase().replace(/^K-/, ''))) return true;
-        return false;
-      });
-
-      // 4. Muat arahan pimpinan untuk kelas ini
-      const targetClassIdForArahan = matchedKelas?.id || staf.kelas_id || undefined;
-      const classArahan = await JournalService.getArahanWaliKelas(targetClassIdForArahan);
-
-      setSiswaList(classStudents);
+      setSiswaList(filteredSiswa);
       setKebiasaanList(habits.sort((a, b) => a.urutan - b.urutan));
       setEntries(allEntries);
       setFeedbacks(allFeedbacks);
       setArahanList(classArahan);
       setStafList(allStaf);
     } catch (e) {
-      console.warn('Error loading wali kelas data:', e);
+      console.warn('Error loading wali kelas dashboard data:', e);
     }
   };
 
@@ -123,7 +117,25 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
     loadData();
   }, [staf.id, staf.kelas_id]);
 
-  // Hitung KPI
+  const classConsistentStudents = useMemo(() => {
+    return PeriodAggregationService.calculateConsistentStudents(
+      siswaList, 
+      entries, 
+      currentKelas ? [currentKelas] : [], 
+      5
+    );
+  }, [siswaList, entries, currentKelas]);
+
+  const classEffortStudents = useMemo(() => {
+    return PeriodAggregationService.calculateEffortStudents(
+      siswaList, 
+      entries, 
+      currentKelas ? [currentKelas] : [], 
+      dateRange, 
+      5
+    );
+  }, [siswaList, entries, currentKelas, dateRange]);
+
   const currentDayEntries = entries.filter((e) => e.tanggal === selectedDate);
   const totalSiswa = siswaList.length;
 
@@ -133,9 +145,9 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
 
   siswaList.forEach((siswa) => {
     const studentDayEntries = currentDayEntries.filter((e) => e.siswa_id === siswa.id);
-    const distinct = new Set(studentDayEntries.map((e) => e.kebiasaan_id)).size;
-    totalHabitsCompleted += distinct;
-    if (distinct === 7) perfectStudentCount++;
+    const distinctHabits = new Set(studentDayEntries.map((e) => e.kebiasaan_id)).size;
+    totalHabitsCompleted += distinctHabits;
+    if (distinctHabits === 7) perfectStudentCount++;
     if (studentDayEntries.some((e) => e.flag_foto_mencurigakan)) flaggedPhotoCount++;
   });
 
@@ -143,7 +155,6 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
     ? Math.round((totalHabitsCompleted / (totalSiswa * 7)) * 100)
     : 0;
 
-  // Handlers
   const handleConfirmDelete = async (entriId: string, alasan: string) => {
     await JournalService.deleteEntriJurnal(entriId, staf.id, alasan);
     await loadData();
@@ -156,28 +167,24 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
 
   const handleMarkArahanRead = async (arahanId: string) => {
     await JournalService.markArahanRead(arahanId);
-    await loadData();
+    setArahanList((prev) =>
+      prev.map((a) => (a.id === arahanId ? { ...a, dibaca: true } : a))
+    );
   };
 
   const getKategoriBadge = (kategori: string) => {
     switch (kategori) {
-      case 'apresiasi':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-300';
-      case 'evaluasi':
-        return 'bg-amber-100 text-amber-800 border-amber-300';
-      case 'instruksi':
-        return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'tindak_lanjut':
-        return 'bg-purple-100 text-purple-800 border-purple-300';
-      default:
-        return 'bg-slate-100 text-slate-700 border-slate-200';
+      case 'instruksi': return 'bg-amber-400/20 text-amber-300 border border-amber-400/30';
+      case 'apresiasi': return 'bg-emerald-400/20 text-emerald-300 border border-emerald-400/30';
+      case 'evaluasi': return 'bg-purple-400/20 text-purple-300 border border-purple-400/30';
+      default: return 'bg-blue-400/20 text-blue-300 border border-blue-400/30';
     }
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 animate-fade-in">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+      {/* Header & Period Navigation */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
         <div>
           <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-block mb-1">
             Portal Wali Kelas • Kelas {currentKelas?.nama_kelas || staf.kelas_id || '7A'}
@@ -190,9 +197,15 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
           </p>
         </div>
 
-        {/* Date Selector */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-2xl">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200">
+            <button onClick={() => setPeriod('daily')} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${period === 'daily' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>Harian</button>
+            <button onClick={() => setPeriod('weekly')} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${period === 'weekly' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>Mingguan</button>
+            <button onClick={() => setPeriod('monthly')} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${period === 'monthly' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>Bulanan</button>
+            <button onClick={() => setPeriod('semester')} className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${period === 'semester' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>Semester</button>
+          </div>
+
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-2xl">
             <Calendar className="w-4 h-4 text-slate-400" />
             <input
               type="date"
@@ -205,12 +218,41 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
           <button
             onClick={loadData}
             title="Muat Ulang Data"
-            className="p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+            className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      {(classConsistentStudents.length > 0 || classEffortStudents.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {classConsistentStudents.length > 0 && (
+            <div className="p-4 rounded-3xl bg-linear-to-r from-amber-500/10 via-amber-50 to-white border border-amber-300 shadow-sm flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center shrink-0 shadow-xs">
+                <Flame className="w-5 h-5 fill-slate-950" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block">🔥 Siswa Terkonsisten Kelas {currentKelas?.nama_kelas}</span>
+                <h4 className="font-bold text-slate-900 text-sm truncate">{classConsistentStudents[0].siswa.nama}</h4>
+                <p className="text-[11px] text-amber-900 mt-0.5 font-medium">Streak {classConsistentStudents[0].longestStreak} Hari ({classConsistentStudents[0].badgeLabel})</p>
+              </div>
+            </div>
+          )}
+          {classEffortStudents.length > 0 && (
+            <div className="p-4 rounded-3xl bg-linear-to-r from-purple-500/10 via-purple-50 to-white border border-purple-300 shadow-sm flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <ArrowUpRight className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-800 block">🚀 Siswa Ter-Effort / Berprogres</span>
+                <h4 className="font-bold text-slate-900 text-sm truncate">{classEffortStudents[0].siswa.nama}</h4>
+                <p className="text-[11px] text-purple-900 mt-0.5 font-medium">{classEffortStudents[0].description} (+{classEffortStudents[0].growthDelta}%)</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Directives from School Leaders Banner (Arahan Pimpinan Sekolah) */}
       {arahanList.length > 0 && (
