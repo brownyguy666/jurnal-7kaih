@@ -1,83 +1,30 @@
 import { Kebiasaan, StatusWaktu } from '../types/database';
+import { BanyuwangiPrayerService, DynamicPrayerSchedule, BanyuwangiPrayerTimes } from './banyuwangiPrayerService';
 
-export interface PrayerSchedule {
-  name: string;
-  aliases: string[];
-  start: string;
-  end: string;
-  toleranceMinutes: number;
-  displayWindow: string;
-  description: string;
-}
+export type PrayerSchedule = DynamicPrayerSchedule;
+export { BanyuwangiPrayerService };
 
 /**
- * Jadwal dan Batasan Waktu Sholat 5 Waktu (WIB - Banyuwangi / Jawa Timur)
+ * Cari jadwal sholat dinamis Banyuwangi berdasarkan nama sub_tipe dan waktu
  */
-export const PRAYER_SCHEDULES: PrayerSchedule[] = [
-  {
-    name: 'Subuh',
-    aliases: ['subuh', 'shubuh', 'fajar'],
-    start: '04:00',
-    end: '05:45',
-    toleranceMinutes: 15,
-    displayWindow: '04.00 - 05.45 WIB',
-    description: 'Waktu Sholat Subuh'
-  },
-  {
-    name: 'Dzuhur',
-    aliases: ['dzuhur', 'dhuhur', 'zuhur', 'duhur'],
-    start: '11:30',
-    end: '14:45',
-    toleranceMinutes: 15,
-    displayWindow: '11.30 - 14.45 WIB',
-    description: 'Waktu Sholat Dzuhur'
-  },
-  {
-    name: 'Ashar',
-    aliases: ['ashar', 'asar', 'ashr'],
-    start: '15:00',
-    end: '17:30',
-    toleranceMinutes: 15,
-    displayWindow: '15.00 - 17.30 WIB',
-    description: 'Waktu Sholat Ashar'
-  },
-  {
-    name: 'Maghrib',
-    aliases: ['maghrib', 'magrib'],
-    start: '17:30',
-    end: '18:45',
-    toleranceMinutes: 15,
-    displayWindow: '17.30 - 18.45 WIB',
-    description: 'Waktu Sholat Maghrib'
-  },
-  {
-    name: "Isya'",
-    aliases: ['isya', "isya'", 'isya`'],
-    start: '18:45',
-    end: '23:59',
-    toleranceMinutes: 0,
-    displayWindow: '18.45 - 23.59 WIB',
-    description: "Waktu Sholat Isya'"
-  }
-];
-
-/**
- * Cari jadwal sholat berdasarkan nama sub_tipe
- */
-export function getPrayerSchedule(subTipe?: string): PrayerSchedule | undefined {
+export function getPrayerSchedule(
+  subTipe?: string, 
+  checkTime: Date = new Date()
+): DynamicPrayerSchedule | undefined {
   if (!subTipe) return undefined;
   const clean = subTipe.trim().toLowerCase();
-  return PRAYER_SCHEDULES.find((p) => p.name.toLowerCase() === clean || p.aliases.includes(clean));
+  const prayerTimes = BanyuwangiPrayerService.calculatePrayerTimes(checkTime);
+  return prayerTimes.schedules.find((p) => p.name.toLowerCase() === clean || p.aliases.includes(clean));
 }
 
 /**
- * Hitung status waktu khusus sholat 5 waktu berdasarkan waktu ambil foto
+ * Hitung status waktu khusus sholat 5 waktu berdasarkan waktu ambil foto dan hisab Banyuwangi
  */
 export function calculateStatusWaktuForPrayer(
   subTipe: string,
   checkTime: Date = new Date()
 ): StatusWaktu {
-  const schedule = getPrayerSchedule(subTipe);
+  const schedule = getPrayerSchedule(subTipe, checkTime);
   if (!schedule) return 'tepat_waktu';
 
   const hours = checkTime.getHours();
@@ -102,14 +49,15 @@ export function calculateStatusWaktuForPrayer(
 }
 
 /**
- * Mendapatkan sholat yang saat ini sedang aktif berdasarkan waktu sekarang
+ * Mendapatkan sholat yang saat ini sedang aktif di Banyuwangi berdasarkan waktu sekarang
  */
-export function getCurrentActivePrayer(checkTime: Date = new Date()): PrayerSchedule | undefined {
+export function getCurrentActivePrayer(checkTime: Date = new Date()): DynamicPrayerSchedule | undefined {
+  const prayerTimes = BanyuwangiPrayerService.calculatePrayerTimes(checkTime);
   const hours = checkTime.getHours();
   const minutes = checkTime.getMinutes();
   const currentTotalMinutes = hours * 60 + minutes;
 
-  for (const schedule of PRAYER_SCHEDULES) {
+  for (const schedule of prayerTimes.schedules) {
     const [startH, startM] = schedule.start.split(':').map(Number);
     const startTotalMinutes = startH * 60 + startM;
 

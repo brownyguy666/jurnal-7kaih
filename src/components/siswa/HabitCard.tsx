@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { EntriJurnal, Kebiasaan } from '../../types/database';
 import { StatusBadge, FlagBadge } from '../common/StatusBadge';
+import { BanyuwangiPrayerService } from '../../lib/banyuwangiPrayerService';
 
 interface HabitCardProps {
   kebiasaan: Kebiasaan;
@@ -30,7 +31,11 @@ export const HabitCard: React.FC<HabitCardProps> = ({
   onViewPhoto
 }) => {
   const currentCount = entries.length;
-  const isMaxReached = currentCount >= kebiasaan.maks_input_harian;
+  const targetMaxCount = kebiasaan.id === 2 
+    ? BanyuwangiPrayerService.getMaxPrayerCountForDate() 
+    : kebiasaan.maks_input_harian;
+
+  const isMaxReached = currentCount >= targetMaxCount;
   const isCompleted = currentCount > 0;
 
   // Icon mapping
@@ -87,7 +92,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           </div>
 
           {/* Progress or Completion Badge */}
-          {kebiasaan.maks_input_harian > 1 ? (
+          {targetMaxCount > 1 ? (
             <span
               className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
                 isMaxReached
@@ -97,7 +102,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                   : 'bg-slate-100 text-slate-600 border-slate-200'
               }`}
             >
-              {currentCount}/{kebiasaan.maks_input_harian} Selesai
+              {currentCount}/{targetMaxCount} Selesai
             </span>
           ) : isCompleted ? (
             <StatusBadge status={entries[0].status_waktu} />
@@ -124,22 +129,34 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           </div>
         )}
 
-        {/* Info Batasan Waktu Sholat 5 Waktu (Khusus Beribadah) */}
-        {kebiasaan.id === 2 && (
-          <div className="p-2 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-emerald-900 text-[11px] mb-3 space-y-1">
-            <div className="flex items-center gap-1 font-bold text-emerald-800">
-              <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>Jadwal Sholat Wajib (WIB):</span>
+        {/* Info Batasan Waktu Sholat 5 Waktu Dinamis Banyuwangi */}
+        {kebiasaan.id === 2 && (() => {
+          const prayerData = BanyuwangiPrayerService.calculatePrayerTimes();
+          return (
+            <div className="p-2.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-emerald-900 text-[11px] mb-3 space-y-1.5">
+              <div className="flex items-center justify-between font-bold text-emerald-800">
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>Jadwal Sholat Banyuwangi:</span>
+                </div>
+                <span className="text-[9px] px-2 py-0.5 rounded-full bg-emerald-200/70 text-emerald-900 font-extrabold">
+                  {prayerData.isHariMinggu ? '5 Sholat (Hari Minggu)' : '4 Sholat (Senin-Sabtu)'}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-emerald-700 pl-1 font-mono">
+                <span>• Subuh: {prayerData.subuh} - {prayerData.terbit}</span>
+                {prayerData.isHariMinggu ? (
+                  <span className="font-bold text-emerald-900">• Dhuhur: {prayerData.dhuhur} - {prayerData.ashar}</span>
+                ) : (
+                  <span className="text-slate-400 font-sans italic">• Dhuhur: Berjamaah Sekolah</span>
+                )}
+                <span>• Ashar: {prayerData.ashar} - {prayerData.maghrib}</span>
+                <span>• Maghrib: {prayerData.maghrib} - {prayerData.isya}</span>
+                <span className="col-span-2 font-mono">• Isya': {prayerData.isya} - 23.59 WIB</span>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[10px] text-emerald-700 pl-4">
-              <span>• Subuh: 04.00 - 05.45</span>
-              <span>• Dzuhur: 11.30 - 14.45</span>
-              <span>• Ashar: 15.00 - 17.30</span>
-              <span>• Maghrib: 17.30 - 18.45</span>
-              <span className="col-span-2">• Isya': 18.45 - 23.59</span>
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* List Foto Bukti yang sudah diisi hari ini */}
         {entries.length > 0 && (
