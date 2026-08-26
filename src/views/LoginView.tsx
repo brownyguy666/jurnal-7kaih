@@ -7,9 +7,22 @@ import {
   ArrowRight, 
   Sparkles, 
   AlertCircle, 
-  Info
+  Info,
+  UserX,
+  KeyRound,
+  HelpCircle,
+  X
 } from 'lucide-react';
 import { SCHOOL_PROFILE } from '../lib/schoolProfile';
+
+interface ErrorModalState {
+  isOpen: boolean;
+  type: 'username_not_found' | 'wrong_password' | 'general';
+  title: string;
+  message: string;
+  guide: string;
+  role: 'siswa' | 'staf';
+}
 
 export const LoginView: React.FC = () => {
   const { loginSiswa, loginStaf, isLoading } = useAuth();
@@ -24,23 +37,58 @@ export const LoginView: React.FC = () => {
   const [stafPassword, setStafPassword] = useState('');
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorModal, setErrorModal] = useState<ErrorModalState | null>(null);
 
   const handleSiswaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
     if (!nisn.trim()) {
-      setErrorMessage('Silakan masukkan NISN Anda.');
+      const msg = 'Silakan masukkan NISN Anda.';
+      setErrorMessage(msg);
+      setErrorModal({
+        isOpen: true,
+        type: 'username_not_found',
+        title: 'NISN Belum Diisi',
+        message: 'Kolom NISN masih kosong.',
+        guide: 'Silakan masukkan nomor NISN Anda yang terdaftar di sekolah.',
+        role: 'siswa'
+      });
       return;
     }
     if (!siswaPassword) {
-      setErrorMessage('Silakan masukkan password.');
+      const msg = 'Silakan masukkan password.';
+      setErrorMessage(msg);
+      setErrorModal({
+        isOpen: true,
+        type: 'wrong_password',
+        title: 'Password Belum Diisi',
+        message: 'Kolom Password masih kosong.',
+        guide: 'Password default untuk login pertama adalah tanggal lahir (DDMMYYYY). Contoh: 15 Mei 2011 = 15052011.',
+        role: 'siswa'
+      });
       return;
     }
 
     const res = await loginSiswa(nisn.trim(), siswaPassword);
     if (!res.success) {
-      setErrorMessage(res.message || 'Gagal login sebagai Siswa.');
+      const msg = res.message || 'Gagal login sebagai Siswa.';
+      setErrorMessage(msg);
+
+      const isUserNotFound = msg.toLowerCase().includes('username tidak ditemukan') || msg.toLowerCase().includes('nisn tidak terdaftar');
+
+      setErrorModal({
+        isOpen: true,
+        type: isUserNotFound ? 'username_not_found' : 'wrong_password',
+        title: isUserNotFound ? 'Username Tidak Ditemukan' : 'Password Siswa Salah',
+        message: isUserNotFound 
+          ? `NISN "${nisn.trim()}" tidak ditemukan dalam sistem database siswa SMPN 2 Glagah.`
+          : 'Password yang Anda masukkan tidak sesuai dengan data terdaftar.',
+        guide: isUserNotFound
+          ? 'Silakan periksa kembali nomor NISN Anda. Pastikan angka yang dimasukkan sudah benar tanpa ada spasi atau karakter lain.'
+          : 'Silakan tanyakan kepada bapak/ibu wali kelas atau guru Anda jika Anda lupa password.',
+        role: 'siswa'
+      });
     }
   };
 
@@ -49,17 +97,51 @@ export const LoginView: React.FC = () => {
     setErrorMessage(null);
 
     if (!nipNik.trim()) {
-      setErrorMessage('Silakan masukkan NIP, NIK, atau Username Anda.');
+      const msg = 'Silakan masukkan NIP, NIK, atau Username Anda.';
+      setErrorMessage(msg);
+      setErrorModal({
+        isOpen: true,
+        type: 'username_not_found',
+        title: 'Username Belum Diisi',
+        message: 'Kolom NIP / NIK / Username masih kosong.',
+        guide: 'Silakan masukkan NIP, NIK, atau Username pendidik Anda.',
+        role: 'staf'
+      });
       return;
     }
     if (!stafPassword) {
-      setErrorMessage('Silakan masukkan password.');
+      const msg = 'Silakan masukkan password.';
+      setErrorMessage(msg);
+      setErrorModal({
+        isOpen: true,
+        type: 'wrong_password',
+        title: 'Password Belum Diisi',
+        message: 'Kolom Password masih kosong.',
+        guide: 'Password default awal adalah tanggal lahir (DDMMYYYY) atau password kustom yang telah diatur.',
+        role: 'staf'
+      });
       return;
     }
 
     const res = await loginStaf(nipNik.trim(), stafPassword);
     if (!res.success) {
-      setErrorMessage(res.message || 'Gagal login sebagai Pendidik/Staf.');
+      const msg = res.message || 'Gagal login sebagai Pendidik/Staf.';
+      setErrorMessage(msg);
+
+      const isUserNotFound = msg.toLowerCase().includes('username tidak ditemukan') || msg.toLowerCase().includes('tidak ditemukan dalam data');
+
+      setErrorModal({
+        isOpen: true,
+        type: isUserNotFound ? 'username_not_found' : 'wrong_password',
+        title: isUserNotFound ? 'Username Tidak Ditemukan' : 'Password Pendidik / Admin Salah',
+        message: isUserNotFound 
+          ? `Username / NIP / NIK "${nipNik.trim()}" tidak ditemukan dalam data pendidik SMPN 2 Glagah.`
+          : 'Password yang Anda masukkan tidak cocok dengan akun ini.',
+        guide: isUserNotFound
+          ? 'Silakan periksa kembali penulisan NIP, NIK, atau Username Anda. Pastikan tidak ada kesalahan ketik.'
+          : 'Silakan menghubungi Superadmin sekolah untuk memeriksa atau mereset password akun Anda.',
+        role: 'staf'
+      });
     }
   };
 
@@ -286,6 +368,92 @@ export const LoginView: React.FC = () => {
       <footer className="p-4 text-center text-xs text-slate-400">
         &copy; {new Date().getFullYear()} {SCHOOL_PROFILE.nama} ({SCHOOL_PROFILE.npsn}) • {SCHOOL_PROFILE.alamat}
       </footer>
+
+      {/* Pop-up Modal Pemberitahuan Kesalahan Login */}
+      {errorModal?.isOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setErrorModal(null)}
+        >
+          <div 
+            className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-slate-100 animate-scale-up space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Icon & Title */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3.5">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner shrink-0 ${
+                  errorModal.type === 'username_not_found'
+                    ? 'bg-amber-100 text-amber-600 border border-amber-200'
+                    : 'bg-rose-100 text-rose-600 border border-rose-200'
+                }`}>
+                  {errorModal.type === 'username_not_found' ? (
+                    <UserX className="w-6 h-6" />
+                  ) : (
+                    <KeyRound className="w-6 h-6" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-800 leading-snug">
+                    {errorModal.title}
+                  </h3>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider mt-0.5 ${
+                    errorModal.type === 'username_not_found' 
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                      : 'bg-rose-50 text-rose-700 border border-rose-200'
+                  }`}>
+                    {errorModal.type === 'username_not_found' ? 'Akun Tidak Ditemukan' : 'Autentikasi Gagal'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setErrorModal(null)}
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                title="Tutup Pemberitahuan"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Error Description */}
+            <div className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+              {errorModal.message}
+            </div>
+
+            {/* Action Guide Box (Saran Solusi) */}
+            <div className={`p-4 rounded-2xl border flex items-start gap-3 ${
+              errorModal.role === 'siswa'
+                ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950'
+                : 'bg-purple-50/90 border-purple-200 text-purple-950'
+            }`}>
+              <HelpCircle className={`w-5 h-5 shrink-0 mt-0.5 ${
+                errorModal.role === 'siswa' ? 'text-emerald-700' : 'text-purple-700'
+              }`} />
+              <div className="text-xs space-y-1">
+                <div className="font-extrabold">Petunjuk & Solusi:</div>
+                <div className="leading-relaxed font-medium">
+                  {errorModal.guide}
+                </div>
+              </div>
+            </div>
+
+            {/* Close / Retry Button */}
+            <button
+              type="button"
+              onClick={() => setErrorModal(null)}
+              className={`w-full py-3 px-4 rounded-2xl font-black text-sm text-white shadow-lg transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] ${
+                errorModal.role === 'siswa'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/25'
+                  : 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/25'
+              }`}
+            >
+              <span>Saya Mengerti / Coba Lagi</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
