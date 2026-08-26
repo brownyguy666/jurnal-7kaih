@@ -10,10 +10,13 @@ import {
   ChevronRight, 
   CheckCircle2,
   Users,
-  Eye
+  Eye,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import { EntriJurnal, Kelas, Siswa, StafSekolah, WarningStudentItem } from '../../types/database';
 import { getTodayDateString } from '../../lib/timeCalculator';
+import * as XLSX from 'xlsx';
 
 interface EarlyWarningRadarProps {
   entries: EntriJurnal[];
@@ -154,6 +157,27 @@ export const EarlyWarningRadar: React.FC<EarlyWarningRadarProps> = ({
     }
   };
 
+  const handleExportExcel = () => {
+    const exportData = filteredWarnings.map((item, idx) => ({
+      No: idx + 1,
+      NISN: item.siswa.nisn,
+      'Nama Siswa': item.siswa.nama,
+      Kelas: `Kelas ${item.namaKelas}`,
+      'Wali Kelas': item.waliKelasNama,
+      'Lama Tidak Mengisi': item.hariTanpaEntriCount >= 7 ? 'Belum Pernah' : `${item.hariTanpaEntriCount} Hari`,
+      'Terakhir Mengisi': item.terakhirMengisiTanggal || 'Belum Pernah',
+      'Foto Flagged': item.flaggedPhotosTotal,
+      'Terlambat Bangun/Tidur': item.terlambatTotal,
+      Kategori: getKategoriLabel(item.kategoriWarning),
+      'Rekomendasi Pembinaan': item.rekomendasiTindakan
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Radar Siswa Perlu Perhatian');
+    XLSX.writeFile(wb, `Laporan_Radar_Pembinaan_Siswa_SMPN2Glagah_${todayStr}.xlsx`);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header Banner Kesiswaan */}
@@ -165,21 +189,31 @@ export const EarlyWarningRadar: React.FC<EarlyWarningRadarProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/40 text-rose-200 border border-rose-400/30">
-                Kesiswaan & BK
+                Kesiswaan, BK & Wali Kelas
               </span>
               <span className="text-xs text-rose-300">Early Warning System & Pembinaan Siswa</span>
             </div>
             <h3 className="text-xl font-extrabold text-white mt-0.5">
-              Radar Pembinaan Karakter & Disiplin Siswa
+              Radar Pembinaan Karakter & Siswa Tidak Aktif (≥ 3 Hari)
             </h3>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-2xl border border-white/15 backdrop-blur-sm shrink-0">
-          <AlertTriangle className="w-5 h-5 text-amber-300" />
-          <div>
-            <span className="text-[10px] text-rose-200 block">Siswa Perlu Perhatian</span>
-            <span className="text-base font-bold text-white">{warningList.length} Siswa Terdeteksi</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportExcel}
+            className="px-4 py-2.5 rounded-2xl bg-white text-rose-900 hover:bg-rose-50 font-bold text-xs shadow-md transition flex items-center gap-2 shrink-0 active:scale-95"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export Excel (.xlsx)</span>
+          </button>
+
+          <div className="flex items-center gap-3 bg-white/10 px-4 py-2 rounded-2xl border border-white/15 backdrop-blur-sm shrink-0">
+            <AlertTriangle className="w-5 h-5 text-amber-300" />
+            <div>
+              <span className="text-[10px] text-rose-200 block">Siswa Perlu Perhatian</span>
+              <span className="text-base font-bold text-white">{warningList.length} Siswa Terdeteksi</span>
+            </div>
           </div>
         </div>
       </div>
@@ -190,7 +224,7 @@ export const EarlyWarningRadar: React.FC<EarlyWarningRadarProps> = ({
         <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 no-scrollbar">
           {[
             { id: 'all', label: `Semua Radar (${warningList.length})` },
-            { id: 'pasif', label: '🛑 Siswa Pasif' },
+            { id: 'pasif', label: '🛑 Tidak Mengisi (≥ 3 Hari)' },
             { id: 'anomali', label: '🔍 Audit Foto EXIF' },
             { id: 'terlambat', label: '⏰ Pola Waktu' }
           ].map((tab) => (

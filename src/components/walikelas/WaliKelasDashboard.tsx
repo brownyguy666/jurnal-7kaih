@@ -139,6 +139,27 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
   const currentDayEntries = entries.filter((e) => e.tanggal === selectedDate);
   const totalSiswa = siswaList.length;
 
+  // 3 Hari Terakhir untuk Deteksi Inaktivitas
+  const last3Days = useMemo(() => {
+    const dates: string[] = [];
+    const baseDate = new Date(selectedDate);
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() - i);
+      dates.push(d.toISOString().split('T')[0]);
+    }
+    return dates;
+  }, [selectedDate]);
+
+  const inactive3DaysStudents = useMemo(() => {
+    return siswaList.filter((siswa) => {
+      const studentEntriesLast3Days = entries.filter(
+        (e) => e.siswa_id === siswa.id && last3Days.includes(e.tanggal)
+      );
+      return studentEntriesLast3Days.length === 0;
+    });
+  }, [siswaList, entries, last3Days]);
+
   let totalHabitsCompleted = 0;
   let perfectStudentCount = 0;
   let flaggedPhotoCount = 0;
@@ -251,6 +272,42 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Alert Banner Siswa Tidak Mengisi 3 Hari Berturut-turut */}
+      {inactive3DaysStudents.length > 0 && (
+        <div className="p-5 rounded-3xl bg-rose-50 border-2 border-rose-200 shadow-sm space-y-3 animate-slide-up">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-rose-950 text-sm">
+                  Perhatian Wali Kelas: Ada {inactive3DaysStudents.length} Siswa Tidak Mengisi Jurnal 3 Hari Berturut-turut
+                </h4>
+                <p className="text-xs text-rose-700 mt-0.5">
+                  Siswa berikut belum mencatat satupun dari 7 kebiasaan pada rentang {last3Days[2]} s.d {last3Days[0]}. Mohon segera berikan pendampingan atau hubungi orang tua.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {inactive3DaysStudents.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setSelectedStudent(s)}
+                className="px-3 py-1.5 rounded-xl bg-white hover:bg-rose-100/80 border border-rose-300 text-rose-900 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs group cursor-pointer"
+                title="Klik untuk membuka detail dan memberi feedback"
+              >
+                <span className="w-2 h-2 rounded-full bg-rose-500 group-hover:animate-ping" />
+                <span>{s.nama}</span>
+                <span className="text-[10px] text-rose-500 font-mono">({s.nisn})</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

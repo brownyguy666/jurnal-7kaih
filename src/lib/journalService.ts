@@ -603,4 +603,60 @@ export class JournalService {
       return true;
     }
   }
+
+  /**
+   * Mengedit / Rename Data Siswa atau Staf (Akses Khusus Superadmin)
+   */
+  static async adminUpdateUser(
+    type: 'siswa' | 'staf',
+    userId: string,
+    updates: Partial<Siswa> | Partial<StafSekolah>
+  ): Promise<boolean> {
+    if (type === 'siswa') {
+      const allSiswa = MockDatabase.getSiswa();
+      const idx = allSiswa.findIndex(s => s.id === userId);
+      if (idx >= 0) {
+        allSiswa[idx] = { ...allSiswa[idx], ...updates } as Siswa;
+        MockDatabase.syncSiswaFromRemote(allSiswa);
+      }
+
+      if (isSupabaseConfigured) {
+        try {
+          const { id, auth_id, created_at, ...cleanUpdates } = updates as any;
+          await supabase
+            .from('siswa')
+            .update(cleanUpdates)
+            .eq('id', userId);
+        } catch (e) {
+          console.warn('Failed admin update siswa:', e);
+        }
+      }
+      return true;
+    } else {
+      const allStaf = MockDatabase.getStaf();
+      const idx = allStaf.findIndex(st => st.id === userId);
+      if (idx >= 0) {
+        allStaf[idx] = { ...allStaf[idx], ...updates } as StafSekolah;
+        MockDatabase.syncStafFromRemote(allStaf);
+      }
+
+      if (isSupabaseConfigured) {
+        try {
+          const { id, auth_id, created_at, ...cleanUpdates } = updates as any;
+          await supabase
+            .from('staf_sekolah')
+            .update(cleanUpdates)
+            .eq('id', userId);
+          
+          if (cleanUpdates.kelas_id && (updates as StafSekolah).role === 'wali_kelas') {
+            await supabase.from('kelas').update({ wali_kelas_id: userId }).eq('id', cleanUpdates.kelas_id);
+          }
+        } catch (e) {
+          console.warn('Failed admin update staf:', e);
+        }
+      }
+      return true;
+    }
+  }
 }
+

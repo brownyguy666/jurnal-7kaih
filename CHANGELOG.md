@@ -4,6 +4,25 @@ Semua pembaruan, perbaikan, dan penambahan fitur aplikasi Jurnal Pembiasaan 7 Ka
 
 ---
 
+## [v0.7.0] - 2026-08-26 *(Superadmin Rename, Radar Inactivity 3 Hari, & Student Progress Dashboard)*
+
+### 🌟 Fitur Baru & Pembaruan
+1. **Fitur Rename & Edit Data Lengkap Guru / Siswa (Khusus Superadmin)**:
+   - Superadmin dapat me-rename nama, memperbarui NISN/NIP, mengubah rombel kelas, atau memperbarui data staf dan siswa secara instan melalui modal `EditUserModal`.
+   - Perubahan langsung tersinkronisasi realtime ke Supabase Cloud (`siswa` dan `staf_sekolah`) serta lokal store.
+2. **Radar & Laporan Siswa Tidak Mengisi Jurnal 3 Hari Berturut-turut**:
+   - Deteksi otomatis siswa pasif yang tidak memiliki satupun entri selama 3 hari terakhir secara berturut-turut.
+   - Dilengkapi **sebaran per 18 kelas (7A–9F)**, rincian tanggal terakhir mengisi, dan tombol **Export Laporan Excel (.xlsx)**.
+   - Akses menyeluruh lintas role: **Superadmin**, **Kepala Sekolah**, **Kesiswaan & BK**, **Waka Kurikulum**, serta **Wali Kelas** (dengan *Alert Warning Card* khusus kelasnya).
+3. **Dashboard Gambaran Lengkap Progress Siswa (`StudentProgressOverview`)**:
+   - Visualisasi distribusi tingkat kepatuhan siswa (🌟 *7/7 Tuntas Sempurna*, 🟢 *5-6 Sangat Aktif*, 🟡 *3-4 Cukup Aktif*, 🔴 *Belum Mengisi*).
+   - Capaian partisipasi per 7 Kebiasaan Resmi Kemendikdasmen.
+   - Peringkat & persentase kepatuhan 18 rombongan belajar (7A s.d 9F).
+4. **Refleksi Literasi Gemar Belajar (Wajib Min. 100 Kata)**:
+   - Menerapkan validasi wajib cerita refleksi minimal 100 kata pada kebiasaan #5 (Gemar Belajar) dengan *live word counter badge*, *progress bar*, dan pemantik kalimat singkat.
+
+---
+
 ## [v0.6.0] - 2026-08-26 *(Multi-Period Aggregation & Hall of Fame)*
 
 ### 🌟 Fitur Baru & Peningkatan Strategis

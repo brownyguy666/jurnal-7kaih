@@ -15,7 +15,10 @@ import {
   RotateCcw,
   KeyRound,
   Eye,
-  EyeOff
+  EyeOff,
+  Trophy,
+  Edit2,
+  Pencil
 } from 'lucide-react';
 import { Kebiasaan, Kelas, Siswa, StafSekolah, EntriJurnal } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
@@ -25,19 +28,19 @@ import { DataImportSiswaModal } from './DataImportSiswaModal';
 import { DataImportStafModal } from './DataImportStafModal';
 import { KebiasaanConfigModal } from './KebiasaanConfigModal';
 import { PasswordManagerModal } from './PasswordManagerModal';
+import { EditUserModal } from './EditUserModal';
 import { ClassReportModal } from './ClassReportModal';
 import { ClassComparisonTable } from '../pejabat/ClassComparisonTable';
-import { SchoolStatsOverview } from '../pejabat/SchoolStatsOverview';
 import { ArahanWaliKelasModal } from '../pejabat/ArahanWaliKelasModal';
 import { SuperadminLeaderboardView } from './SuperadminLeaderboardView';
-import { Trophy } from 'lucide-react';
+import { StudentProgressOverview } from '../common/StudentProgressOverview';
 
 interface SuperadminDashboardProps {
   staf: StafSekolah;
 }
 
 export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }) => {
-  const [activeTab, setActiveTab] = useState<'leaderboard' | 'siswa' | 'staf' | 'kebiasaan' | 'monitoring'>('leaderboard');
+  const [activeTab, setActiveTab] = useState<'leaderboard' | 'monitoring' | 'siswa' | 'staf' | 'kebiasaan'>('leaderboard');
   const todayStr = getTodayDateString();
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
 
@@ -62,8 +65,12 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
   const [isArahanModalOpen, setIsArahanModalOpen] = useState(false);
   const [targetClassForArahan, setTargetClassForArahan] = useState('');
   
-  // Password Manager Modal & Class Report Modal
+  // Password Manager Modal & Class Report Modal & Edit User Modal
   const [selectedUserForPassword, setSelectedUserForPassword] = useState<{
+    type: 'siswa' | 'staf';
+    data: Siswa | StafSekolah;
+  } | null>(null);
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<{
     type: 'siswa' | 'staf';
     data: Siswa | StafSekolah;
   } | null>(null);
@@ -108,24 +115,25 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
     }));
   };
 
-  const getFormattedDobPassword = (dobStr?: string) => {
-    if (!dobStr) return '01012011';
+  // Helper konversi Tanggal Lahir -> Format Password DDMMYYYY
+  const getFormattedDobPassword = (dob?: string) => {
+    if (!dob) return '01012011';
     try {
-      const parts = dobStr.split('-');
-      if (parts.length === 3) {
-        return `${parts[2]}${parts[1]}${parts[0]}`;
+      const [yyyy, mm, dd] = dob.split('-');
+      if (yyyy && mm && dd) {
+        return `${dd}${mm}${yyyy}`;
       }
-    } catch {
+    } catch (_) {
       // fallback
     }
-    return dobStr.replace(/\D/g, '');
+    return dob.replace(/[^0-9]/g, '');
   };
 
   // Filtered Siswa
   const filteredSiswa = siswaList.filter((s) => {
-    const matchSearch = s.nama.toLowerCase().includes(searchSiswa.toLowerCase()) || s.nisn.includes(searchSiswa);
     const matchKelas = filterKelasSiswa === 'all' || s.kelas_id === filterKelasSiswa;
-    return matchSearch && matchKelas;
+    const matchSearch = s.nama.toLowerCase().includes(searchSiswa.toLowerCase()) || s.nisn.includes(searchSiswa);
+    return matchKelas && matchSearch;
   });
 
   // Filtered Staf
@@ -146,7 +154,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
             Panel Kendali Superadmin SMPN 2 Glagah
           </h2>
           <p className="text-xs text-purple-200/80 mt-1 max-w-2xl">
-            Kelola data 563 Siswa, 22 Pendidik & Staf, lihat serta ubah password, periksa laporan per kelas, dan konfigurasi 7 Kebiasaan Resmi Kemendikdasmen.
+            Kelola data 563 Siswa, 22 Pendidik & Staf, rename data, lihat serta ubah password, pantau radar siswa tidak aktif 3 hari, dan periksa laporan 18 kelas.
           </p>
         </div>
 
@@ -219,31 +227,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
           }`}
         >
           <Trophy className="w-4 h-4 text-amber-500 fill-amber-500" />
-          <span>🏆 Peringkat & Grafik Analitik</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('siswa')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'siswa'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>Kelola & Password Siswa ({siswaList.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('staf')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
-            activeTab === 'staf'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-          }`}
-        >
-          <Briefcase className="w-4 h-4" />
-          <span>Kelola & Password Staf ({stafList.length})</span>
+          <span>🏆 Leaderboard & Prestasi</span>
         </button>
 
         <button
@@ -255,7 +239,31 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Monitoring & Report 18 Kelas</span>
+          <span>📊 Progress Siswa & Radar 3 Hari</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('siswa')}
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'siswa'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>Kelola, Rename & Password Siswa ({siswaList.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('staf')}
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'staf'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Briefcase className="w-4 h-4" />
+          <span>Kelola, Rename & Password Staf ({stafList.length})</span>
         </button>
 
         <button
@@ -271,7 +279,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         </button>
       </div>
 
-      {/* TAB 0: LEADERBOARD & GRAFIK ANALITIK */}
+      {/* TAB 0: LEADERBOARD */}
       {activeTab === 'leaderboard' && (
         <SuperadminLeaderboardView
           kelasList={kelasList}
@@ -286,20 +294,56 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         />
       )}
 
-      {/* TAB 1: KELOLA & PASSWORD SISWA */}
+      {/* TAB 1: MONITORING & PROGRESS OVERVIEW + RADAR 3 HARI */}
+      {activeTab === 'monitoring' && (
+        <div className="space-y-6">
+          <StudentProgressOverview
+            entries={entries}
+            kelasList={kelasList}
+            siswaList={siswaList}
+            stafList={stafList}
+            kebiasaanList={kebiasaanList}
+            selectedDate={selectedDate}
+            onOpenArahanModal={(kId) => {
+              setTargetClassForArahan(kId);
+              setIsArahanModalOpen(true);
+            }}
+          />
+
+          <ClassComparisonTable
+            kelasList={kelasList}
+            siswaList={siswaList}
+            entries={entries}
+            stafList={stafList}
+            selectedDate={selectedDate}
+            onOpenArahanModal={(kId) => {
+              setTargetClassForArahan(kId);
+              setIsArahanModalOpen(true);
+            }}
+            onDrillDownClass={(kId) => {
+              const targetK = kelasList.find((c) => c.id === kId);
+              if (targetK) {
+                setSelectedClassForReport(targetK);
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* TAB 2: KELOLA SISWA (RENAME & PASSWORD) */}
       {activeTab === 'siswa' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              {/* Filter Kelas */}
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-2xl text-xs font-bold text-slate-700">
-                <Filter className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1">
+              {/* Filter Rombel / Kelas */}
+              <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
+                <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 <select
                   value={filterKelasSiswa}
                   onChange={(e) => setFilterKelasSiswa(e.target.value)}
-                  className="bg-transparent focus:outline-none cursor-pointer"
+                  className="bg-transparent focus:outline-none cursor-pointer font-bold"
                 >
-                  <option value="all">Semua Kelas (18 Kelas)</option>
+                  <option value="all">Semua Rombel (18 Kelas)</option>
                   {kelasList.map((k) => (
                     <option key={k.id} value={k.id}>
                       Kelas {k.nama_kelas}
@@ -331,7 +375,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
             </button>
           </div>
 
-          {/* Tabel Siswa dengan Kolom Password & Ganti Password */}
+          {/* Tabel Siswa */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
@@ -343,7 +387,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
                     <th className="py-3 px-4 text-center">Kelas</th>
                     <th className="py-3 px-4">Tanggal Lahir</th>
                     <th className="py-3 px-4 text-center">Password Login (DDMMYYYY)</th>
-                    <th className="py-3 px-4 text-center">Aksi</th>
+                    <th className="py-3 px-4 text-center">Aksi Manajemen</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -377,14 +421,24 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
                           </div>
                         </td>
                         <td className="py-2.5 px-4 text-center">
-                          <button
-                            onClick={() => setSelectedUserForPassword({ type: 'siswa', data: s })}
-                            className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] border border-indigo-200 transition flex items-center gap-1 mx-auto active:scale-95"
-                            title="Lihat atau Ganti Password Siswa"
-                          >
-                            <KeyRound className="w-3.5 h-3.5" />
-                            <span>Ganti Password</span>
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedUserForEdit({ type: 'siswa', data: s })}
+                              className="px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-[11px] border border-purple-200 transition flex items-center gap-1 active:scale-95"
+                              title="Edit / Rename Siswa"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                              <span>Rename</span>
+                            </button>
+                            <button
+                              onClick={() => setSelectedUserForPassword({ type: 'siswa', data: s })}
+                              className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] border border-indigo-200 transition flex items-center gap-1 active:scale-95"
+                              title="Lihat atau Ganti Password Siswa"
+                            >
+                              <KeyRound className="w-3.5 h-3.5" />
+                              <span>Password</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -401,7 +455,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         </div>
       )}
 
-      {/* TAB 2: KELOLA & PASSWORD STAF */}
+      {/* TAB 3: KELOLA STAF (RENAME & PASSWORD) */}
       {activeTab === 'staf' && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-slate-200 shadow-sm">
@@ -426,7 +480,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
             </button>
           </div>
 
-          {/* Tabel Staf dengan Password & Ganti Password */}
+          {/* Tabel Staf */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
@@ -438,7 +492,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
                     <th className="py-3 px-4">Role / Jabatan</th>
                     <th className="py-3 px-4 text-center">Kelas Binaan</th>
                     <th className="py-3 px-4 text-center">Password Login</th>
-                    <th className="py-3 px-4 text-center">Aksi</th>
+                    <th className="py-3 px-4 text-center">Aksi Manajemen</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -480,14 +534,24 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
                           </div>
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <button
-                            onClick={() => setSelectedUserForPassword({ type: 'staf', data: st })}
-                            className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] border border-indigo-200 transition flex items-center gap-1 mx-auto active:scale-95"
-                            title="Lihat atau Ganti Password Staf"
-                          >
-                            <KeyRound className="w-3.5 h-3.5" />
-                            <span>Ganti Password</span>
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedUserForEdit({ type: 'staf', data: st })}
+                              className="px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-[11px] border border-purple-200 transition flex items-center gap-1 active:scale-95"
+                              title="Edit / Rename Data Staf"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                              <span>Rename</span>
+                            </button>
+                            <button
+                              onClick={() => setSelectedUserForPassword({ type: 'staf', data: st })}
+                              className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] border border-indigo-200 transition flex items-center gap-1 active:scale-95"
+                              title="Lihat atau Ganti Password Staf"
+                            >
+                              <KeyRound className="w-3.5 h-3.5" />
+                              <span>Password</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -496,36 +560,6 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
               </table>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* TAB 3: MONITORING & REPORT 18 KELAS */}
-      {activeTab === 'monitoring' && (
-        <div className="space-y-6">
-          <SchoolStatsOverview
-            kebiasaanList={kebiasaanList}
-            entries={entries}
-            siswaList={siswaList}
-            selectedDate={selectedDate}
-          />
-
-          <ClassComparisonTable
-            kelasList={kelasList}
-            siswaList={siswaList}
-            entries={entries}
-            stafList={stafList}
-            selectedDate={selectedDate}
-            onOpenArahanModal={(kId) => {
-              setTargetClassForArahan(kId);
-              setIsArahanModalOpen(true);
-            }}
-            onDrillDownClass={(kId) => {
-              const targetK = kelasList.find((c) => c.id === kId);
-              if (targetK) {
-                setSelectedClassForReport(targetK);
-              }
-            }}
-          />
         </div>
       )}
 
@@ -548,41 +582,41 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {kebiasaanList.map((k) => (
               <div
                 key={k.id}
-                className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between"
+                className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3 flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-xs font-extrabold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
-                      Kebiasaan #{k.urutan}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                      Urutan #{k.urutan}
                     </span>
-                    <button
-                      onClick={() => setSelectedHabitForConfig(k)}
-                      className="px-3 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200 transition flex items-center gap-1"
-                    >
-                      <Settings2 className="w-3.5 h-3.5" />
-                      <span>Ubah Aturan</span>
-                    </button>
+                    <span className="text-xs font-semibold text-slate-400">
+                      Maks: {k.maks_input_harian}x / hari
+                    </span>
                   </div>
-
-                  <h4 className="font-bold text-slate-800 text-base">{k.nama}</h4>
-                  <p className="text-xs text-slate-500 mt-1">{k.deskripsi}</p>
+                  <h4 className="font-bold text-slate-800 text-base mb-1">{k.nama}</h4>
+                  <p className="text-xs text-slate-500 line-clamp-2">{k.deskripsi}</p>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 text-xs text-slate-500 space-y-1">
-                  <div className="flex justify-between">
-                    <span>Rentang Waktu:</span>
-                    <span className="font-semibold text-slate-700">
-                      {k.jam_mulai ? `${k.jam_mulai} - ${k.jam_selesai}` : 'Fleksibel 24 Jam'}
-                    </span>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <div className="text-xs text-slate-600">
+                    {k.jam_mulai && k.jam_selesai ? (
+                      <span>{k.jam_mulai} - {k.jam_selesai} (+{k.toleransi_menit}m)</span>
+                    ) : (
+                      <span className="text-slate-400 italic">Fleksibel / Sesuai Waktu</span>
+                    )}
                   </div>
-                  <div className="flex justify-between">
-                    <span>Batas Input Harian:</span>
-                    <span className="font-semibold text-slate-700">{k.maks_input_harian}x / hari</span>
-                  </div>
+
+                  <button
+                    onClick={() => setSelectedHabitForConfig(k)}
+                    className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs transition flex items-center gap-1"
+                  >
+                    <Settings2 className="w-4 h-4" />
+                    <span>Konfigurasi</span>
+                  </button>
                 </div>
               </div>
             ))}
@@ -616,6 +650,14 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         isOpen={Boolean(selectedUserForPassword)}
         targetUser={selectedUserForPassword}
         onClose={() => setSelectedUserForPassword(null)}
+        onSuccess={loadAllData}
+      />
+
+      <EditUserModal
+        isOpen={Boolean(selectedUserForEdit)}
+        targetUser={selectedUserForEdit}
+        kelasList={kelasList}
+        onClose={() => setSelectedUserForEdit(null)}
         onSuccess={loadAllData}
       />
 
