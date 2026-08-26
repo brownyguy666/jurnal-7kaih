@@ -81,7 +81,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Password default: DDMMYYYY dari tanggal_lahir
    */
   const loginSiswa = async (nisn: string, passwordInput: string): Promise<{ success: boolean; message?: string }> => {
-    setIsLoading(true);
     try {
       const allSiswa = await JournalService.getSiswa();
       const student = allSiswa.find((s) => s.nisn === nisn.trim());
@@ -107,8 +106,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     } catch (err: any) {
       return { success: false, message: err.message || 'Terjadi kesalahan saat login' };
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -117,7 +114,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * Password default: Tanggal Lahir (DDMMYYYY) dari staf.tanggal_lahir
    */
   const loginStaf = async (nipOrNik: string, passwordInput: string): Promise<{ success: boolean; message?: string }> => {
-    setIsLoading(true);
     try {
       const cleanInput = nipOrNik.trim().toLowerCase();
 
@@ -175,8 +171,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: true };
     } catch (err: any) {
       return { success: false, message: err.message || 'Terjadi kesalahan saat login' };
-    } finally {
-      setIsLoading(false);
     }
   };
 

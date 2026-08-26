@@ -25,8 +25,9 @@ interface ErrorModalState {
 }
 
 export const LoginView: React.FC = () => {
-  const { loginSiswa, loginStaf, isLoading } = useAuth();
+  const { loginSiswa, loginStaf } = useAuth();
   const [activeTab, setActiveTab] = useState<'siswa' | 'staf'>('siswa');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Siswa state
   const [nisn, setNisn] = useState('');
@@ -70,25 +71,30 @@ export const LoginView: React.FC = () => {
       return;
     }
 
-    const res = await loginSiswa(nisn.trim(), siswaPassword);
-    if (!res.success) {
-      const msg = res.message || 'Gagal login sebagai Siswa.';
-      setErrorMessage(msg);
+    try {
+      setIsSubmitting(true);
+      const res = await loginSiswa(nisn.trim(), siswaPassword);
+      if (!res.success) {
+        const msg = res.message || 'Gagal login sebagai Siswa.';
+        setErrorMessage(msg);
 
-      const isUserNotFound = msg.toLowerCase().includes('username tidak ditemukan') || msg.toLowerCase().includes('nisn tidak terdaftar');
+        const isUserNotFound = msg.toLowerCase().includes('username tidak ditemukan') || msg.toLowerCase().includes('nisn tidak terdaftar');
 
-      setErrorModal({
-        isOpen: true,
-        type: isUserNotFound ? 'username_not_found' : 'wrong_password',
-        title: isUserNotFound ? 'Username Tidak Ditemukan' : 'Password Siswa Salah',
-        message: isUserNotFound 
-          ? `NISN "${nisn.trim()}" tidak ditemukan dalam sistem database siswa SMPN 2 Glagah.`
-          : 'Password yang Anda masukkan tidak sesuai dengan data terdaftar.',
-        guide: isUserNotFound
-          ? 'Silakan periksa kembali nomor NISN Anda. Pastikan angka yang dimasukkan sudah benar tanpa ada spasi atau karakter lain.'
-          : 'Silakan tanyakan kepada bapak/ibu wali kelas atau guru Anda jika Anda lupa password.',
-        role: 'siswa'
-      });
+        setErrorModal({
+          isOpen: true,
+          type: isUserNotFound ? 'username_not_found' : 'wrong_password',
+          title: isUserNotFound ? 'Username Tidak Ditemukan' : 'Password Siswa Salah',
+          message: isUserNotFound 
+            ? `NISN "${nisn.trim()}" tidak ditemukan dalam sistem database siswa SMPN 2 Glagah.`
+            : 'Password yang Anda masukkan tidak sesuai dengan data terdaftar.',
+          guide: isUserNotFound
+            ? 'Silakan periksa kembali nomor NISN Anda. Pastikan angka yang dimasukkan sudah benar tanpa ada spasi atau karakter lain.'
+            : 'Silakan tanyakan kepada bapak/ibu wali kelas atau guru Anda jika Anda lupa password.',
+          role: 'siswa'
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -123,25 +129,30 @@ export const LoginView: React.FC = () => {
       return;
     }
 
-    const res = await loginStaf(nipNik.trim(), stafPassword);
-    if (!res.success) {
-      const msg = res.message || 'Gagal login sebagai Pendidik/Staf.';
-      setErrorMessage(msg);
+    try {
+      setIsSubmitting(true);
+      const res = await loginStaf(nipNik.trim(), stafPassword);
+      if (!res.success) {
+        const msg = res.message || 'Gagal login sebagai Pendidik/Staf.';
+        setErrorMessage(msg);
 
-      const isUserNotFound = msg.toLowerCase().includes('username tidak ditemukan') || msg.toLowerCase().includes('tidak ditemukan dalam data');
+        const isUserNotFound = msg.toLowerCase().includes('username tidak ditemukan') || msg.toLowerCase().includes('tidak ditemukan dalam data');
 
-      setErrorModal({
-        isOpen: true,
-        type: isUserNotFound ? 'username_not_found' : 'wrong_password',
-        title: isUserNotFound ? 'Username Tidak Ditemukan' : 'Password Pendidik / Admin Salah',
-        message: isUserNotFound 
-          ? `Username / NIP / NIK "${nipNik.trim()}" tidak ditemukan dalam data pendidik SMPN 2 Glagah.`
-          : 'Password yang Anda masukkan tidak cocok dengan akun ini.',
-        guide: isUserNotFound
-          ? 'Silakan periksa kembali penulisan NIP, NIK, atau Username Anda. Pastikan tidak ada kesalahan ketik.'
-          : 'Silakan menghubungi Superadmin sekolah untuk memeriksa atau mereset password akun Anda.',
-        role: 'staf'
-      });
+        setErrorModal({
+          isOpen: true,
+          type: isUserNotFound ? 'username_not_found' : 'wrong_password',
+          title: isUserNotFound ? 'Username Tidak Ditemukan' : 'Password Pendidik / Admin Salah',
+          message: isUserNotFound 
+            ? `Username / NIP / NIK "${nipNik.trim()}" tidak ditemukan dalam data pendidik SMPN 2 Glagah.`
+            : 'Password yang Anda masukkan tidak cocok dengan akun ini.',
+          guide: isUserNotFound
+            ? 'Silakan periksa kembali penulisan NIP, NIK, atau Username Anda. Pastikan tidak ada kesalahan ketik.'
+            : 'Silakan menghubungi Superadmin sekolah untuk memeriksa atau mereset password akun Anda.',
+          role: 'staf'
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -298,10 +309,10 @@ export const LoginView: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
+                  disabled={isSubmitting}
+                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                 >
-                  <span>{isLoading ? 'Memproses...' : 'Masuk sebagai Siswa'}</span>
+                  <span>{isSubmitting ? 'Memproses...' : 'Masuk sebagai Siswa'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
@@ -352,10 +363,10 @@ export const LoginView: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-purple-600/20 transition flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
+                  disabled={isSubmitting}
+                  className="w-full py-3 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-purple-600/20 transition flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 cursor-pointer"
                 >
-                  <span>{isLoading ? 'Memproses...' : 'Masuk sebagai Pendidik / Admin'}</span>
+                  <span>{isSubmitting ? 'Memproses...' : 'Masuk sebagai Pendidik / Admin'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
