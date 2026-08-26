@@ -147,9 +147,30 @@ export const PortofolioLiterasiView: React.FC<PortofolioLiterasiViewProps> = ({
                   )}
 
                   {/* Catatan / Refleksi Siswa */}
-                  <p className="text-xs text-slate-600 leading-relaxed italic bg-slate-50/50 p-2 rounded-xl">
-                    "{entry.catatan || 'Belajar mandiri dan membaca materi pelajaran.'}"
-                  </p>
+                  {(() => {
+                    const text = entry.catatan || 'Belajar mandiri dan membaca materi pelajaran.';
+                    const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+                    return (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="font-bold text-indigo-900 flex items-center gap-1">
+                            <BookOpen className="w-3 h-3 text-indigo-600" />
+                            <span>Cerita Refleksi</span>
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full font-bold border text-[10px] ${
+                            wordCount >= 100 
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}>
+                            {wordCount} kata
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-700 leading-relaxed italic bg-indigo-50/40 p-3 rounded-2xl border border-indigo-100">
+                          "{text}"
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Footer with Photo Preview Button */}

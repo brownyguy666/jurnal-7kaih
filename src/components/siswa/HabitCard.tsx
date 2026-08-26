@@ -158,6 +158,19 @@ export const HabitCard: React.FC<HabitCardProps> = ({
           );
         })()}
 
+        {/* Info Khusus Kebiasaan #5 (Gemar Belajar): Wajib Cerita Min. 100 Kata */}
+        {kebiasaan.id === 5 && (
+          <div className="p-2.5 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 text-indigo-950 text-[11px] mb-3 flex items-start gap-2">
+            <BookOpen className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold block text-indigo-900">Wajib Refleksi Cerita (Min. 100 Kata):</span>
+              <span className="text-[10px] text-indigo-700/80 leading-tight block mt-0.5">
+                Ceritakan rangkuman materi pelajaran hari ini atau persiapan materi pelajaran untuk esok hari.
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* List Foto Bukti yang sudah diisi hari ini */}
         {entries.length > 0 && (
           <div className="space-y-2 mb-4 pt-2 border-t border-slate-200/60">

@@ -74,7 +74,7 @@ export const INITIAL_KEBIASAAN: Kebiasaan[] = [
     id: 5,
     nama: 'Gemar Belajar',
     urutan: 5,
-    deskripsi: 'Membaca buku pengetahuan, mengulang materi sekolah, atau belajar hal baru.',
+    deskripsi: 'Membaca buku pengetahuan, mengulang materi sekolah, atau persiapan pelajaran esok hari disertai cerita refleksi minimal 100 kata.',
     jam_mulai: null,
     jam_selesai: null,
     toleransi_menit: 0,

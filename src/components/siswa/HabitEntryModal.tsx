@@ -8,7 +8,11 @@ import {
   Clock, 
   Sparkles, 
   Info,
-  Loader2
+  Loader2,
+  BookOpen,
+  Lightbulb,
+  PenTool,
+  BookMarked
 } from 'lucide-react';
 import { EntriJurnal, Kebiasaan, SumberFoto } from '../../types/database';
 import { analyzePhotoExif } from '../../lib/exifHelper';
@@ -181,6 +185,16 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
 
     if (kebiasaan.butuh_nama_kegiatan && !namaKegiatan.trim()) {
       setErrorMessage('Silakan isi atau pilih nama kegiatan bermasyarakat!');
+      return;
+    }
+
+    // Validasi Khusus Kebiasaan #5 (Gemar Belajar): Wajib minimal 100 kata refleksi
+    const isGemarBelajar = kebiasaan.urutan === 5 || kebiasaan.nama.toLowerCase().includes('belajar');
+    const wordCount = catatan.trim().split(/\s+/).filter(Boolean).length;
+    if (isGemarBelajar && wordCount < 100) {
+      setErrorMessage(
+        `Jurnal Gemar Belajar mewajibkan cerita refleksi minimal 100 kata (saat ini baru ${wordCount} kata). Ceritakan lebih lengkap materi pelajaran hari ini atau persiapan materi yang kamu baca untuk esok hari!`
+      );
       return;
     }
 
@@ -558,19 +572,147 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
             </div>
           )}
 
-          {/* 4. Catatan Refleksi (Opsional) */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Catatan / Refleksi Diri (Opsional)
-            </label>
-            <textarea
-              rows={2}
-              value={catatan}
-              onChange={(e) => setCatatan(e.target.value)}
-              placeholder="Ceritakan perasaan atau hal bermanfaat yang kamu rasakan..."
-              className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-            />
-          </div>
+          {/* 4. Catatan Refleksi (Khusus Gemar Belajar: Wajib Minimal 100 Kata) */}
+          {(() => {
+            const isGemarBelajar = kebiasaan.urutan === 5 || kebiasaan.nama.toLowerCase().includes('belajar');
+            const wordCount = catatan.trim().split(/\s+/).filter(Boolean).length;
+            const percentage = Math.min(100, Math.round((wordCount / 100) * 100));
+
+            if (isGemarBelajar) {
+              return (
+                <div className="space-y-3 p-4 rounded-2xl bg-linear-to-br from-indigo-50/90 via-purple-50/60 to-white border-2 border-indigo-200 shadow-xs animate-fade-in">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
+                        <BookOpen className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-extrabold text-indigo-950">
+                          Cerita Refleksi Belajar (Wajib Min. 100 Kata)
+                        </label>
+                        <span className="text-[11px] text-indigo-700/80">
+                          Ceritakan pelajaran hari ini atau persiapan esok hari
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Live Word Counter Badge */}
+                    <div className={`px-2.5 py-1 rounded-full text-xs font-bold border transition-all flex items-center gap-1.5 shrink-0 ${
+                      wordCount >= 100
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs'
+                        : 'bg-amber-100 text-amber-900 border-amber-300'
+                    }`}>
+                      {wordCount >= 100 ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{wordCount} / 100 kata (Tercapai!)</span>
+                        </>
+                      ) : (
+                        <>
+                          <PenTool className="w-3.5 h-3.5 text-amber-700" />
+                          <span>{wordCount} / 100 kata</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Word Count Progress Bar */}
+                  <div className="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-300 rounded-full ${
+                        wordCount >= 100 
+                          ? 'bg-emerald-500' 
+                          : wordCount >= 50 
+                          ? 'bg-amber-500' 
+                          : 'bg-indigo-500'
+                      }`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+
+                  {/* Template Pilihan Pemantik Refleksi */}
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[11px] font-bold text-indigo-900 flex items-center gap-1">
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Pilihan Topik & Panduan Kerangka Cerita:</span>
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCatatan(
+                            "Hari ini saya telah mempelajari materi tentang [Tuliskan Mata Pelajaran & Topik, contoh: Matematika - Persamaan Linier]. Konsep penting yang saya pelajari adalah [Jelaskan apa inti materinya]. Awalnya saya sempat merasa kesulitan saat [Tuliskan hal yang sempat membingungkan], namun setelah mencoba mengerjakan latihan soal dan membaca kembali catatan, saya berhasil memahaminya. Pelajaran ini sangat bermanfaat karena dapat melatih kemampuan berpikir logis dan teliti. Saya merasa senang karena bisa menguasai materi hari ini dengan baik."
+                          );
+                        }}
+                        className="text-left p-2.5 rounded-xl bg-white/95 hover:bg-white text-indigo-900 border border-indigo-200 hover:border-indigo-400 text-[11px] font-medium transition shadow-2xs group cursor-pointer"
+                      >
+                        <span className="font-bold flex items-center gap-1 text-indigo-700 group-hover:text-indigo-900">
+                          <BookMarked className="w-3.5 h-3.5" />
+                          <span>1. Pelajaran Hari Ini</span>
+                        </span>
+                        <span className="text-slate-500 text-[10px] block mt-0.5 leading-tight">
+                          Materi yang baru dipelajari, rumus/konsep yang dipahami, dan tantangan yang diselesaikan.
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCatatan(
+                            "Malam ini saya mempersiapkan diri untuk mata pelajaran esok hari, yaitu [Tuliskan Mata Pelajaran & Bab, contoh: IPA - Sistem Pencernaan Manusia]. Saya telah membaca buku paket bab tersebut dan mencatat poin-poin utama seperti [Sebutkan fungsi organ / materi penting]. Dari bacaan ini, saya mendapatkan banyak wawasan baru. Ada beberapa bagian menarik yang ingin saya tanyakan kepada bapak/ibu guru di kelas besok agar pemahaman saya semakin mendalam. Dengan persiapan ini, saya merasa lebih siap dan percaya diri mengikuti pelajaran besok."
+                          );
+                        }}
+                        className="text-left p-2.5 rounded-xl bg-white/95 hover:bg-white text-purple-900 border border-purple-200 hover:border-purple-400 text-[11px] font-medium transition shadow-2xs group cursor-pointer"
+                      >
+                        <span className="font-bold flex items-center gap-1 text-purple-700 group-hover:text-purple-900">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>2. Persiapan Esok Hari</span>
+                        </span>
+                        <span className="text-slate-500 text-[10px] block mt-0.5 leading-tight">
+                          Materi yang dibaca untuk jadwal besok, poin penting yang dicatat, dan pertanyaan untuk guru.
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <textarea
+                    rows={5}
+                    value={catatan}
+                    onChange={(e) => setCatatan(e.target.value)}
+                    placeholder="Ceritakan dengan bahasamu sendiri minimal 100 kata (misal: apa mata pelajarannya, apa yang kamu pahami, tantangan yang kamu selesaikan, atau persiapan untuk esok hari)..."
+                    className="w-full p-3.5 rounded-xl border border-indigo-200 text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-normal leading-relaxed text-slate-800"
+                  />
+
+                  {wordCount < 100 ? (
+                    <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-900 flex items-center justify-between">
+                      <span>⚠️ Masih kurang <strong>{100 - wordCount} kata</strong> lagi.</span>
+                      <span className="font-bold text-amber-700">{percentage}% selesai</span>
+                    </div>
+                  ) : (
+                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-800 font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Hebat! Cerita refleksimu telah mencapai {wordCount} kata dan memenuhi syarat pengiriman jurnal.</span>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Catatan / Refleksi Diri (Opsional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={catatan}
+                  onChange={(e) => setCatatan(e.target.value)}
+                  placeholder="Ceritakan perasaan atau hal bermanfaat yang kamu rasakan..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+            );
+          })()}
 
           {/* Footer Submit Button */}
           <div className="pt-3 border-t border-slate-100 flex gap-3">

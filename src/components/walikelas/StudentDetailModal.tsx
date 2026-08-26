@@ -11,7 +11,8 @@ import {
   ShieldCheck,
   Clock,
   Printer,
-  FileText
+  FileText,
+  BookOpen
 } from 'lucide-react';
 import { EntriJurnal, Feedback, Kebiasaan, Siswa } from '../../types/database';
 import { StatusBadge, FlagBadge } from '../common/StatusBadge';
@@ -153,9 +154,26 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
 
                       {/* Catatan Siswa */}
                       {entry.catatan && (
-                        <p className="text-[11px] text-slate-600 italic bg-slate-50 p-2 rounded-lg line-clamp-2">
-                          "{entry.catatan}"
-                        </p>
+                        entry.kebiasaan_id === 5 ? (
+                          <div className="p-3 rounded-xl bg-indigo-50/80 border border-indigo-200 text-xs space-y-1.5">
+                            <div className="flex items-center justify-between text-[10px] font-bold text-indigo-900">
+                              <span className="flex items-center gap-1">
+                                <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                                <span>Refleksi Gemar Belajar</span>
+                              </span>
+                              <span className="px-1.5 py-0.2 rounded bg-indigo-200/60 text-indigo-800">
+                                {entry.catatan.trim().split(/\s+/).filter(Boolean).length} kata
+                              </span>
+                            </div>
+                            <p className="text-slate-700 italic text-[11px] leading-relaxed">
+                              "{entry.catatan}"
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-slate-600 italic bg-slate-50 p-2 rounded-lg line-clamp-2">
+                            "{entry.catatan}"
+                          </p>
+                        )
                       )}
 
                       {/* Action Bar (View Photo & Delete Entry for moderation) */}

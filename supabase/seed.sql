@@ -12,7 +12,7 @@ insert into kebiasaan (
 (2, 'Beribadah', 2, 'Melaksanakan sholat 5 waktu secara tertib dan khusyuk.', null, null, 0, 5, true, ARRAY['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya']::text[], false, 'HeartHandshake', 'emerald'),
 (3, 'Berolahraga', 3, 'Melakukan olahraga atau peregangan fisik minimal 15-30 menit.', null, null, 0, 1, false, null, false, 'Activity', 'blue'),
 (4, 'Makan Sehat dan Bergizi', 4, 'Sarapan dan makan makanan bergizi seimbang (sayur, buah, protein, karbohidrat).', null, null, 0, 2, false, null, false, 'Utensils', 'green'),
-(5, 'Gemar Belajar', 5, 'Membaca buku pengetahuan, mengulang materi sekolah, atau belajar hal baru.', null, null, 0, 1, false, null, false, 'BookOpen', 'indigo'),
+(5, 'Gemar Belajar', 5, 'Membaca buku pengetahuan, mengulang materi sekolah, atau persiapan pelajaran esok hari disertai cerita refleksi minimal 100 kata.', null, null, 0, 1, false, null, false, 'BookOpen', 'indigo'),
 (6, 'Bermasyarakat', 6, 'Membantu orang tua, gotong royong, atau berinteraksi santun dengan tetangga.', null, null, 0, 1, false, null, true, 'Users', 'purple'),
 (7, 'Tidur Cepat', 7, 'Tidur malam tepat waktu antara 20.00 s.d 22.00 WIB (toleransi s.d 22.15 WIB).', '20:00', '22:00', 15, 1, false, null, false, 'Moon', 'violet')
 on conflict (id) do update set
