@@ -12,7 +12,8 @@ import {
   Users,
   Eye,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Send
 } from 'lucide-react';
 import { EntriJurnal, Kelas, Siswa, StafSekolah, WarningStudentItem } from '../../types/database';
 import { getTodayDateString } from '../../lib/timeCalculator';
@@ -178,6 +179,33 @@ export const EarlyWarningRadar: React.FC<EarlyWarningRadarProps> = ({
     XLSX.writeFile(wb, `Laporan_Radar_Pembinaan_Siswa_SMPN2Glagah_${todayStr}.xlsx`);
   };
 
+  const handleCopyWhatsAppBroadcast = () => {
+    let msg = `*🚨 PERINGATAN PEMBINAAN SISWA PASIF - JURNAL 7 KAIH*\n`;
+    msg += `*SMP Negeri 2 Glagah • Tanggal:* ${todayStr}\n\n`;
+    msg += `Yth. Bapak/Ibu Wali Kelas 7A - 9F,\n`;
+    msg += `Berikut adalah rekap siswa yang terpantau pasif / tidak mengisi jurnal pembiasaan selama 3 hari berturut-turut atau lebih:\n\n`;
+
+    const groupedByClass: Record<string, WarningStudentItem[]> = {};
+    filteredWarnings.filter(w => w.kategoriWarning.startsWith('pasif')).forEach(item => {
+      if (!groupedByClass[item.namaKelas]) groupedByClass[item.namaKelas] = [];
+      groupedByClass[item.namaKelas].push(item);
+    });
+
+    Object.entries(groupedByClass).forEach(([kelasName, items]) => {
+      msg += `📌 *Kelas ${kelasName}* (Wali Kelas: ${items[0].waliKelasNama}):\n`;
+      items.forEach((it, idx) => {
+        msg += `  ${idx + 1}. ${it.siswa.nama} (NISN: ${it.siswa.nisn}) - Pasif ${it.hariTanpaEntriCount >= 7 ? 'Belum Pernah' : it.hariTanpaEntriCount + ' Hari'}\n`;
+      });
+      msg += `\n`;
+    });
+
+    msg += `_Mohon Bapak/Ibu Wali Kelas berkenan menindaklanjuti dan mengingatkan ananda/wali murid masing-masing. Terima kasih._\n\n`;
+    msg += `Salam Hormat,\n*Tim Kesiswaan / Pimpinan SMPN 2 Glagah*`;
+
+    navigator.clipboard.writeText(msg);
+    alert('✅ Pesan WhatsApp Broadcast Peringatan Siswa Pasif ke Wali Kelas berhasil disalin!');
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header Banner Kesiswaan */}
@@ -200,6 +228,15 @@ export const EarlyWarningRadar: React.FC<EarlyWarningRadarProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleCopyWhatsAppBroadcast}
+            className="px-4 py-2.5 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-md transition flex items-center gap-2 shrink-0 active:scale-95 cursor-pointer"
+            title="Salin Pesan Broadcast Peringatan untuk WhatsApp Group Wali Kelas"
+          >
+            <Send className="w-4 h-4" />
+            <span>Copy WA Broadcast</span>
+          </button>
+
           <button
             onClick={handleExportExcel}
             className="px-4 py-2.5 rounded-2xl bg-white text-rose-900 hover:bg-rose-50 font-bold text-xs shadow-md transition flex items-center gap-2 shrink-0 active:scale-95"

@@ -241,4 +241,24 @@ export interface PiagamData {
   skor: number | string;
 }
 
+export type KategoriSuara = 'curhat_pembiasaan' | 'keluhan_kendala' | 'ide_saran_aplikasi' | 'lainnya';
+
+export interface SuaraSiswa {
+  id: string;
+  siswa_id: string;
+  kelas_id?: string;
+  kategori: KategoriSuara;
+  judul: string;
+  isi: string;
+  tanggal: string; // YYYY-MM-DD
+  tanggapan?: string | null;
+  tanggapan_oleh_staf_id?: string | null;
+  tanggapan_at?: string | null;
+  created_at?: string;
+  // Join properties
+  siswa?: Siswa;
+  kelas?: Kelas;
+  staf_penanggap?: StafSekolah;
+}
+
 

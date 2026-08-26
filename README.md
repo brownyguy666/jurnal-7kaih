@@ -1,6 +1,6 @@
 # 🇮🇩 Jurnal 7 KAIH
 ### SMP Negeri 2 Glagah — Banyuwangi, Jawa Timur
-> **Versi: `v0.7.0` (Official Production)**  
+> **Versi: `v0.8.0` (Official Production)**  
 > Platform Web Pencatatan & Evaluasi Pembiasaan Karakter Luhur Peserta Didik Berbasis Cloud Database Realtime.
 
 ---
@@ -24,7 +24,7 @@ Sistem mencatat pembiasaan siswa dengan urutan baku resmi Kementerian Pendidikan
 2. **Beribadah** *(Sholat 5 Waktu: Subuh, Dzuhur, Ashar, Maghrib, Isya / Ibadah Keagamaan)*
 3. **Berolahraga** *(Minimal 15–30 menit pembiasaan fisik sehat)*
 4. **Makan Sehat dan Bergizi** *(Maksimal 2x input per hari)*
-5. **Gemar Belajar** *(Membaca buku, mengulang pelajaran, eksplorasi pengetahuan)*
+5. **Gemar Belajar** *(Membaca buku, mengulang pelajaran, eksplorasi pengetahuan, wajib cerita refleksi min. 100 kata)*
 6. **Bermasyarakat** *(Aktivitas gotong royong, sosial, membantu sesama dengan nama kegiatan)*
 7. **Tidur Cepat** *(Target Ideal: 20.00 – 22.00 WIB, batas toleransi s.d. 22.15 WIB)*
 
@@ -52,6 +52,7 @@ Sistem mencatat pembiasaan siswa dengan urutan baku resmi Kementerian Pendidikan
   - **Anti-Kecurangan EXIF**: Deteksi otomatis tanggal pengambilan foto asli (`DateTimeOriginal`) via `exifr`. Foto tangkapan layar/WhatsApp diberi tanda `flag_foto_mencurigakan` tanpa memblokir pengiriman.
   - **Kompresi Client-Side**: Otomatis dikompresi (< 1MB) sebelum diunggah ke cloud storage.
   - **Pesan Apresiasi Guru**: Menampilkan kartu notifikasi motivasi dan pesan pembinaan dari wali kelas/guru di dashboard utama.
+  - **Kotak Suara Siswa**: Form opsional untuk mengirimkan curhat pembiasaan, keluhan kendala teknis, atau ide inovasi aplikasi secara terlindungi/anonim ke bapak/ibu guru serta menerima balasan resmi.
 
 ### 2. 👨‍🏫 Wali Kelas (18 Rombel: 7A – 9F)
 - **Login**: Menggunakan **NIP / NIK / Username**.
@@ -61,6 +62,8 @@ Sistem mencatat pembiasaan siswa dengan urutan baku resmi Kementerian Pendidikan
   - Inspeksi detail entri jurnal, preview foto resolusi tinggi, dan metadata EXIF.
   - **Beri Feedback & Motivasi Siswa**: Tombol feedback cepat per siswa lengkap dengan pilihan template motivasi siap pakai.
   - **Moderasi & Hapus Entri**: Wali kelas dapat menghapus entri tidak valid disertai alasan wajib yang tercatat dalam audit log (`log_hapus`).
+  - **Banner Peringatan 3 Hari Pasif**: Deteksi siswa yang 3 hari berturut-turut belum mengisi jurnal dengan tombol **📢 Ingatkan Semua via WA** untuk menyalin template pengingat ke grup kelas/wali murid.
+  - **Kotak Suara Siswa (Anonim)**: Membaca curhat dan masukan siswa kelas binaan dalam mode tersamar serta memberikan tanggapan resmi.
   - **Export & Share**: Cetak laporan format Excel (`.xlsx`) via SheetJS atau bagikan rekap ke WhatsApp wali murid.
 
 ### 3. 🏛️ Pimpinan Sekolah (Kepala Sekolah, Waka Kurikulum, Kesiswaan)
@@ -69,15 +72,19 @@ Sistem mencatat pembiasaan siswa dengan urutan baku resmi Kementerian Pendidikan
 - **Fitur**:
   - **Executive Overview**: Pantau metrik kepatuhan 563 siswa di 18 rombel secara realtime.
   - **Arahan & Feedback Kelas**: Mengirimkan instruksi dan feedback resmi kepada wali kelas dengan 4 kategori (*Apresiasi*, *Evaluasi*, *Instruksi*, *Tindak Lanjut*).
+  - **Early Warning Radar & Copy WA Broadcast**: Memantau siswa pasif $\ge 3$ hari dan menyalin pesan peringatan broadcast langsung ke grup WhatsApp wali kelas.
+  - **Kotak Suara Siswa (Anonim)**: Memantau aspirasi dan keluhan seluruh siswa 18 kelas secara anonim dan meresponsnya.
   - **Laporan Drill-Down 18 Kelas (Ikon Mata 👁️)**: Membuka modal inspeksi detail rekapitulasi per kelas lengkap dengan foto bukti dan persentase kehadiran.
 
 ### 4. 🔑 Super Administrator
 - **Login**: `ajibaguskhoiri` / Password: `••••••`
 - **Fitur Tertinggi**:
+  - **Rename & Edit Data Lengkap**: Mengubah nama, NISN/NIP, dan kelas guru maupun siswa secara langsung.
   - **Password Manager**: Melihat semua password siswa & staf secara transparan (dengan *show/hide eye toggle*), menyalin password, serta mengganti/mereset password langsung ke database Supabase Cloud.
+  - **Audit Suara Siswa**: Membaca seluruh curhatan/ide siswa dengan tampilan nama asli dan NISN pengirim untuk tujuan pendampingan terarah & keamanan.
+  - **Evaluasi Progress & Date Range**: Analisis kepatuhan dengan kustomisasi tanggal mulai s.d. tanggal selesai serta bulk peringatan ke seluruh wali kelas.
   - **Import Massal Dapodik/Excel**: Unggah dan sinkronkan data siswa & staf baru via file Excel/CSV dengan pemetaan kolom cerdas.
   - **Konfigurasi 7 Kebiasaan**: Kustomisasi jam target, toleransi waktu, dan kuota input harian untuk setiap butir kebiasaan.
-  - **Monitoring 18 Rombel**: Laporan lengkap per kelas dengan fitur drill-down modal dan reset data.
 
 ---
 

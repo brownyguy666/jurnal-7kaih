@@ -20,9 +20,11 @@ import {
   Crown,
   Printer,
   FileText,
-  Sparkles
+  Sparkles,
+  Flame,
+  MessageSquareHeart
 } from 'lucide-react';
-import { ArahanWaliKelas, EntriJurnal, Feedback, KategoriArahan, Kebiasaan, Kelas, PiagamData, Siswa, StafSekolah } from '../../types/database';
+import { ArahanWaliKelas, EntriJurnal, Feedback, KategoriArahan, Kebiasaan, Kelas, PiagamData, Siswa, StafSekolah, SuaraSiswa } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
 import { getTodayDateString } from '../../lib/timeCalculator';
 import { LeaderboardService } from '../../lib/leaderboardService';
@@ -39,7 +41,7 @@ import { EarlyWarningRadar } from './EarlyWarningRadar';
 import { PiagamPenghargaanModal } from './PiagamPenghargaanModal';
 import { RaporKarakterModal } from '../common/RaporKarakterModal';
 import { HallOfFameSection } from '../admin/HallOfFameSection';
-import { Flame } from 'lucide-react';
+import { SuaraSiswaModerationView } from '../common/SuaraSiswaModerationView';
 
 interface PejabatDashboardProps {
   staf: StafSekolah;
@@ -58,7 +60,7 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
     ? 'literasi' 
     : 'comparison';
     
-  const [activeTab, setActiveTab] = useState<'comparison' | 'students' | 'arahan' | 'literasi' | 'early_warning' | 'piagam' | 'hall_of_fame'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'comparison' | 'students' | 'suara' | 'arahan' | 'literasi' | 'early_warning' | 'piagam' | 'hall_of_fame'>(defaultTab);
 
   const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [stafList, setStafList] = useState<StafSekolah[]>([]);
@@ -67,6 +69,7 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
   const [entries, setEntries] = useState<EntriJurnal[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [arahanList, setArahanList] = useState<ArahanWaliKelas[]>([]);
+  const [suaraList, setSuaraList] = useState<SuaraSiswa[]>([]);
 
   // Modal states
   const [selectedStudent, setSelectedStudent] = useState<Siswa | null>(null);
@@ -79,14 +82,15 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
 
   const loadData = async () => {
     try {
-      const [allKelas, allStaf, allSiswa, habits, allEntries, allFeedbacks, allArahan] = await Promise.all([
+      const [allKelas, allStaf, allSiswa, habits, allEntries, allFeedbacks, allArahan, allSuara] = await Promise.all([
         JournalService.getKelas(),
         JournalService.getStaf(),
         JournalService.getSiswa(),
         JournalService.getKebiasaan(),
         JournalService.getEntriJurnal(),
         JournalService.getFeedback(),
-        JournalService.getArahanWaliKelas()
+        JournalService.getArahanWaliKelas(),
+        JournalService.getSuaraSiswaList()
       ]);
 
       setKelasList(allKelas);
@@ -96,6 +100,7 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
       setEntries(allEntries);
       setFeedbacks(allFeedbacks);
       setArahanList(allArahan);
+      setSuaraList(allSuara);
     } catch (e) {
       console.warn('Error loading pejabat data:', e);
     }
@@ -384,6 +389,18 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
         </button>
 
         <button
+          onClick={() => setActiveTab('suara')}
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'suara'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <MessageSquareHeart className="w-4 h-4 text-pink-500" />
+          <span>💬 Suara Siswa ({suaraList.length})</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('arahan')}
           className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'arahan'
@@ -395,6 +412,18 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
           <span>Riwayat Arahan ({arahanList.length})</span>
         </button>
       </div>
+
+      {/* TAB: SUARA & ASPIRASI SISWA (ANONIM) */}
+      {activeTab === 'suara' && (
+        <SuaraSiswaModerationView
+          suaraList={suaraList}
+          siswaList={siswaList}
+          kelasList={kelasList}
+          stafList={stafList}
+          currentStaf={staf}
+          onRefreshData={loadData}
+        />
+      )}
 
       {/* TAB: HALL OF FAME (KONSISTENSI, EFFORT & WALI KELAS ISTIQOMAH) */}
       {activeTab === 'hall_of_fame' && (

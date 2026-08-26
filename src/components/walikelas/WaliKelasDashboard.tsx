@@ -13,7 +13,9 @@ import {
   Flame,
   Crown,
   Sparkles,
-  ArrowUpRight
+  ArrowUpRight,
+  Send,
+  MessageSquareHeart
 } from 'lucide-react';
 import { 
   EntriJurnal, 
@@ -22,7 +24,8 @@ import {
   Kelas, 
   Siswa, 
   StafSekolah,
-  ArahanWaliKelas
+  ArahanWaliKelas,
+  SuaraSiswa
 } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
 import { getTodayDateString } from '../../lib/timeCalculator';
@@ -33,6 +36,7 @@ import { PhotoViewerModal } from '../common/PhotoViewerModal';
 import { ExportSharePanel } from './ExportSharePanel';
 import { ModerationDeleteModal } from './ModerationDeleteModal';
 import { RaporKarakterModal } from '../common/RaporKarakterModal';
+import { SuaraSiswaModerationView } from '../common/SuaraSiswaModerationView';
 
 interface WaliKelasDashboardProps {
   staf: StafSekolah;
@@ -51,12 +55,14 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [arahanList, setArahanList] = useState<ArahanWaliKelas[]>([]);
   const [stafList, setStafList] = useState<StafSekolah[]>([]);
+  const [suaraList, setSuaraList] = useState<SuaraSiswa[]>([]);
 
   // Modal states
   const [selectedStudent, setSelectedStudent] = useState<Siswa | null>(null);
   const [selectedEntryForPhoto, setSelectedEntryForPhoto] = useState<EntriJurnal | null>(null);
   const [entryToDelete, setEntryToDelete] = useState<EntriJurnal | null>(null);
   const [studentForRapor, setStudentForRapor] = useState<Siswa | null>(null);
+  const [showSuaraModal, setShowSuaraModal] = useState<boolean>(false);
 
   const dateRange = useMemo(() => {
     return PeriodAggregationService.getDateRange(period, selectedDate);
@@ -64,13 +70,14 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
 
   const loadData = async () => {
     try {
-      const [allKelas, allSiswa, habits, allEntries, allFeedbacks, allStaf] = await Promise.all([
+      const [allKelas, allSiswa, habits, allEntries, allFeedbacks, allStaf, allSuara] = await Promise.all([
         JournalService.getKelas(),
         JournalService.getSiswa(),
         JournalService.getKebiasaan(),
         JournalService.getEntriJurnal(),
         JournalService.getFeedback(),
-        JournalService.getStaf()
+        JournalService.getStaf(),
+        JournalService.getSuaraSiswaList()
       ]);
 
       let matchedKelas = allKelas.find((k) => 
@@ -108,6 +115,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
       setFeedbacks(allFeedbacks);
       setArahanList(classArahan);
       setStafList(allStaf);
+      setSuaraList(allSuara);
     } catch (e) {
       console.warn('Error loading wali kelas dashboard data:', e);
     }
@@ -193,6 +201,23 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
     );
   };
 
+  const handleCopyClassWhatsAppReminder = () => {
+    let msg = `*🚨 PENGINGAT JURNAL 7 KAIH - KELAS ${currentKelas?.nama_kelas || ''}*\n`;
+    msg += `*SMP Negeri 2 Glagah • Tanggal:* ${selectedDate}\n\n`;
+    msg += `Assalamu'alaikum Wr. Wb. & Selamat Pagi/Siang,\n`;
+    msg += `Yth. Bapak/Ibu Wali Murid dan Ananda Siswa Kelas ${currentKelas?.nama_kelas || ''},\n\n`;
+    msg += `Berdasarkan pemantauan sistem, berikut adalah nama ananda yang belum mengisi jurnal 7 KAIH selama 3 hari terakhir:\n`;
+    inactive3DaysStudents.forEach((st, idx) => {
+      msg += `${idx + 1}. *${st.nama}* (NISN: ${st.nisn})\n`;
+    });
+    msg += `\n_Mohon ananda segera melengkapi pencatatan pembiasaan hari ini sebelum pukul 24.00 WIB._\n`;
+    msg += `_Semangat menjaga karakter luhur dan kedisiplinan setiap hari!_\n\n`;
+    msg += `Salam hangat,\n*${staf.nama}* (Wali Kelas ${currentKelas?.nama_kelas || ''})`;
+
+    navigator.clipboard.writeText(msg);
+    alert('✅ Teks pengingat WhatsApp untuk siswa/wali murid berhasil disalin ke clipboard!');
+  };
+
   const getKategoriBadge = (kategori: string) => {
     switch (kategori) {
       case 'instruksi': return 'bg-amber-400/20 text-amber-300 border border-amber-400/30';
@@ -235,6 +260,15 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
               className="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
             />
           </div>
+
+          <button
+            onClick={() => setShowSuaraModal(true)}
+            className="px-3.5 py-1.5 rounded-2xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold text-xs transition flex items-center gap-1.5 border border-purple-200"
+            title="Buka Kotak Aspirasi & Curhat Siswa"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-purple-700" />
+            <span>Aspirasi Siswa ({suaraList.filter(s => s.kelas_id === currentKelas?.id).length})</span>
+          </button>
 
           <button
             onClick={loadData}
@@ -292,6 +326,15 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
                 </p>
               </div>
             </div>
+
+            <button
+              onClick={handleCopyClassWhatsAppReminder}
+              className="px-3.5 py-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 shrink-0 active:scale-95 cursor-pointer"
+              title="Salin Pesan Pengingat WhatsApp untuk Grup Kelas"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Ingatkan Semua via WA</span>
+            </button>
           </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
@@ -513,6 +556,36 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
         kepalaSekolahNip={stafList.find((s) => s.role === 'kepala_sekolah')?.nip_atau_nik || '197508122002121003'}
         onClose={() => setStudentForRapor(null)}
       />
+
+      {/* Modal Suara & Aspirasi Siswa (Anonim) */}
+      {showSuaraModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-fade-in">
+          <div className="bg-slate-100 rounded-3xl max-w-4xl w-full p-6 shadow-2xl space-y-4 animate-scale-up border border-slate-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-slate-800 text-lg">
+                  Kotak Aspirasi & Curhat Siswa • Kelas {currentKelas?.nama_kelas}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowSuaraModal(false)}
+                className="px-4 py-1.5 rounded-xl bg-white hover:bg-slate-200 text-slate-700 font-bold text-xs shadow-xs transition"
+              >
+                Tutup
+              </button>
+            </div>
+
+            <SuaraSiswaModerationView
+              suaraList={suaraList}
+              siswaList={siswaList}
+              kelasList={currentKelas ? [currentKelas] : []}
+              stafList={stafList}
+              currentStaf={staf}
+              onRefreshData={loadData}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

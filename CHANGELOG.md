@@ -1,6 +1,24 @@
-# 📜 Changelog - Jurnal 7KAIH (SMP Negeri 2 Glagah)
+# 📜 Changelog - Jurnal 7 KAIH (SMP Negeri 2 Glagah)
 
-Semua pembaruan, perbaikan, dan penambahan fitur aplikasi Jurnal Pembiasaan 7 Karakter Anak Indonesia Hebat (7KAIH) dicatat secara kronologis di bawah ini.
+Semua pembaruan, perbaikan, dan penambahan fitur aplikasi Jurnal 7 KAIH (7 Karakter Anak Indonesia Hebat) dicatat secara kronologis di bawah ini.
+
+---
+
+## [v0.8.0] - 2026-08-26 *(Branding Resmi Jurnal 7 KAIH, Suara & Curhat Siswa, Date Range Picker, & Bulk Reminder WA)*
+
+### 🌟 Fitur Baru & Peningkatan
+1. **Branding Resmi & Standarisasi Aplikasi (`Jurnal 7 KAIH`)**:
+   - Menstandarkan seluruh antarmuka, navbar, footer, login view, dashboard router, modal rapor, header ekspor Excel, dan format WhatsApp ke nama resmi **Jurnal 7 KAIH**.
+2. **Kotak Aspirasi & Curhat Siswa ("Suara Siswa")**:
+   - Siswa dapat mengirimkan curhatan pembiasaan, keluhan kendala teknis/kehidupan, maupun ide/saran inovasi aplikasi secara opsional setiap hari melalui modal interaktif.
+   - **Privasi Terproteksi (Anonim)**: Wali Kelas, Kepala Sekolah, Waka Kurikulum, dan Kesiswaan membaca pesan dengan label *"Siswa Kelas [Rombel] (Anonim)"* dan dapat memberikan tanggapan resmi yang langsung muncul di dashboard siswa.
+   - **Audit Superadmin**: Hanya Superadministrator yang memiliki hak khusus untuk melihat nama dan NISN asli siswa demi keamanan dan pembinaan terarah.
+3. **Date Range Picker Kustom pada Evaluasi Progress**:
+   - Pemilihan rentang tanggal fleksibel (*Start Date s.d. End Date*) dengan tombol preset cepat (*Hari Ini*, *7 Hari Terakhir*, *30 Hari Terakhir*, *Bulan Ini*, *1 Semester Penuh*).
+   - Menghilangkan tab Peringkat 18 Kelas yang duplikat pada tab Progress agar Leaderboard tetap fokus dan eksklusif di tab klasemen.
+4. **Peringatan Massal (Bulk Reminder) Siswa Pasif via WhatsApp & In-App**:
+   - **Superadmin, KS, Kurikulum, Kesiswaan**: Tombol *Bulk Peringatan ke Semua Wali Kelas* yang otomatis mengirimkan arahan in-app serentak dan membuat template WhatsApp broadcast lengkap dengan rincian nama siswa per kelas.
+   - **Wali Kelas**: Tombol *📢 Ingatkan Semua via WA* langsung di banner peringatan siswa pasif 3 hari berturut-turut untuk menyalin format pengingat ke grup kelas/wali murid.
 
 ---
 

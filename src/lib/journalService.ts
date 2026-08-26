@@ -8,7 +8,10 @@ import {
   Kelas, 
   LogHapus, 
   Siswa, 
-  StafSekolah 
+  StafSekolah,
+  SuaraSiswa,
+  KategoriSuara,
+  KategoriArahan
 } from '../types/database';
 
 export class JournalService {
@@ -657,6 +660,115 @@ export class JournalService {
       }
       return true;
     }
+  }
+
+  /**
+   * Mengambil Seluruh Daftar Curhatan / Aspirasi Siswa (Kotak Suara Siswa)
+   */
+  static async getSuaraSiswaList(): Promise<SuaraSiswa[]> {
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from('suara_siswa')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data) {
+          MockDatabase.syncSuaraSiswaFromRemote(data as SuaraSiswa[]);
+        }
+      } catch (e) {
+        // Fallback local jika tabel supabase belum dibuat
+      }
+    }
+    return MockDatabase.getSuaraSiswa();
+  }
+
+  /**
+   * Siswa Mengirimkan Curhatan / Keluhan / Ide
+   */
+  static async kirimSuaraSiswa(
+    siswaId: string,
+    kelasId: string,
+    kategori: KategoriSuara,
+    judul: string,
+    isi: string
+  ): Promise<SuaraSiswa> {
+    const localSuara = MockDatabase.addSuaraSiswa(siswaId, kelasId, kategori, judul, isi);
+    if (isSupabaseConfigured) {
+      try {
+        const { data } = await supabase
+          .from('suara_siswa')
+          .insert({
+            siswa_id: siswaId,
+            kelas_id: kelasId,
+            kategori,
+            judul,
+            isi
+          })
+          .select()
+          .single();
+        if (data) return data as SuaraSiswa;
+      } catch (e) {
+        console.warn('Failed remote insert suara_siswa:', e);
+      }
+    }
+    return localSuara;
+  }
+
+  /**
+   * Pendidik / Pimpinan Sekolah Memberikan Tanggapan / Respons terhadap Suara Siswa
+   */
+  static async tanggapiSuaraSiswa(
+    suaraId: string,
+    stafId: string,
+    tanggapan: string
+  ): Promise<boolean> {
+    MockDatabase.tanggapiSuaraSiswa(suaraId, stafId, tanggapan);
+    if (isSupabaseConfigured) {
+      try {
+        await supabase
+          .from('suara_siswa')
+          .update({
+            tanggapan,
+            tanggapan_oleh_staf_id: stafId,
+            tanggapan_at: new Date().toISOString()
+          })
+          .eq('id', suaraId);
+      } catch (e) {
+        console.warn('Failed remote tanggapi suara_siswa:', e);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Menghapus Suara Siswa (Superadmin)
+   */
+  static async deleteSuaraSiswa(suaraId: string): Promise<boolean> {
+    MockDatabase.deleteSuaraSiswa(suaraId);
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('suara_siswa').delete().eq('id', suaraId);
+      } catch (e) {
+        console.warn('Failed remote delete suara_siswa:', e);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Mengirimkan Bulk Arahan / Peringatan Massal ke Banyak Kelas Sekaligus
+   */
+  static async kirimBulkArahan(
+    stafPengirimId: string,
+    kelasIds: string[],
+    kategori: KategoriArahan,
+    judul: string,
+    pesan: string
+  ): Promise<void> {
+    const promises = kelasIds.map((kelasId) =>
+      this.sendArahanWaliKelas(stafPengirimId, kelasId, kategori, judul, pesan)
+    );
+    await Promise.all(promises);
   }
 }
 

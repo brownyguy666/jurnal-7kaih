@@ -6,7 +6,9 @@ import {
   EntriJurnal, 
   Feedback, 
   ArahanWaliKelas, 
-  LogHapus 
+  LogHapus,
+  SuaraSiswa,
+  KategoriSuara
 } from '../types/database';
 import { 
   INITIAL_KEBIASAAN, 
@@ -27,8 +29,25 @@ const STORAGE_KEYS = {
   ENTRI: 'jurnal_7k_entri',
   FEEDBACK: 'jurnal_7k_feedback',
   ARAHAN: 'jurnal_7k_arahan',
-  LOG_HAPUS: 'jurnal_7k_log_hapus'
+  LOG_HAPUS: 'jurnal_7k_log_hapus',
+  SUARA_SISWA: 'jurnal_7k_suara_siswa'
 };
+
+const INITIAL_SUARA_SISWA: SuaraSiswa[] = [
+  {
+    id: 'suara-1',
+    siswa_id: 's-01',
+    kelas_id: 'k-7a',
+    kategori: 'ide_saran_aplikasi',
+    judul: 'Usul Tambahan Fitur Pengingat Sebelum Batas Waktu Sholat',
+    isi: 'Bapak/Ibu guru, apakah bisa diberikan pengingat atau notifikasi sebelum batas waktu sholat berakhir agar kami tidak terburu-buru mengisi jurnal?',
+    tanggal: new Date().toISOString().split('T')[0],
+    tanggapan: 'Terima kasih atas sarannya ananda. Masukan ini sangat baik dan sedang kami tindaklanjuti bersama tim kurikulum dan IT sekolah.',
+    tanggapan_oleh_staf_id: 'staf-kurikulum',
+    tanggapan_at: new Date().toISOString(),
+    created_at: new Date().toISOString()
+  }
+];
 
 function getStored<T>(key: string, fallback: T): T {
   try {
@@ -85,7 +104,16 @@ export class MockDatabase {
     return getStored<LogHapus[]>(STORAGE_KEYS.LOG_HAPUS, []);
   }
 
+  static getSuaraSiswa(): SuaraSiswa[] {
+    return getStored<SuaraSiswa[]>(STORAGE_KEYS.SUARA_SISWA, INITIAL_SUARA_SISWA);
+  }
+
   // Cloud Sync Helpers
+  static syncSuaraSiswaFromRemote(remoteList: SuaraSiswa[]): void {
+    if (remoteList && remoteList.length > 0) {
+      setStored(STORAGE_KEYS.SUARA_SISWA, remoteList);
+    }
+  }
   static syncSiswaFromRemote(remoteList: Siswa[]): void {
     if (remoteList && remoteList.length > 0) {
       setStored(STORAGE_KEYS.SISWA, remoteList);
@@ -227,6 +255,54 @@ export class MockDatabase {
     const current = this.getArahanWaliKelas();
     const updated = current.filter(a => a.id !== arahanId);
     setStored(STORAGE_KEYS.ARAHAN, updated);
+  }
+
+  static addSuaraSiswa(
+    siswaId: string,
+    kelasId: string,
+    kategori: KategoriSuara,
+    judul: string,
+    isi: string
+  ): SuaraSiswa {
+    const current = this.getSuaraSiswa();
+    const newSuara: SuaraSiswa = {
+      id: 'suara-' + Date.now(),
+      siswa_id: siswaId,
+      kelas_id: kelasId,
+      kategori,
+      judul,
+      isi,
+      tanggal: new Date().toISOString().split('T')[0],
+      tanggapan: null,
+      tanggapan_oleh_staf_id: null,
+      tanggapan_at: null,
+      created_at: new Date().toISOString()
+    };
+    setStored(STORAGE_KEYS.SUARA_SISWA, [newSuara, ...current]);
+    return newSuara;
+  }
+
+  static tanggapiSuaraSiswa(suaraId: string, stafId: string, tanggapan: string): boolean {
+    const current = this.getSuaraSiswa();
+    const idx = current.findIndex(s => s.id === suaraId);
+    if (idx >= 0) {
+      current[idx] = {
+        ...current[idx],
+        tanggapan,
+        tanggapan_oleh_staf_id: stafId,
+        tanggapan_at: new Date().toISOString()
+      };
+      setStored(STORAGE_KEYS.SUARA_SISWA, current);
+      return true;
+    }
+    return false;
+  }
+
+  static deleteSuaraSiswa(suaraId: string): boolean {
+    const current = this.getSuaraSiswa();
+    const filtered = current.filter(s => s.id !== suaraId);
+    setStored(STORAGE_KEYS.SUARA_SISWA, filtered);
+    return true;
   }
 
   static updatePassword(type: 'siswa' | 'staf', id: string): boolean {

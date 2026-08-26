@@ -18,9 +18,10 @@ import {
   EyeOff,
   Trophy,
   Edit2,
-  Pencil
+  Pencil,
+  MessageSquareHeart
 } from 'lucide-react';
-import { Kebiasaan, Kelas, Siswa, StafSekolah, EntriJurnal } from '../../types/database';
+import { Kebiasaan, Kelas, Siswa, StafSekolah, EntriJurnal, SuaraSiswa } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
 import { getTodayDateString } from '../../lib/timeCalculator';
 import { MockDatabase } from '../../lib/mockStore';
@@ -34,13 +35,14 @@ import { ClassComparisonTable } from '../pejabat/ClassComparisonTable';
 import { ArahanWaliKelasModal } from '../pejabat/ArahanWaliKelasModal';
 import { SuperadminLeaderboardView } from './SuperadminLeaderboardView';
 import { StudentProgressOverview } from '../common/StudentProgressOverview';
+import { SuaraSiswaModerationView } from '../common/SuaraSiswaModerationView';
 
 interface SuperadminDashboardProps {
   staf: StafSekolah;
 }
 
 export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }) => {
-  const [activeTab, setActiveTab] = useState<'leaderboard' | 'monitoring' | 'siswa' | 'staf' | 'kebiasaan'>('leaderboard');
+  const [activeTab, setActiveTab] = useState<'leaderboard' | 'monitoring' | 'suara' | 'siswa' | 'staf' | 'kebiasaan'>('leaderboard');
   const todayStr = getTodayDateString();
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
 
@@ -49,6 +51,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [kebiasaanList, setKebiasaanList] = useState<Kebiasaan[]>([]);
   const [entries, setEntries] = useState<EntriJurnal[]>([]);
+  const [suaraList, setSuaraList] = useState<SuaraSiswa[]>([]);
 
   // Search & Filter
   const [searchSiswa, setSearchSiswa] = useState('');
@@ -78,12 +81,13 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
 
   const loadAllData = async () => {
     try {
-      const [allKelas, allStaf, allSiswa, habits, allEntries] = await Promise.all([
+      const [allKelas, allStaf, allSiswa, habits, allEntries, allSuara] = await Promise.all([
         JournalService.getKelas(),
         JournalService.getStaf(),
         JournalService.getSiswa(),
         JournalService.getKebiasaan(),
-        JournalService.getEntriJurnal()
+        JournalService.getEntriJurnal(),
+        JournalService.getSuaraSiswaList()
       ]);
 
       setKelasList(allKelas);
@@ -91,6 +95,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
       setSiswaList(allSiswa);
       setKebiasaanList(habits.sort((a, b) => a.urutan - b.urutan));
       setEntries(allEntries);
+      setSuaraList(allSuara);
     } catch (e) {
       console.warn('Error loading superadmin data:', e);
     }
@@ -243,6 +248,18 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         </button>
 
         <button
+          onClick={() => setActiveTab('suara')}
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'suara'
+              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <MessageSquareHeart className="w-4 h-4" />
+          <span>💬 Suara Siswa ({suaraList.length})</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('siswa')}
           className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'siswa'
@@ -304,6 +321,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
             stafList={stafList}
             kebiasaanList={kebiasaanList}
             selectedDate={selectedDate}
+            currentUser={staf}
             onOpenArahanModal={(kId) => {
               setTargetClassForArahan(kId);
               setIsArahanModalOpen(true);
@@ -328,6 +346,18 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
             }}
           />
         </div>
+      )}
+
+      {/* TAB: SUARA & ASPIRASI SISWA */}
+      {activeTab === 'suara' && (
+        <SuaraSiswaModerationView
+          suaraList={suaraList}
+          siswaList={siswaList}
+          kelasList={kelasList}
+          stafList={stafList}
+          currentStaf={staf}
+          onRefreshData={loadAllData}
+        />
       )}
 
       {/* TAB 2: KELOLA SISWA (RENAME & PASSWORD) */}

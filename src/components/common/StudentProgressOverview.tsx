@@ -22,10 +22,17 @@ import {
   ShieldAlert, 
   Sparkles,
   Eye,
-  FileText
+  FileText,
+  Calendar,
+  Send,
+  BellRing,
+  Copy,
+  Check,
+  X
 } from 'lucide-react';
 import { EntriJurnal, Kebiasaan, Kelas, Siswa, StafSekolah } from '../../types/database';
 import { getTodayDateString } from '../../lib/timeCalculator';
+import { JournalService } from '../../lib/journalService';
 import * as XLSX from 'xlsx';
 
 interface StudentProgressOverviewProps {
@@ -35,6 +42,7 @@ interface StudentProgressOverviewProps {
   stafList: StafSekolah[];
   kebiasaanList: Kebiasaan[];
   selectedDate?: string;
+  currentUser?: StafSekolah | null;
   onOpenStudentDetail?: (siswa: Siswa) => void;
   onOpenArahanModal?: (targetKelasId: string, prefillMessage: string) => void;
 }
@@ -46,30 +54,82 @@ export const StudentProgressOverview: React.FC<StudentProgressOverviewProps> = (
   stafList,
   kebiasaanList,
   selectedDate,
+  currentUser,
   onOpenStudentDetail,
   onOpenArahanModal
 }) => {
   const todayStr = selectedDate || getTodayDateString();
+
+  // Helper untuk default date range (7 hari terakhir s.d hari ini)
+  const defaultStartDate = useMemo(() => {
+    const d = new Date(todayStr);
+    d.setDate(d.getDate() - 6);
+    return d.toISOString().split('T')[0];
+  }, [todayStr]);
+
+  const [startDate, setStartDate] = useState<string>(defaultStartDate);
+  const [endDate, setEndDate] = useState<string>(todayStr);
+  const [activePreset, setActivePreset] = useState<string>('7days');
+
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'inactive3days' | 'classRanking'>('overview');
+  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'inactive3days'>('overview');
 
-  // Filter entri hari yang dipilih
-  const todayEntries = useMemo(() => {
-    return entries.filter((e) => e.tanggal === todayStr);
-  }, [entries, todayStr]);
+  // State Modal Bulk Warning
+  const [showBulkWarningModal, setShowBulkWarningModal] = useState<boolean>(false);
+  const [bulkJudul, setBulkJudul] = useState<string>('Peringatan Dini: Siswa Tidak Aktif Mengisi Jurnal 3 Hari Berturut-turut');
+  const [bulkPesan, setBulkPesan] = useState<string>('Berdasarkan pemantauan sistem, terdapat siswa di kelas binaan Bapak/Ibu yang tidak aktif mengisi jurnal selama 3 hari berturut-turut. Mohon segera lakukan pendampingan dan pembinaan intensif.');
+  const [isSendingBulk, setIsSendingBulk] = useState<boolean>(false);
+  const [copiedWA, setCopiedWA] = useState<boolean>(false);
 
-  // Evaluasi 3 Hari Terakhir (Today, Today-1, Today-2)
+  // Quick Preset Handlers
+  const handleSetPreset = (preset: 'today' | '7days' | '30days' | 'month' | 'semester') => {
+    setActivePreset(preset);
+    const now = new Date(todayStr);
+    
+    if (preset === 'today') {
+      setStartDate(todayStr);
+      setEndDate(todayStr);
+    } else if (preset === '7days') {
+      const start = new Date(now);
+      start.setDate(start.getDate() - 6);
+      setStartDate(start.toISOString().split('T')[0]);
+      setEndDate(todayStr);
+    } else if (preset === '30days') {
+      const start = new Date(now);
+      start.setDate(start.getDate() - 29);
+      setStartDate(start.toISOString().split('T')[0]);
+      setEndDate(todayStr);
+    } else if (preset === 'month') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      setStartDate(firstDay.toISOString().split('T')[0]);
+      setEndDate(todayStr);
+    } else if (preset === 'semester') {
+      const month = now.getMonth();
+      const semesterStart = month >= 6
+        ? new Date(now.getFullYear(), 6, 1) // 1 Juli
+        : new Date(now.getFullYear(), 0, 1); // 1 Januari
+      setStartDate(semesterStart.toISOString().split('T')[0]);
+      setEndDate(todayStr);
+    }
+  };
+
+  // Filter entri dalam rentang tanggal yang dipilih
+  const rangeEntries = useMemo(() => {
+    return entries.filter((e) => e.tanggal >= startDate && e.tanggal <= endDate);
+  }, [entries, startDate, endDate]);
+
+  // Evaluasi 3 Hari Terakhir untuk Deteksi Inaktivitas
   const last3Days = useMemo(() => {
     const dates: string[] = [];
-    const baseDate = new Date(todayStr);
+    const baseDate = new Date(endDate);
     for (let i = 0; i < 3; i++) {
       const d = new Date(baseDate);
       d.setDate(d.getDate() - i);
       dates.push(d.toISOString().split('T')[0]);
     }
     return dates;
-  }, [todayStr]);
+  }, [endDate]);
 
   // Evaluasi Siswa yang Tidak Mengisi 3 Hari Berturut-turut
   const inactive3DaysStudents = useMemo(() => {
@@ -78,17 +138,16 @@ export const StudentProgressOverview: React.FC<StudentProgressOverviewProps> = (
         (e) => e.siswa_id === siswa.id && last3Days.includes(e.tanggal)
       );
 
-      // Cari tanggal terakhir siswa pernah mengisi jurnal
       const allStudentEntries = entries.filter((e) => e.siswa_id === siswa.id);
       const allDates = Array.from(new Set(allStudentEntries.map((e) => e.tanggal))).sort();
       const lastActiveDate = allDates.length > 0 ? allDates[allDates.length - 1] : null;
 
       let daysSinceLast = 0;
       if (!lastActiveDate) {
-        daysSinceLast = 999; // Belum pernah sama sekali
+        daysSinceLast = 999;
       } else {
         const diff = Math.round(
-          (new Date(todayStr).getTime() - new Date(lastActiveDate).getTime()) / (1000 * 60 * 60 * 24)
+          (new Date(endDate).getTime() - new Date(lastActiveDate).getTime()) / (1000 * 60 * 60 * 24)
         );
         daysSinceLast = Math.max(diff, 0);
       }
@@ -108,7 +167,7 @@ export const StudentProgressOverview: React.FC<StudentProgressOverviewProps> = (
         daysSinceLast
       };
     }).filter((item) => item.isInactive3Days);
-  }, [siswaList, entries, last3Days, todayStr, kelasList, stafList]);
+  }, [siswaList, entries, last3Days, endDate, kelasList, stafList]);
 
   // Rekap jumlah siswa tidak aktif per kelas
   const inactiveCountPerClass = useMemo(() => {
@@ -131,6 +190,11 @@ export const StudentProgressOverview: React.FC<StudentProgressOverviewProps> = (
     return Object.values(map).sort((a, b) => b.count - a.count);
   }, [kelasList, stafList, inactive3DaysStudents]);
 
+  // Daftar kelas yang memiliki siswa tidak aktif untuk bulk warning
+  const classesWithInactiveStudents = useMemo(() => {
+    return inactiveCountPerClass.filter(c => c.count > 0);
+  }, [inactiveCountPerClass]);
+
   // Filter siswa tidak aktif sesuai dropdown & pencarian
   const filteredInactiveList = useMemo(() => {
     return inactive3DaysStudents.filter((item) => {
@@ -141,53 +205,56 @@ export const StudentProgressOverview: React.FC<StudentProgressOverviewProps> = (
     });
   }, [inactive3DaysStudents, selectedClassFilter, searchQuery]);
 
-  // Distribusi Tingkat Kepatuhan Hari Ini
+  // Hitung jumlah hari unik dalam rentang
+  const daysCountInRange = useMemo(() => {
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
+    const diff = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+    return Math.max(diff, 1);
+  }, [startDate, endDate]);
+
+  // Distribusi Tingkat Kepatuhan dalam Rentang Tanggal
   const complianceDistribution = useMemo(() => {
-    let perfect = 0; // 7/7
-    let high = 0;    // 5-6/7
-    let medium = 0;  // 3-4/7
-    let low = 0;     // 1-2/7
-    let zero = 0;    // 0/7
+    let perfect = 0; // >= 90%
+    let high = 0;    // 70-89%
+    let medium = 0;  // 40-69%
+    let low = 0;     // 1-39%
+    let zero = 0;    // 0%
 
     siswaList.forEach((siswa) => {
-      const habitIds = new Set(
-        todayEntries.filter((e) => e.siswa_id === siswa.id).map((e) => e.kebiasaan_id)
-      );
-      const count = habitIds.size;
-      if (count === 7) perfect++;
-      else if (count >= 5) high++;
-      else if (count >= 3) medium++;
-      else if (count >= 1) low++;
-      else zero++;
+      const studentEntries = rangeEntries.filter((e) => e.siswa_id === siswa.id);
+      const totalPossible = daysCountInRange * 7;
+      const completedDistinctPerDay = studentEntries.length;
+      const percentage = totalPossible > 0 ? (completedDistinctPerDay / totalPossible) * 100 : 0;
+
+      if (completedDistinctPerDay === 0) zero++;
+      else if (percentage >= 90) perfect++;
+      else if (percentage >= 70) high++;
+      else if (percentage >= 40) medium++;
+      else low++;
     });
 
     return { perfect, high, medium, low, zero };
-  }, [siswaList, todayEntries]);
+  }, [siswaList, rangeEntries, daysCountInRange]);
 
-  // Rata-rata kepatuhan sekolah hari ini
+  // Rata-rata kepatuhan sekolah dalam rentang
   const averageComplianceRate = useMemo(() => {
-    if (siswaList.length === 0) return 0;
-    const totalFilledDistinct = siswaList.reduce((acc, siswa) => {
-      const habits = new Set(
-        todayEntries.filter((e) => e.siswa_id === siswa.id).map((e) => e.kebiasaan_id)
-      );
-      return acc + habits.size;
-    }, 0);
-    return Math.round((totalFilledDistinct / (siswaList.length * 7)) * 100);
-  }, [siswaList, todayEntries]);
+    if (siswaList.length === 0 || daysCountInRange === 0) return 0;
+    const totalPossible = siswaList.length * 7 * daysCountInRange;
+    const totalFilled = rangeEntries.length;
+    return Math.round((totalFilled / totalPossible) * 100);
+  }, [siswaList, rangeEntries, daysCountInRange]);
 
-  // Performa Per Kebiasaan Hari Ini
+  // Performa Per Kebiasaan dalam Rentang
   const habitPerformance = useMemo(() => {
     return kebiasaanList.map((k) => {
-      const studentsSubmitted = new Set(
-        todayEntries.filter((e) => e.kebiasaan_id === k.id).map((e) => e.siswa_id)
-      );
-      const submittedCount = studentsSubmitted.size;
-      const percentage = siswaList.length > 0 ? Math.round((submittedCount / siswaList.length) * 100) : 0;
+      const habitEntries = rangeEntries.filter((e) => e.kebiasaan_id === k.id);
+      const totalExpected = siswaList.length * daysCountInRange;
+      const submittedCount = habitEntries.length;
+      const percentage = totalExpected > 0 ? Math.round((submittedCount / totalExpected) * 100) : 0;
       
-      // Khusus refleksi belajar 100 kata
       const wordCountValid = k.id === 5 
-        ? todayEntries.filter((e) => e.kebiasaan_id === 5 && (e.catatan || '').trim().split(/\s+/).filter(Boolean).length >= 100).length
+        ? habitEntries.filter((e) => (e.catatan || '').trim().split(/\s+/).filter(Boolean).length >= 100).length
         : null;
 
       return {
@@ -197,39 +264,7 @@ export const StudentProgressOverview: React.FC<StudentProgressOverviewProps> = (
         wordCountValid
       };
     });
-  }, [kebiasaanList, todayEntries, siswaList]);
-
-  // Peringkat 18 Kelas Hari Ini
-  const classRankings = useMemo(() => {
-    return kelasList.map((k) => {
-      const classStudents = siswaList.filter((s) => s.kelas_id === k.id);
-      const wali = stafList.find((s) => s.id === k.wali_kelas_id);
-      if (classStudents.length === 0) {
-        return { kelas: k, studentCount: 0, complianceRate: 0, completedAllCount: 0, waliNama: wali?.nama || '-' };
-      }
-
-      let completedAll = 0;
-      let totalCompletedHabits = 0;
-
-      classStudents.forEach((s) => {
-        const studentHabits = new Set(
-          todayEntries.filter((e) => e.siswa_id === s.id).map((e) => e.kebiasaan_id)
-        );
-        totalCompletedHabits += studentHabits.size;
-        if (studentHabits.size === 7) completedAll++;
-      });
-
-      const rate = Math.round((totalCompletedHabits / (classStudents.length * 7)) * 100);
-
-      return {
-        kelas: k,
-        studentCount: classStudents.length,
-        complianceRate: rate,
-        completedAllCount: completedAll,
-        waliNama: wali?.nama || 'Wali Kelas'
-      };
-    }).sort((a, b) => b.complianceRate - a.complianceRate);
-  }, [kelasList, siswaList, stafList, todayEntries]);
+  }, [kebiasaanList, rangeEntries, siswaList, daysCountInRange]);
 
   // Export Excel Siswa Tidak Aktif 3 Hari
   const handleExportInactiveExcel = () => {
@@ -247,217 +282,373 @@ export const StudentProgressOverview: React.FC<StudentProgressOverviewProps> = (
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Siswa Tidak Aktif 3 Hari');
-    XLSX.writeFile(wb, `Laporan_Siswa_Tidak_Aktif_3Hari_SMPN2Glagah_${todayStr}.xlsx`);
+    XLSX.writeFile(wb, `Laporan_Siswa_Tidak_Aktif_3Hari_SMPN2Glagah_${endDate}.xlsx`);
+  };
+
+  // Kirim Bulk Peringatan ke Semua Wali Kelas
+  const handleSendBulkWarning = async () => {
+    if (!currentUser) return;
+    setIsSendingBulk(true);
+    try {
+      const targetKelasIds = classesWithInactiveStudents.map(c => c.kelas.id);
+      await JournalService.kirimBulkArahan(
+        currentUser.id,
+        targetKelasIds,
+        'evaluasi',
+        bulkJudul,
+        bulkPesan
+      );
+      setShowBulkWarningModal(false);
+      alert(`✅ Berhasil mengirimkan peringatan resmi ke ${targetKelasIds.length} Wali Kelas!`);
+    } catch (e) {
+      alert('Gagal mengirim peringatan massal: ' + e);
+    } finally {
+      setIsSendingBulk(false);
+    }
+  };
+
+  // Generate WhatsApp Broadcast Text untuk Peringatan Massal
+  const handleCopyWhatsAppBroadcast = () => {
+    let msg = `*🚨 PERINGATAN DINI KESISWAAN - SISWA TIDAK AKTIF (≥ 3 HARI)*\n`;
+    msg += `*SMP Negeri 2 Glagah • Per Tanggal:* ${endDate}\n\n`;
+    msg += `Yth. Bapak/Ibu Wali Kelas,\n`;
+    msg += `Berdasarkan pantauan sistem Jurnal 7 KAIH, berikut adalah rincian siswa yang belum mengisi jurnal 3 hari berturut-turut:\n\n`;
+
+    classesWithInactiveStudents.forEach((c) => {
+      const studentsInThisClass = inactive3DaysStudents.filter(s => s.siswa.kelas_id === c.kelas.id);
+      msg += `📌 *Kelas ${c.kelas.nama_kelas}* (Wali: ${c.waliKelas}) - *${c.count} Siswa:*\n`;
+      studentsInThisClass.forEach((st, idx) => {
+        msg += `   ${idx + 1}. ${st.siswa.nama} (${st.siswa.nisn}) • Terakhir: ${st.lastActiveDate || 'Belum Pernah'}\n`;
+      });
+      msg += `\n`;
+    });
+
+    msg += `_Mohon kesediaan Bapak/Ibu Wali Kelas untuk segera melakukan konfirmasi dan pembinaan kepada siswa atau menghubungi orang tua._\n\n`;
+    msg += `_Terima kasih atas kerja sama dan dedikasi Bapak/Ibu._\n`;
+    msg += `_Tim Kesiswaan & Manajemen SMP Negeri 2 Glagah_`;
+
+    navigator.clipboard.writeText(msg);
+    setCopiedWA(true);
+    setTimeout(() => setCopiedWA(false), 2500);
   };
 
   const getHabitIcon = (iconName?: string) => {
     switch (iconName) {
-      case 'Sunrise': return <Sunrise className="w-4 h-4 text-amber-600" />;
-      case 'HeartHandshake': return <HeartHandshake className="w-4 h-4 text-emerald-600" />;
-      case 'Activity': return <Activity className="w-4 h-4 text-blue-600" />;
-      case 'Utensils': return <Utensils className="w-4 h-4 text-green-600" />;
-      case 'BookOpen': return <BookOpen className="w-4 h-4 text-indigo-600" />;
-      case 'Users': return <Users className="w-4 h-4 text-purple-600" />;
-      case 'Moon': return <Moon className="w-4 h-4 text-violet-600" />;
-      default: return <Award className="w-4 h-4 text-emerald-600" />;
+      case 'Sunrise': return <Sunrise className="w-5 h-5 text-amber-500" />;
+      case 'HeartHandshake': return <HeartHandshake className="w-5 h-5 text-emerald-500" />;
+      case 'Activity': return <Activity className="w-5 h-5 text-blue-500" />;
+      case 'Utensils': return <Utensils className="w-5 h-5 text-green-500" />;
+      case 'BookOpen': return <BookOpen className="w-5 h-5 text-indigo-500" />;
+      case 'Users': return <Users className="w-5 h-5 text-purple-500" />;
+      case 'Moon': return <Moon className="w-5 h-5 text-indigo-400" />;
+      default: return <Sparkles className="w-5 h-5 text-slate-500" />;
     }
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* KPI Hero Metric Cards */}
+      {/* Top Header Filter & Date Range Picker */}
+      <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200 inline-block mb-1">
+              📊 Evaluasi & Progress Kepatuhan Siswa
+            </span>
+            <h3 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
+              Dashboard Perkembangan Pembiasaan Karakter
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Analisis menyeluruh keterlibatan 563 siswa, capaian 7 kebiasaan, serta radar peringatan dini inaktivitas.
+            </p>
+          </div>
+
+          {/* Sub-Tab Navigation (2 Tabs Bersih Tanpa Duplikasi) */}
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 self-start lg:self-auto">
+            <button
+              onClick={() => setActiveSubTab('overview')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                activeSubTab === 'overview'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span>Ringkasan 7 Kebiasaan</span>
+            </button>
+            <button
+              onClick={() => setActiveSubTab('inactive3days')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 relative ${
+                activeSubTab === 'inactive3days'
+                  ? 'bg-rose-600 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <AlertTriangle className="w-4 h-4 text-amber-300" />
+              <span>Radar Pasif 3+ Hari</span>
+              {inactive3DaysStudents.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-400 text-slate-950">
+                  {inactive3DaysStudents.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Date Range Controls & Presets */}
+        <div className="pt-3 border-t border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+          {/* Quick Presets */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-500 mr-1 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" />
+              Rentang:
+            </span>
+            {[
+              { id: 'today', label: 'Hari Ini' },
+              { id: '7days', label: '7 Hari Terakhir' },
+              { id: '30days', label: '30 Hari' },
+              { id: 'month', label: 'Bulan Ini' },
+              { id: 'semester', label: 'Semester Ini' }
+            ].map((p) => (
+              <button
+                key={p.id}
+                onClick={() => handleSetPreset(p.id as any)}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
+                  activePreset === p.id
+                    ? 'bg-purple-100 text-purple-800 border border-purple-300 shadow-2xs'
+                    : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Custom Date Range Picker */}
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 px-3 rounded-2xl border border-slate-200">
+            <Calendar className="w-4 h-4 text-purple-600" />
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setActivePreset('custom');
+                }}
+                className="bg-white px-2 py-1 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono text-[11px]"
+              />
+              <span className="text-slate-400 font-normal">s.d</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setActivePreset('custom');
+                }}
+                className="bg-white px-2 py-1 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-purple-500 font-mono text-[11px]"
+              />
+            </div>
+            <span className="text-[10px] text-purple-700 bg-purple-100 font-extrabold px-2 py-0.5 rounded-md ml-1">
+              {daysCountInRange} Hari
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Cards Ringkasan */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Siswa */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-bold text-slate-600">Total Siswa Terdaftar</span>
-            <Users className="w-4 h-4 text-purple-600" />
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shrink-0">
+            <Users className="w-6 h-6" />
           </div>
-          <p className="text-2xl font-black text-slate-800">{siswaList.length}</p>
-          <span className="text-[11px] text-purple-600 font-semibold">18 Kelas (7A s.d 9F)</span>
+          <div>
+            <span className="text-xs font-bold text-slate-400 block">Total Siswa Aktif</span>
+            <span className="text-2xl font-extrabold text-slate-800">{siswaList.length}</span>
+            <span className="text-[10px] text-slate-500 block">18 Rombel (7A-9F)</span>
+          </div>
         </div>
 
-        {/* Total Entri Jurnal Realtime */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-bold text-slate-600">Total Entri Jurnal</span>
-            <FileSpreadsheet className="w-4 h-4 text-amber-600" />
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
+            <CheckCircle2 className="w-6 h-6" />
           </div>
-          <p className="text-2xl font-black text-slate-800">{entries.length}</p>
-          <span className="text-[11px] text-slate-500 font-medium">Bukti 7 Kebiasaan Tersimpan</span>
+          <div>
+            <span className="text-xs font-bold text-slate-400 block">Entri Terkumpul</span>
+            <span className="text-2xl font-extrabold text-emerald-600">{rangeEntries.length.toLocaleString('id-ID')}</span>
+            <span className="text-[10px] text-slate-500 block">Rentang {daysCountInRange} Hari</span>
+          </div>
         </div>
 
-        {/* Kepatuhan Rata-Rata */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-bold text-slate-600">Kepatuhan Hari Ini</span>
-            <TrendingUp className="w-4 h-4 text-emerald-600" />
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600 shrink-0">
+            <TrendingUp className="w-6 h-6" />
           </div>
-          <p className="text-2xl font-black text-emerald-700">{averageComplianceRate}%</p>
-          <span className="text-[11px] text-emerald-600 font-medium">
-            {complianceDistribution.perfect} Siswa Tuntas 100%
-          </span>
+          <div>
+            <span className="text-xs font-bold text-slate-400 block">Rata-rata Kepatuhan</span>
+            <span className="text-2xl font-extrabold text-purple-600">{averageComplianceRate}%</span>
+            <span className="text-[10px] text-slate-500 block">Target Sekolah: &gt; 80%</span>
+          </div>
         </div>
 
-        {/* Radar Siswa Tidak Aktif 3 Hari */}
-        <div className={`p-5 rounded-3xl border shadow-xs space-y-1 transition ${
-          inactive3DaysStudents.length > 0
-            ? 'bg-rose-50/70 border-rose-200 text-rose-950'
-            : 'bg-white border-slate-200'
-        }`}>
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-bold text-rose-800">Tidak Aktif 3+ Hari</span>
-            <ShieldAlert className="w-4 h-4 text-rose-600 animate-pulse" />
+        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+            <AlertTriangle className="w-6 h-6" />
           </div>
-          <p className="text-2xl font-black text-rose-700">{inactive3DaysStudents.length}</p>
-          <span className="text-[11px] text-rose-600 font-bold">
-            {inactive3DaysStudents.length > 0 ? 'Perlu Pembinaan Segera' : 'Semua Siswa Terpantau Aktif'}
-          </span>
+          <div>
+            <span className="text-xs font-bold text-slate-400 block">Pasif 3+ Hari</span>
+            <span className="text-2xl font-extrabold text-rose-600">{inactive3DaysStudents.length}</span>
+            <span className="text-[10px] text-rose-600 font-bold block">Perlu Pembinaan</span>
+          </div>
         </div>
       </div>
 
-      {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
-        <button
-          onClick={() => setActiveSubTab('overview')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
-            activeSubTab === 'overview'
-              ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-          }`}
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>Ringkasan 7 Kebiasaan</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('inactive3days')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
-            activeSubTab === 'inactive3days'
-              ? 'bg-rose-600 text-white shadow-md shadow-rose-600/20'
-              : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'
-          }`}
-        >
-          <AlertTriangle className="w-4 h-4 text-rose-500" />
-          <span>Radar Tidak Aktif 3 Hari ({inactive3DaysStudents.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('classRanking')}
-          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap ${
-            activeSubTab === 'classRanking'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-          }`}
-        >
-          <Building2 className="w-4 h-4" />
-          <span>Peringkat 18 Kelas</span>
-        </button>
-      </div>
-
-      {/* TAB 1: RINGKASAN PROGRESS 7 KEBIASAAN */}
+      {/* SUB-TAB 1: OVERVIEW & 7 KEBIASAAN */}
       {activeSubTab === 'overview' && (
         <div className="space-y-6">
-          {/* Distribusi Kepatuhan Siswa Cards */}
+          {/* Distribusi 5 Level Kepatuhan Siswa */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-4">
-            <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-              <Award className="w-4 h-4 text-purple-600" />
-              <span>Distribusi Kepatuhan Siswa Hari Ini ({todayStr})</span>
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h4 className="font-extrabold text-slate-800 text-base">
+                  Distribusi Kepatuhan Siswa ({startDate === endDate ? `Tanggal ${startDate}` : `${startDate} s.d ${endDate}`})
+                </h4>
+                <p className="text-xs text-slate-500">
+                  Pengelompokan siswa berdasarkan intensitas ketercapaian 7 kebiasaan pada rentang waktu terpilih.
+                </p>
+              </div>
+            </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
-              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200/80">
-                <span className="text-xs font-bold text-amber-800 block">⭐ 7/7 Tuntas Sempurna</span>
-                <p className="text-2xl font-black text-amber-900 mt-1">{complianceDistribution.perfect}</p>
-                <span className="text-[10px] text-amber-700">100% Kebiasaan</span>
+            {/* Stacked Progress Bar */}
+            <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
+              <div
+                style={{ width: `${(complianceDistribution.perfect / (siswaList.length || 1)) * 100}%` }}
+                className="bg-amber-400 h-full transition-all duration-500"
+                title={`🌟 Sangat Tertib (90-100%): ${complianceDistribution.perfect} Siswa`}
+              />
+              <div
+                style={{ width: `${(complianceDistribution.high / (siswaList.length || 1)) * 100}%` }}
+                className="bg-emerald-500 h-full transition-all duration-500"
+                title={`🟢 Sangat Aktif (70-89%): ${complianceDistribution.high} Siswa`}
+              />
+              <div
+                style={{ width: `${(complianceDistribution.medium / (siswaList.length || 1)) * 100}%` }}
+                className="bg-blue-500 h-full transition-all duration-500"
+                title={`🟡 Cukup Aktif (40-69%): ${complianceDistribution.medium} Siswa`}
+              />
+              <div
+                style={{ width: `${(complianceDistribution.low / (siswaList.length || 1)) * 100}%` }}
+                className="bg-purple-500 h-full transition-all duration-500"
+                title={`⚪ Mulai Aktif (1-39%): ${complianceDistribution.low} Siswa`}
+              />
+              <div
+                style={{ width: `${(complianceDistribution.zero / (siswaList.length || 1)) * 100}%` }}
+                className="bg-rose-500 h-full transition-all duration-500"
+                title={`🔴 Belum Mengisi (0%): ${complianceDistribution.zero} Siswa`}
+              />
+            </div>
+
+            {/* Legend Pills */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+              <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200">
+                <span className="text-[11px] font-bold text-amber-800 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                  Sangat Tertib (&ge;90%)
+                </span>
+                <span className="text-lg font-black text-amber-950 mt-1 block">
+                  {complianceDistribution.perfect} <span className="text-xs font-normal text-amber-700">siswa</span>
+                </span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200/80">
-                <span className="text-xs font-bold text-emerald-800 block">🟢 5-6 Kebiasaan</span>
-                <p className="text-2xl font-black text-emerald-900 mt-1">{complianceDistribution.high}</p>
-                <span className="text-[10px] text-emerald-700">Sangat Aktif</span>
+              <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200">
+                <span className="text-[11px] font-bold text-emerald-800 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  Sangat Aktif (70-89%)
+                </span>
+                <span className="text-lg font-black text-emerald-950 mt-1 block">
+                  {complianceDistribution.high} <span className="text-xs font-normal text-emerald-700">siswa</span>
+                </span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200/80">
-                <span className="text-xs font-bold text-blue-800 block">🟡 3-4 Kebiasaan</span>
-                <p className="text-2xl font-black text-blue-900 mt-1">{complianceDistribution.medium}</p>
-                <span className="text-[10px] text-blue-700">Cukup Aktif</span>
+              <div className="p-3 rounded-2xl bg-blue-50 border border-blue-200">
+                <span className="text-[11px] font-bold text-blue-800 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                  Cukup Aktif (40-69%)
+                </span>
+                <span className="text-lg font-black text-blue-950 mt-1 block">
+                  {complianceDistribution.medium} <span className="text-xs font-normal text-blue-700">siswa</span>
+                </span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span className="text-xs font-bold text-slate-700 block">⚪ 1-2 Kebiasaan</span>
-                <p className="text-2xl font-black text-slate-800 mt-1">{complianceDistribution.low}</p>
-                <span className="text-[10px] text-slate-500">Mulai Mengisi</span>
+              <div className="p-3 rounded-2xl bg-purple-50 border border-purple-200">
+                <span className="text-[11px] font-bold text-purple-800 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                  Mulai Aktif (1-39%)
+                </span>
+                <span className="text-lg font-black text-purple-950 mt-1 block">
+                  {complianceDistribution.low} <span className="text-xs font-normal text-purple-700">siswa</span>
+                </span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200/80 col-span-2 sm:col-span-1">
-                <span className="text-xs font-bold text-rose-800 block">🔴 Belum Mengisi</span>
-                <p className="text-2xl font-black text-rose-900 mt-1">{complianceDistribution.zero}</p>
-                <span className="text-[10px] text-rose-700">Perlu Diingatkan</span>
+              <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200">
+                <span className="text-[11px] font-bold text-rose-800 flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                  Belum Mengisi (0%)
+                </span>
+                <span className="text-lg font-black text-rose-950 mt-1 block">
+                  {complianceDistribution.zero} <span className="text-xs font-normal text-rose-700">siswa</span>
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Grid 7 Kebiasaan Kemendikdasmen */}
+          {/* 7 Kartu Capaian Kebiasaan Kemendikdasmen */}
           <div className="space-y-3">
-            <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Progres Partisipasi Per 7 Kebiasaan Kemendikdasmen</span>
-            </h3>
+            <h4 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              <span>Capaian Partisipasi 7 Kebiasaan Kemendikdasmen</span>
+            </h4>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {habitPerformance.map(({ kebiasaan, submittedCount, percentage, wordCountValid }) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {habitPerformance.map((item) => (
                 <div
-                  key={kebiasaan.id}
-                  className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3 flex flex-col justify-between"
+                  key={item.kebiasaan.id}
+                  className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3 flex flex-col justify-between hover:shadow-md transition"
                 >
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center">
-                          {getHabitIcon(kebiasaan.icon_name)}
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase">
-                            Kebiasaan #{kebiasaan.urutan}
-                          </span>
-                          <h4 className="font-bold text-slate-900 text-sm">{kebiasaan.nama}</h4>
-                        </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+                        {getHabitIcon(item.kebiasaan.icon_name)}
                       </div>
-
-                      <span className="text-xs font-black text-slate-800 px-2 py-0.5 rounded-lg bg-slate-100">
-                        {percentage}%
+                      <span className="text-xs font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+                        {item.percentage}%
                       </span>
                     </div>
 
-                    <p className="text-[11px] text-slate-500 line-clamp-2">{kebiasaan.deskripsi}</p>
+                    <h5 className="font-extrabold text-slate-800 text-sm">
+                      {item.kebiasaan.urutan}. {item.kebiasaan.nama}
+                    </h5>
+                    <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
+                      {item.kebiasaan.deskripsi}
+                    </p>
                   </div>
 
                   <div className="space-y-2 pt-2 border-t border-slate-100">
-                    <div className="flex items-center justify-between text-xs text-slate-600">
-                      <span>Total Siswa Mengisi:</span>
-                      <span className="font-bold text-slate-800">
-                        {submittedCount} / {siswaList.length} siswa
-                      </span>
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-600">
+                      <span>Total Entri Masuk:</span>
+                      <span className="text-slate-900 font-mono">{item.submittedCount.toLocaleString('id-ID')}</span>
                     </div>
 
-                    {/* Progress Bar */}
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-
-                    {/* Khusus Gemar Belajar: info refleksi 100 kata */}
-                    {kebiasaan.id === 5 && (
-                      <div className="pt-1 text-[10px] text-indigo-700 font-semibold flex items-center justify-between">
-                        <span>📝 Refleksi Min. 100 Kata:</span>
-                        <span className="px-1.5 py-0.2 rounded bg-indigo-50 border border-indigo-200 font-bold">
-                          {wordCountValid} Refleksi Terverifikasi
-                        </span>
+                    {item.wordCountValid !== null && (
+                      <div className="p-2 rounded-xl bg-indigo-50 border border-indigo-200 text-[11px] text-indigo-900 font-medium">
+                        ✍️ Refleksi &ge;100 Kata: <span className="font-bold">{item.wordCountValid} entri</span>
                       </div>
                     )}
+
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        style={{ width: `${Math.min(item.percentage, 100)}%` }}
+                        className="bg-purple-600 h-full rounded-full transition-all duration-500"
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -466,164 +657,182 @@ export const StudentProgressOverview: React.FC<StudentProgressOverviewProps> = (
         </div>
       )}
 
-      {/* TAB 2: RADAR SISWA TIDAK MENGISI 3 HARI BERTURUT-TURUT */}
+      {/* SUB-TAB 2: RADAR PASIF 3 HARI */}
       {activeSubTab === 'inactive3days' && (
         <div className="space-y-6">
-          {/* Header Alert Radar */}
-          <div className="rounded-3xl p-6 bg-gradient-to-r from-rose-950 via-rose-900 to-slate-900 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-rose-800/40">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center text-rose-300 shrink-0">
-                <ShieldAlert className="w-6 h-6 animate-pulse" />
+          {/* Header Banner Radar Inaktivitas */}
+          <div className="p-6 rounded-3xl bg-linear-to-r from-rose-950 via-red-900 to-slate-900 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/30 border border-rose-400/40 flex items-center justify-center text-rose-200 shrink-0">
+                <ShieldAlert className="w-6 h-6" />
               </div>
               <div>
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-rose-500/30 text-rose-200 border border-rose-400/30 uppercase tracking-wider">
-                  Early Warning System • Kesiswaan, BK & Wali Kelas
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 bg-rose-500/30 px-2.5 py-0.5 rounded-full border border-rose-400/30 inline-block mb-1">
+                  Radar Pembinaan Kesiswaan & Wali Kelas
                 </span>
-                <h3 className="text-xl font-extrabold text-white mt-1">
-                  Laporan Siswa Tidak Mengisi Jurnal 3 Hari Berturut-turut
-                </h3>
-                <p className="text-xs text-rose-200/80 mt-0.5">
-                  Mendeteksi siswa yang pasif tanpa entri pada rentang 3 hari terakhir ({last3Days.reverse().join(', ')}).
+                <h4 className="text-xl font-extrabold text-white">
+                  Siswa Tidak Mengisi Jurnal 3 Hari Berturut-turut
+                </h4>
+                <p className="text-xs text-rose-200 mt-0.5">
+                  Mendeteksi siswa yang 0 entri pada rentang 3 hari terakhir ({last3Days[2]} s.d {last3Days[0]}).
                 </p>
               </div>
             </div>
 
-            <button
-              onClick={handleExportInactiveExcel}
-              className="px-4 py-2.5 rounded-2xl bg-white text-rose-900 hover:bg-rose-50 font-bold text-xs shadow-md transition flex items-center gap-2 shrink-0 active:scale-95"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export Laporan Excel (.xlsx)</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={handleCopyWhatsAppBroadcast}
+                className="px-3.5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition flex items-center gap-2 active:scale-95 cursor-pointer"
+                title="Salin Pesan Broadcast WhatsApp untuk Grup Wali Kelas"
+              >
+                {copiedWA ? <Check className="w-4 h-4 text-amber-300" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedWA ? 'Tersalin ke Clipboard!' : 'Copy WA Broadcast'}</span>
+              </button>
+
+              {currentUser && (
+                <button
+                  onClick={() => setShowBulkWarningModal(true)}
+                  className="px-3.5 py-2.5 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow-md transition flex items-center gap-2 active:scale-95 cursor-pointer"
+                >
+                  <BellRing className="w-4 h-4" />
+                  <span>Kirim Bulk Peringatan ({classesWithInactiveStudents.length} Kelas)</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleExportInactiveExcel}
+                className="px-3.5 py-2.5 rounded-2xl bg-white text-rose-900 hover:bg-rose-50 font-bold text-xs shadow-md transition flex items-center gap-2 active:scale-95 cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export Excel (.xlsx)</span>
+              </button>
+            </div>
           </div>
 
-          {/* Breakdown Per Kelas */}
+          {/* Sebaran Inaktivitas Per Rombel (18 Kelas) */}
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
-            <h4 className="font-extrabold text-slate-800 text-xs flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-indigo-600" />
-              <span>Sebaran Siswa Tidak Aktif di 18 Rombel (7A - 9F)</span>
-            </h4>
+            <h5 className="font-extrabold text-slate-800 text-sm">
+              Sebaran Siswa Tidak Aktif di 18 Rombongan Belajar (Kelas 7A - 9F):
+            </h5>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-              {inactiveCountPerClass.map(({ kelas, count, waliKelas }) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+              {inactiveCountPerClass.map((c) => (
                 <button
-                  key={kelas.id}
-                  onClick={() => setSelectedClassFilter(kelas.id)}
-                  className={`p-3 rounded-2xl border text-left transition flex flex-col justify-between ${
-                    selectedClassFilter === kelas.id
-                      ? 'bg-purple-600 text-white border-purple-700 shadow-md'
-                      : count > 0
-                      ? 'bg-rose-50/80 hover:bg-rose-100/80 border-rose-200 text-rose-950'
-                      : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                  key={c.kelas.id}
+                  onClick={() => setSelectedClassFilter(selectedClassFilter === c.kelas.id ? 'all' : c.kelas.id)}
+                  className={`p-3 rounded-2xl border text-left transition ${
+                    selectedClassFilter === c.kelas.id
+                      ? 'bg-rose-600 text-white border-rose-600 shadow-sm'
+                      : c.count > 0
+                      ? 'bg-rose-50/70 border-rose-200 text-slate-800 hover:bg-rose-100/80'
+                      : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-black text-sm">Kelas {kelas.nama_kelas}</span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md ${
-                      selectedClassFilter === kelas.id
-                        ? 'bg-white/20 text-white'
-                        : count > 0
-                        ? 'bg-rose-200/80 text-rose-900'
+                    <span className={`text-xs font-black ${selectedClassFilter === c.kelas.id ? 'text-white' : 'text-slate-800'}`}>
+                      Kelas {c.kelas.nama_kelas}
+                    </span>
+                    <span className={`text-xs font-extrabold px-1.5 py-0.2 rounded-full ${
+                      selectedClassFilter === c.kelas.id
+                        ? 'bg-white text-rose-900'
+                        : c.count > 0
+                        ? 'bg-rose-600 text-white'
                         : 'bg-slate-200 text-slate-600'
                     }`}>
-                      {count} Siswa
+                      {c.count}
                     </span>
                   </div>
-                  <span className={`text-[9px] truncate mt-1 ${
-                    selectedClassFilter === kelas.id ? 'text-purple-200' : 'text-slate-400'
-                  }`}>
-                    {waliKelas}
+                  <span className={`text-[10px] truncate block mt-1 ${selectedClassFilter === c.kelas.id ? 'text-rose-100' : 'text-slate-400'}`}>
+                    {c.waliKelas}
                   </span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Filter & Search Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-              <select
-                value={selectedClassFilter}
-                onChange={(e) => setSelectedClassFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 focus:ring-2 focus:ring-rose-500 focus:outline-none w-full sm:w-56"
-              >
-                <option value="all">Semua Rombel ({inactive3DaysStudents.length} Siswa)</option>
-                {kelasList.map((k) => {
-                  const c = inactiveCountPerClass.find((x) => x.kelas.id === k.id)?.count || 0;
-                  return (
-                    <option key={k.id} value={k.id}>
-                      Kelas {k.nama_kelas} ({c} siswa tidak aktif)
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-
-            <div className="relative w-full sm:w-72">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari siswa atau NISN..."
-                className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
-              />
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-            </div>
-          </div>
-
-          {/* Tabel Daftar Siswa Tidak Aktif 3 Hari */}
+          {/* Tabel Detail Siswa Tidak Aktif */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-800 text-sm">
+                  Daftar Siswa Tidak Aktif ({filteredInactiveList.length} Siswa)
+                </span>
+                {selectedClassFilter !== 'all' && (
+                  <button
+                    onClick={() => setSelectedClassFilter('all')}
+                    className="text-xs font-bold text-rose-600 hover:underline"
+                  >
+                    (Reset Filter Rombel)
+                  </button>
+                )}
+              </div>
+
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari siswa atau NISN..."
+                  className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
                   <tr>
-                    <th className="py-3 px-4 w-12 text-center">No</th>
-                    <th className="py-3 px-4">NISN</th>
-                    <th className="py-3 px-4">Nama Siswa</th>
-                    <th className="py-3 px-4 text-center">Kelas</th>
-                    <th className="py-3 px-4">Wali Kelas</th>
-                    <th className="py-3 px-4 text-center">Terakhir Mengisi</th>
-                    <th className="py-3 px-4 text-center">Aksi Pembinaan</th>
+                    <th className="p-3.5 pl-5">No</th>
+                    <th className="p-3.5">NISN & Nama Siswa</th>
+                    <th className="p-3.5">Rombel</th>
+                    <th className="p-3.5">Wali Kelas</th>
+                    <th className="p-3.5">Terakhir Mengisi</th>
+                    <th className="p-3.5">Lama Pasif</th>
+                    <th className="p-3.5 pr-5 text-right">Aksi Pembinaan</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredInactiveList.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400 text-xs">
-                        🎉 Tidak ada siswa yang pasif 3 hari pada filter ini. Semua siswa terpantau aktif!
+                      <td colSpan={7} className="p-8 text-center text-slate-400">
+                        <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                        <p className="font-bold text-slate-700">Semua Siswa Terpantau Aktif</p>
+                        <p className="text-xs">Tidak ditemukan siswa yang tidak mengisi jurnal 3 hari berturut-turut pada filter ini.</p>
                       </td>
                     </tr>
                   ) : (
                     filteredInactiveList.map((item, idx) => (
                       <tr key={item.siswa.id} className="hover:bg-rose-50/40 transition">
-                        <td className="py-3 px-4 text-center text-slate-400">{idx + 1}</td>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-800">{item.siswa.nisn}</td>
-                        <td className="py-3 px-4 font-bold text-slate-900">{item.siswa.nama}</td>
-                        <td className="py-3 px-4 text-center">
-                          <span className="px-2.5 py-0.5 rounded-lg bg-purple-50 text-purple-700 font-bold border border-purple-200">
+                        <td className="p-3.5 pl-5 font-bold text-slate-400">{idx + 1}</td>
+                        <td className="p-3.5">
+                          <span className="font-bold text-slate-800 block text-xs">{item.siswa.nama}</span>
+                          <span className="text-[10px] text-slate-400 font-mono">{item.siswa.nisn}</span>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
                             Kelas {item.namaKelas}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-600">{item.waliKelasNama}</td>
-                        <td className="py-3 px-4 text-center">
-                          {item.lastActiveDate ? (
-                            <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold text-[10px]">
-                              {item.daysSinceLast} Hari Lalu ({item.lastActiveDate})
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-bold text-[10px]">
-                              Belum Pernah Mengisi
-                            </span>
-                          )}
+                        <td className="p-3.5">
+                          <span className="font-medium text-slate-700 block">{item.waliKelasNama}</span>
+                          <span className="text-[10px] text-slate-400 font-mono">NIP: {item.waliKelasNip}</span>
                         </td>
-                        <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
+                        <td className="p-3.5 font-medium text-slate-600">
+                          {item.lastActiveDate ? item.lastActiveDate : <span className="text-rose-500 font-bold">Belum Pernah</span>}
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-black text-rose-600 text-xs">
+                            {item.daysSinceLast >= 999 ? 'Belum Pernah' : `${item.daysSinceLast} Hari`}
+                          </span>
+                        </td>
+                        <td className="p-3.5 pr-5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
                             {onOpenStudentDetail && (
                               <button
                                 onClick={() => onOpenStudentDetail(item.siswa)}
-                                className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition flex items-center gap-1"
-                                title="Lihat Profil Siswa"
+                                className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] transition flex items-center gap-1"
+                                title="Lihat Riwayat & Profil Siswa"
                               >
                                 <Eye className="w-3.5 h-3.5" />
                                 <span>Detail</span>
@@ -657,76 +866,79 @@ export const StudentProgressOverview: React.FC<StudentProgressOverviewProps> = (
         </div>
       )}
 
-      {/* TAB 3: PERINGKAT 18 KELAS */}
-      {activeSubTab === 'classRanking' && (
-        <div className="space-y-4">
-          <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between">
-            <div>
-              <h3 className="font-extrabold text-slate-800 text-sm">
-                Peringkat Kepatuhan 18 Rombongan Belajar (7A - 9F) Hari Ini
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Dihitung dari persentase rata-rata 7 kebiasaan seluruh siswa di masing-masing kelas.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {classRankings.map((cr, idx) => (
-              <div
-                key={cr.kelas.id}
-                className={`p-5 rounded-3xl border shadow-xs flex flex-col justify-between space-y-3 transition ${
-                  idx === 0
-                    ? 'bg-amber-50/70 border-amber-300 shadow-sm'
-                    : idx === 1
-                    ? 'bg-slate-50 border-slate-300'
-                    : idx === 2
-                    ? 'bg-orange-50/50 border-orange-200'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs ${
-                        idx === 0
-                          ? 'bg-amber-400 text-amber-950 shadow-xs'
-                          : idx === 1
-                          ? 'bg-slate-300 text-slate-800'
-                          : idx === 2
-                          ? 'bg-orange-300 text-orange-950'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        #{idx + 1}
-                      </span>
-                      <h4 className="font-extrabold text-slate-900 text-base">Kelas {cr.kelas.nama_kelas}</h4>
-                    </div>
-
-                    <span className="font-black text-sm text-emerald-700 px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200">
-                      {cr.complianceRate}%
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-slate-500">Wali Kelas: <strong>{cr.waliNama}</strong></p>
+      {/* MODAL BULK PERINGATAN KESISWAAN */}
+      {showBulkWarningModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-scale-up border border-slate-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5 text-rose-700">
+                <div className="w-9 h-9 rounded-2xl bg-rose-100 flex items-center justify-center">
+                  <BellRing className="w-5 h-5" />
                 </div>
-
-                <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
-                  <div className="flex items-center justify-between text-slate-600">
-                    <span>Siswa Tuntas 100%:</span>
-                    <span className="font-bold text-slate-800">{cr.completedAllCount} / {cr.studentCount} siswa</span>
-                  </div>
-
-                  <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        cr.complianceRate >= 80 ? 'bg-emerald-500' : cr.complianceRate >= 50 ? 'bg-blue-500' : 'bg-amber-500'
-                      }`}
-                      style={{ width: `${cr.complianceRate}%` }}
-                    />
-                  </div>
+                <div>
+                  <h4 className="font-extrabold text-slate-800 text-base">Kirim Peringatan Massal</h4>
+                  <p className="text-xs text-slate-400">Notifikasi resmi ke {classesWithInactiveStudents.length} Wali Kelas</p>
                 </div>
               </div>
-            ))}
+              <button
+                onClick={() => setShowBulkWarningModal(false)}
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Daftar Kelas Target:</label>
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-50 border border-slate-200 max-h-24 overflow-y-auto">
+                  {classesWithInactiveStudents.map((c) => (
+                    <span key={c.kelas.id} className="px-2 py-0.5 rounded-lg bg-rose-100 text-rose-900 font-bold text-[10px]">
+                      Kelas {c.kelas.nama_kelas} ({c.count} siswa)
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Judul Arahan / Peringatan:</label>
+                <input
+                  type="text"
+                  value={bulkJudul}
+                  onChange={(e) => setBulkJudul(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 font-semibold text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Isi Pesan Instruksi:</label>
+                <textarea
+                  rows={3}
+                  value={bulkPesan}
+                  onChange={(e) => setBulkPesan(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none leading-relaxed"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowBulkWarningModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleSendBulkWarning}
+                disabled={isSendingBulk}
+                className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+                <span>{isSendingBulk ? 'Mengirim...' : 'Kirim ke Semua Wali Kelas'}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

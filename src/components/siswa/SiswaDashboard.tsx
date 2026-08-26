@@ -11,7 +11,8 @@ import {
   TrendingUp,
   Heart,
   Flame,
-  FileText
+  FileText,
+  MessageSquareHeart
 } from 'lucide-react';
 import { EntriJurnal, Feedback, Kebiasaan, Siswa } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
@@ -22,6 +23,7 @@ import { HabitEntryModal } from './HabitEntryModal';
 import { PhotoViewerModal } from '../common/PhotoViewerModal';
 import { SiswaHistory } from './SiswaHistory';
 import { BadgesShowcaseModal } from './BadgesShowcaseModal';
+import { SuaraSiswaModal } from './SuaraSiswaModal';
 
 interface SiswaDashboardProps {
   siswa: Siswa;
@@ -39,6 +41,7 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
   const [selectedKebiasaanForEntry, setSelectedKebiasaanForEntry] = useState<Kebiasaan | null>(null);
   const [selectedEntryForPhoto, setSelectedEntryForPhoto] = useState<EntriJurnal | null>(null);
   const [isBadgesModalOpen, setIsBadgesModalOpen] = useState<boolean>(false);
+  const [isSuaraModalOpen, setIsSuaraModalOpen] = useState<boolean>(false);
 
   // Load data
   const loadData = async () => {
@@ -224,6 +227,14 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
             </span>
           )}
         </button>
+
+        <button
+          onClick={() => setIsSuaraModalOpen(true)}
+          className="ml-auto px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 bg-linear-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white shadow-md shadow-pink-500/20 active:scale-95 cursor-pointer"
+        >
+          <MessageSquareHeart className="w-4 h-4" />
+          <span>Suara & Curhat Siswa</span>
+        </button>
       </div>
 
       {/* Tab 1: 7 Kebiasaan Hari Ini */}
@@ -291,6 +302,12 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
         onClose={() => setIsBadgesModalOpen(false)}
         gamification={gamificationProfile}
         studentName={siswa.nama}
+      />
+
+      <SuaraSiswaModal
+        isOpen={isSuaraModalOpen}
+        onClose={() => setIsSuaraModalOpen(false)}
+        siswa={siswa}
       />
     </div>
   );
