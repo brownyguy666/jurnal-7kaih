@@ -2,6 +2,19 @@
 
 Semua pembaruan, perbaikan, dan penambahan fitur aplikasi Jurnal 7 KAIH (7 Karakter Anak Indonesia Hebat) dicatat secara kronologis di bawah ini.
 
+## [v0.9.1] - 2026-08-26 *(Sinkronisasi Realtime Suara & Curhat Siswa, Migrasi Cloud Schema, & Pembersihan Mock)*
+
+### 🌟 Fitur Baru & Perbaikan
+1. **Sinkronisasi Cloud Realtime Suara Siswa**:
+   - Menambahkan skrip migrasi database `supabase/create_suara_siswa.sql` untuk membuat tabel `suara_siswa` dengan relasi lengkap ke tabel `siswa`, `kelas`, dan `staf_sekolah` serta konfigurasi RLS.
+   - Sinkronisasi realtime otomatis saat siswa mengirimkan aspirasi, saat guru memberikan balasan/tanggapan resmi, maupun saat superadmin memoderasi.
+2. **Pembersihan Data Mock Dummy Lokal**:
+   - Menghapus inisialisasi dummy data `suara-1` dari penyimpanan lokal agar data yang tampil di dashboard Kepala Sekolah, Wali Kelas, dan Superadmin 100% merupakan curhatan/ide riil siswa.
+3. **Penyempurnaan Pemetaan Kelas (*Resilient Class Mapping*)**:
+   - Memperbaiki logika filter suara siswa untuk Wali Kelas dan Kepala Sekolah agar mengenali seluruh variasi ID rombel kelas tanpa terputus.
+
+---
+
 ## [v0.9.0] - 2026-08-26 *(Pusat Piagam Penghargaan Kepala Sekolah: Multi-Periode & Kategori Prestasi Siswa / Guru)*
 
 ### 🌟 Fitur Baru & Peningkatan

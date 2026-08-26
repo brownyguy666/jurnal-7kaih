@@ -144,6 +144,27 @@ create table if not exists log_hapus (
   waktu timestamptz default now()
 );
 
+-- ------------------------------------------------------------------------------
+-- 9. TABEL SUARA SISWA (Aspirasi, Curhat, Keluhan & Ide Siswa)
+-- ------------------------------------------------------------------------------
+create table if not exists suara_siswa (
+  id uuid primary key default gen_random_uuid(),
+  siswa_id uuid not null references siswa(id) on delete cascade,
+  kelas_id uuid references kelas(id) on delete set null,
+  kategori text not null check (kategori in ('curhat_pembiasaan', 'keluhan_kendala', 'ide_saran_aplikasi', 'lainnya')),
+  judul text not null,
+  isi text not null,
+  tanggal date not null default current_date,
+  tanggapan text,
+  tanggapan_oleh_staf_id uuid references staf_sekolah(id) on delete set null,
+  tanggapan_at timestamptz,
+  created_at timestamptz default now()
+);
+
+create index if not exists idx_suara_siswa_siswa on suara_siswa(siswa_id);
+create index if not exists idx_suara_siswa_kelas on suara_siswa(kelas_id);
+create index if not exists idx_suara_siswa_created_at on suara_siswa(created_at desc);
+
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
@@ -156,6 +177,7 @@ alter table entri_jurnal enable row level security;
 alter table feedback enable row level security;
 alter table arahan_wali_kelas enable row level security;
 alter table log_hapus enable row level security;
+alter table suara_siswa enable row level security;
 
 create policy "Allow all kebiasaan" on kebiasaan for all using (true) with check (true);
 create policy "Allow all kelas" on kelas for all using (true) with check (true);
@@ -165,6 +187,7 @@ create policy "Allow all entri_jurnal" on entri_jurnal for all using (true) with
 create policy "Allow all feedback" on feedback for all using (true) with check (true);
 create policy "Allow all arahan_wali_kelas" on arahan_wali_kelas for all using (true) with check (true);
 create policy "Allow all log_hapus" on log_hapus for all using (true) with check (true);
+create policy "Allow all suara_siswa" on suara_siswa for all using (true) with check (true);
 
 -- Storage bucket
 insert into storage.buckets (id, name, public)

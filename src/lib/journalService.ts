@@ -674,9 +674,13 @@ export class JournalService {
           .order('created_at', { ascending: false });
         if (!error && data) {
           MockDatabase.syncSuaraSiswaFromRemote(data as SuaraSiswa[]);
+          return data as SuaraSiswa[];
+        }
+        if (error) {
+          console.warn('Notice from Supabase suara_siswa:', error.message);
         }
       } catch (e) {
-        // Fallback local jika tabel supabase belum dibuat
+        console.warn('Fallback local for getSuaraSiswaList:', e);
       }
     }
     return MockDatabase.getSuaraSiswa();
@@ -695,18 +699,26 @@ export class JournalService {
     const localSuara = MockDatabase.addSuaraSiswa(siswaId, kelasId, kategori, judul, isi);
     if (isSupabaseConfigured) {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('suara_siswa')
           .insert({
             siswa_id: siswaId,
             kelas_id: kelasId,
             kategori,
             judul,
-            isi
+            isi,
+            tanggal: new Date().toISOString().split('T')[0]
           })
           .select()
           .single();
-        if (data) return data as SuaraSiswa;
+        if (error) {
+          console.warn('Failed remote insert suara_siswa:', error.message);
+        }
+        if (data) {
+          const current = MockDatabase.getSuaraSiswa().map(s => s.id === localSuara.id ? data as SuaraSiswa : s);
+          MockDatabase.syncSuaraSiswaFromRemote(current);
+          return data as SuaraSiswa;
+        }
       } catch (e) {
         console.warn('Failed remote insert suara_siswa:', e);
       }

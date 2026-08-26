@@ -33,21 +33,7 @@ const STORAGE_KEYS = {
   SUARA_SISWA: 'jurnal_7k_suara_siswa'
 };
 
-const INITIAL_SUARA_SISWA: SuaraSiswa[] = [
-  {
-    id: 'suara-1',
-    siswa_id: 's-01',
-    kelas_id: 'k-7a',
-    kategori: 'ide_saran_aplikasi',
-    judul: 'Usul Tambahan Fitur Pengingat Sebelum Batas Waktu Sholat',
-    isi: 'Bapak/Ibu guru, apakah bisa diberikan pengingat atau notifikasi sebelum batas waktu sholat berakhir agar kami tidak terburu-buru mengisi jurnal?',
-    tanggal: new Date().toISOString().split('T')[0],
-    tanggapan: 'Terima kasih atas sarannya ananda. Masukan ini sangat baik dan sedang kami tindaklanjuti bersama tim kurikulum dan IT sekolah.',
-    tanggapan_oleh_staf_id: 'staf-kurikulum',
-    tanggapan_at: new Date().toISOString(),
-    created_at: new Date().toISOString()
-  }
-];
+const INITIAL_SUARA_SISWA: SuaraSiswa[] = [];
 
 function getStored<T>(key: string, fallback: T): T {
   try {
@@ -105,12 +91,18 @@ export class MockDatabase {
   }
 
   static getSuaraSiswa(): SuaraSiswa[] {
-    return getStored<SuaraSiswa[]>(STORAGE_KEYS.SUARA_SISWA, INITIAL_SUARA_SISWA);
+    const items = getStored<SuaraSiswa[]>(STORAGE_KEYS.SUARA_SISWA, INITIAL_SUARA_SISWA);
+    // Bersihkan data dummy masa lalu jika ada
+    const cleanItems = items.filter(s => s.id !== 'suara-1' && s.siswa_id !== 's-01');
+    if (cleanItems.length !== items.length) {
+      setStored(STORAGE_KEYS.SUARA_SISWA, cleanItems);
+    }
+    return cleanItems;
   }
 
   // Cloud Sync Helpers
   static syncSuaraSiswaFromRemote(remoteList: SuaraSiswa[]): void {
-    if (remoteList && remoteList.length > 0) {
+    if (Array.isArray(remoteList)) {
       setStored(STORAGE_KEYS.SUARA_SISWA, remoteList);
     }
   }

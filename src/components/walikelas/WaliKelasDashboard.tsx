@@ -49,6 +49,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const [currentKelas, setCurrentKelas] = useState<Kelas | null>(null);
+  const [kelasList, setKelasList] = useState<Kelas[]>([]);
   const [siswaList, setSiswaList] = useState<Siswa[]>([]);
   const [kebiasaanList, setKebiasaanList] = useState<Kebiasaan[]>([]);
   const [entries, setEntries] = useState<EntriJurnal[]>([]);
@@ -93,6 +94,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
         matchedKelas = allKelas[0];
       }
 
+      setKelasList(allKelas);
       setCurrentKelas(matchedKelas || null);
 
       const targetClassId = matchedKelas ? matchedKelas.id : (staf.kelas_id || 'k-7a');
@@ -267,7 +269,13 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
             title="Buka Kotak Aspirasi & Curhat Siswa"
           >
             <MessageSquare className="w-3.5 h-3.5 text-purple-700" />
-            <span>Aspirasi Siswa ({suaraList.filter(s => s.kelas_id === currentKelas?.id).length})</span>
+            <span>Aspirasi Siswa ({
+              suaraList.filter(s => 
+                s.kelas_id === currentKelas?.id || 
+                s.kelas_id === currentKelas?.nama_kelas ||
+                siswaList.find(st => st.id === s.siswa_id)?.kelas_id === currentKelas?.id
+              ).length
+            })</span>
           </button>
 
           <button
@@ -578,7 +586,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
             <SuaraSiswaModerationView
               suaraList={suaraList}
               siswaList={siswaList}
-              kelasList={currentKelas ? [currentKelas] : []}
+              kelasList={kelasList.length > 0 ? kelasList : (currentKelas ? [currentKelas] : [])}
               stafList={stafList}
               currentStaf={staf}
               onRefreshData={loadData}

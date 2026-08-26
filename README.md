@@ -1,6 +1,6 @@
 # 🇮🇩 Jurnal 7 KAIH
 ### SMP Negeri 2 Glagah — Banyuwangi, Jawa Timur
-> **Versi: `v0.9.0` (Official Production)**  
+> **Versi: `v0.9.1` (Official Production)**  
 > Platform Web Pencatatan & Evaluasi Pembiasaan Karakter Luhur Peserta Didik Berbasis Cloud Database Realtime.
 
 ---
@@ -147,6 +147,17 @@ npm run build
 ---
 
 ## 📜 Catatan Perubahan & Riwayat Rilis (Changelog)
+
+### [v0.9.1] - 2026-08-26 *(Sinkronisasi Realtime Suara & Curhat Siswa, Migrasi Cloud Schema, & Pembersihan Mock)*
+- **Sinkronisasi Cloud Realtime Suara Siswa**:
+  - Menyediakan skrip migrasi database `supabase/create_suara_siswa.sql` untuk membuat tabel `suara_siswa` dengan relasi ke siswa, kelas, dan staf serta proteksi RLS.
+  - Memperbarui `journalService.ts` untuk menyinkronkan aspirasi, keluhan, dan tanggapan secara langsung ke Supabase Cloud.
+- **Pembersihan Data Mock Lokal**:
+  - Menghapus inisialisasi mock data dummy (`suara-1` dari `s-01`) agar data yang tampil 100% merupakan aspirasi nyata siswa yang telah tersinkronkan.
+- **Pemetaan Kelas Tangguh (*Resilient Class Mapping*)**:
+  - Menyempurnakan filter suara siswa untuk Wali Kelas, Kepala Sekolah, Waka Kurikulum, Kesiswaan, dan Superadmin agar tidak terhalang variasi ID string / UUID rombel kelas.
+
+---
 
 ### [v0.9.0] - 2026-08-26 *(Pusat Piagam Penghargaan Kepala Sekolah: Multi-Periode & Kategori Prestasi Siswa / Guru)*
 - **Penerbitan Piagam Multi-Periode Fleksibel (Kepala Sekolah)**:

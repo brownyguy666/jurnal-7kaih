@@ -53,13 +53,29 @@ export const SuaraSiswaModerationView: React.FC<SuaraSiswaModerationViewProps> =
   // Filter list
   const filteredList = useMemo(() => {
     return suaraList.filter((item) => {
-      // Jika wali kelas, tampilkan suara dari kelas binaannya
-      if (isWaliKelas && currentStaf.kelas_id && item.kelas_id !== currentStaf.kelas_id) {
-        return false;
+      // Jika wali kelas, tampilkan suara dari kelas binaannya secara resilient
+      if (isWaliKelas) {
+        const rawS = siswaList.find(s => s.id === item.siswa_id);
+        const itemClassId = item.kelas_id || rawS?.kelas_id;
+        const myClassId = currentStaf.kelas_id;
+        const myKelas = kelasList.find(k => 
+          k.id === myClassId || 
+          k.nama_kelas === myClassId || 
+          k.wali_kelas_id === currentStaf.id ||
+          (myClassId && k.nama_kelas.toUpperCase() === String(myClassId).replace(/^k-/i, '').toUpperCase())
+        );
+        
+        const isMatch = 
+          itemClassId === myClassId ||
+          (myKelas && (itemClassId === myKelas.id || itemClassId === myKelas.nama_kelas || itemClassId?.toUpperCase() === myKelas.nama_kelas.toUpperCase())) ||
+          (rawS && myKelas && rawS.kelas_id === myKelas.id);
+        
+        if (!isMatch) return false;
       }
 
       const matchKategori = filterKategori === 'all' || item.kategori === filterKategori;
-      const matchKelas = filterKelas === 'all' || item.kelas_id === filterKelas;
+      const matchKelas = filterKelas === 'all' || item.kelas_id === filterKelas || 
+        siswaList.find(s => s.id === item.siswa_id)?.kelas_id === filterKelas;
       const matchStatus = 
         filterStatus === 'all' ? true :
         filterStatus === 'belum_ditanggapi' ? !item.tanggapan :
@@ -71,7 +87,7 @@ export const SuaraSiswaModerationView: React.FC<SuaraSiswaModerationViewProps> =
 
       return matchKategori && matchKelas && matchStatus && matchQuery;
     });
-  }, [suaraList, filterKategori, filterKelas, filterStatus, searchQuery, isWaliKelas, currentStaf]);
+  }, [suaraList, filterKategori, filterKelas, filterStatus, searchQuery, isWaliKelas, currentStaf, siswaList, kelasList]);
 
   const handleOpenResponseModal = (item: SuaraSiswa) => {
     setRespondingItem(item);
