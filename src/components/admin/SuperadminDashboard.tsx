@@ -19,7 +19,8 @@ import {
   Trophy,
   Edit2,
   Pencil,
-  MessageSquareHeart
+  MessageSquareHeart,
+  Trash2
 } from 'lucide-react';
 import { Kebiasaan, Kelas, Siswa, StafSekolah, EntriJurnal, SuaraSiswa } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
@@ -30,6 +31,7 @@ import { DataImportStafModal } from './DataImportStafModal';
 import { KebiasaanConfigModal } from './KebiasaanConfigModal';
 import { PasswordManagerModal } from './PasswordManagerModal';
 import { EditUserModal } from './EditUserModal';
+import { DeleteStudentModal } from './DeleteStudentModal';
 import { ClassReportModal } from './ClassReportModal';
 import { ClassComparisonTable } from '../pejabat/ClassComparisonTable';
 import { ArahanWaliKelasModal } from '../pejabat/ArahanWaliKelasModal';
@@ -68,7 +70,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
   const [isArahanModalOpen, setIsArahanModalOpen] = useState(false);
   const [targetClassForArahan, setTargetClassForArahan] = useState('');
   
-  // Password Manager Modal & Class Report Modal & Edit User Modal
+  // Password Manager Modal & Class Report Modal & Edit User Modal & Delete Student Modal
   const [selectedUserForPassword, setSelectedUserForPassword] = useState<{
     type: 'siswa' | 'staf';
     data: Siswa | StafSekolah;
@@ -77,6 +79,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
     type: 'siswa' | 'staf';
     data: Siswa | StafSekolah;
   } | null>(null);
+  const [selectedStudentForDelete, setSelectedStudentForDelete] = useState<Siswa | null>(null);
   const [selectedClassForReport, setSelectedClassForReport] = useState<Kelas | null>(null);
 
   const loadAllData = async () => {
@@ -132,6 +135,12 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
       // fallback
     }
     return dob.replace(/[^0-9]/g, '');
+  };
+
+  // Handler Hapus Siswa dari Database / Kelas
+  const handleConfirmDeleteStudent = async (siswaId: string) => {
+    await JournalService.deleteSiswa(siswaId);
+    await loadAllData();
   };
 
   // Filtered Siswa
@@ -468,6 +477,14 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
                               <KeyRound className="w-3.5 h-3.5" />
                               <span>Password</span>
                             </button>
+                            <button
+                              onClick={() => setSelectedStudentForDelete(s)}
+                              className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] border border-rose-200 transition flex items-center gap-1 active:scale-95"
+                              title="Hapus Siswa dari Kelas & Database"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Hapus</span>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -689,6 +706,14 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         kelasList={kelasList}
         onClose={() => setSelectedUserForEdit(null)}
         onSuccess={loadAllData}
+      />
+
+      <DeleteStudentModal
+        isOpen={Boolean(selectedStudentForDelete)}
+        siswa={selectedStudentForDelete}
+        kelasList={kelasList}
+        onClose={() => setSelectedStudentForDelete(null)}
+        onConfirmDelete={handleConfirmDeleteStudent}
       />
 
       <ClassReportModal

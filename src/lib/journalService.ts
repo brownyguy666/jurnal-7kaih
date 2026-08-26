@@ -768,6 +768,28 @@ export class JournalService {
   }
 
   /**
+   * Menghapus Siswa dari Database / Kelas (Superadmin)
+   */
+  static async deleteSiswa(siswaId: string): Promise<boolean> {
+    MockDatabase.deleteSiswa(siswaId);
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('entri_jurnal').delete().eq('siswa_id', siswaId);
+        await supabase.from('feedback').delete().eq('siswa_id', siswaId);
+        await supabase.from('suara_siswa').delete().eq('siswa_id', siswaId);
+        const { error } = await supabase.from('siswa').delete().eq('id', siswaId);
+        if (error) {
+          console.error('Failed to delete student from Supabase:', error.message);
+          return false;
+        }
+      } catch (e) {
+        console.warn('Failed remote delete siswa:', e);
+      }
+    }
+    return true;
+  }
+
+  /**
    * Mengirimkan Bulk Arahan / Peringatan Massal ke Banyak Kelas Sekaligus
    */
   static async kirimBulkArahan(

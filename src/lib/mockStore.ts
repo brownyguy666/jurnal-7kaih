@@ -297,6 +297,23 @@ export class MockDatabase {
     return true;
   }
 
+  static deleteSiswa(siswaId: string): boolean {
+    const allSiswa = this.getSiswa();
+    const filtered = allSiswa.filter((s) => s.id !== siswaId);
+    setStored(STORAGE_KEYS.SISWA, filtered);
+
+    const allEntries = this.getEntriJurnal();
+    setStored(STORAGE_KEYS.ENTRI, allEntries.filter((e) => e.siswa_id !== siswaId));
+
+    const allFeedback = this.getFeedback();
+    setStored(STORAGE_KEYS.FEEDBACK, allFeedback.filter((f) => f.siswa_id !== siswaId));
+
+    const allSuara = this.getSuaraSiswa();
+    setStored(STORAGE_KEYS.SUARA_SISWA, allSuara.filter((s) => s.siswa_id !== siswaId));
+
+    return true;
+  }
+
   static updatePassword(type: 'siswa' | 'staf', id: string): boolean {
     if (type === 'siswa') {
       const allSiswa = this.getSiswa();
