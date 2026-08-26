@@ -77,7 +77,7 @@ Sistem mencatat pembiasaan siswa dengan urutan baku resmi Kementerian Pendidikan
   - **Laporan Drill-Down 18 Kelas (Ikon Mata 👁️)**: Membuka modal inspeksi detail rekapitulasi per kelas lengkap dengan foto bukti dan persentase kehadiran.
 
 ### 4. 🔑 Super Administrator
-- **Login**: `ajibaguskhoiri` / Password: `••••••`
+- **Login**: Menggunakan akun Super Administrator terdaftar (Kredensial Khusus Pengelola IT Sekolah)
 - **Fitur Tertinggi**:
   - **Rename & Edit Data Lengkap**: Mengubah nama, NISN/NIP, dan kelas guru maupun siswa secara langsung.
   - **Password Manager**: Melihat semua password siswa & staf secara transparan (dengan *show/hide eye toggle*), menyalin password, serta mengganti/mereset password langsung ke database Supabase Cloud.
@@ -120,8 +120,8 @@ cp .env.example .env
 
 Isi file `.env` dengan kredensial Supabase Anda:
 ```env
-VITE_SUPABASE_URL=https://xxeegyireqgxshtazkzh.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key-here
 ```
 
 Jalankan server development:
@@ -146,35 +146,99 @@ npm run build
 
 ---
 
-## 📜 Riwayat Rilis & Revisi
+## 📜 Catatan Perubahan & Riwayat Rilis (Changelog)
 
-### `v0.4.0` (Revisi 04 — Current)
-- 🏆 **Sistem Perangkingan Harian (Leaderboard 18 Kelas)**: Evaluasi otomatis setelah pukul 24.00 WIB menghitung Skor Tertib Kelas berdasarkan persentase kepatuhan 7 kebiasaan, rasio siswa tuntas 100%, dan minimnya anomali foto.
-- 🌟 **Siswa Teladan Tercepat & Terbersih**: Algoritma kurasi murid terbaik yang menyelesaikan seluruh 7 kebiasaan paling awal dengan **100% foto asli sinkron (bebas peringatan EXIF)** dan **tepat waktu** saat Bangun Pagi (04.00–05.00) dan Tidur Cepat (20.00–22.00).
-- 📊 **Dashboard Grafik Dinamis Superadmin**: Visualisasi interaktif meliputi Animated Horizontal Bar Chart 18 Kelas, Komparasi Tingkat 7 vs 8 vs 9, Grafik Pemenuhan 7 Kebiasaan Sekolah, dan Pengukur Integritas Foto EXIF.
-- 🥇 **Podium Juara 3D/Glassmorphic**: Visualisasi podium penghargaan Juara 1 (Gold), Juara 2 (Silver), dan Juara 3 (Bronze) untuk kelas terdisiplin dan siswa teladan.
-- 📥 **Export Excel 2-Sheet & WhatsApp Broadcast**: Ekspor laporan klasemen harian ke Excel (.xlsx) dan format broadcast pengumuman resmi ke WhatsApp grup sekolah.
-- 🛠️ **Penyelarasan Dinamis Wali Kelas & Supabase**: Perbaikan integrasi relasi dua arah wali kelas (`wali_kelas_id` & `kelas_id`), memastikan guru (seperti Wali Kelas 7F) memuat data 31 siswa dan entri jurnal Supabase secara realtime dan dinamis.
+### [v0.8.0] - 2026-08-26 *(Branding Resmi Jurnal 7 KAIH, Suara & Curhat Siswa, Date Range Picker, & Bulk Reminder WA)*
+- **Branding Resmi & Standarisasi Aplikasi (`Jurnal 7 KAIH`)**: Menstandarkan seluruh antarmuka, navbar, footer, login view, dashboard router, modal rapor, header ekspor Excel, dan format WhatsApp ke nama resmi **Jurnal 7 KAIH**.
+- **Kotak Aspirasi & Curhat Siswa ("Suara Siswa")**:
+  - Siswa dapat mengirimkan curhatan pembiasaan, keluhan kendala teknis/kehidupan, maupun ide/saran inovasi aplikasi secara opsional setiap hari melalui modal interaktif.
+  - **Privasi Terproteksi (Anonim)**: Wali Kelas, Kepala Sekolah, Waka Kurikulum, dan Kesiswaan membaca pesan dengan label *"Siswa Kelas [Rombel] (Anonim)"* dan dapat memberikan tanggapan resmi yang langsung muncul di dashboard siswa.
+  - **Audit Superadmin**: Hanya Superadministrator yang memiliki hak khusus untuk melihat nama dan NISN asli siswa demi keamanan dan pembinaan terarah.
+- **Date Range Picker Kustom pada Evaluasi Progress**:
+  - Pemilihan rentang tanggal fleksibel (*Start Date s.d. End Date*) dengan tombol preset cepat (*Hari Ini*, *7 Hari Terakhir*, *30 Hari Terakhir*, *Bulan Ini*, *1 Semester Penuh*).
+  - Menghilangkan tab Peringkat 18 Kelas yang duplikat pada tab Progress agar Leaderboard tetap fokus dan eksklusif di tab klasemen.
+- **Peringatan Massal (Bulk Reminder) Siswa Pasif via WhatsApp & In-App**:
+  - **Superadmin, KS, Kurikulum, Kesiswaan**: Tombol *Bulk Peringatan ke Semua Wali Kelas* yang otomatis mengirimkan arahan in-app serentak dan membuat template WhatsApp broadcast lengkap dengan rincian nama siswa per kelas.
+  - **Wali Kelas**: Tombol *📢 Ingatkan Semua via WA* langsung di banner peringatan siswa pasif 3 hari berturut-turut untuk menyalin format pengingat ke grup kelas/wali murid.
 
-### `v0.3.1` (Revisi 03)
-- ⏰ **Jam Operasional Harian**: Penetapan jendela input jurnal setiap hari pukul **01.00 – 24.00 WIB** disertai pesan notifikasi jeda pergantian hari (00.00 – 01.00 WIB).
-- 💬 **Feedback Siswa Realtime**: Penambahan tombol feedback langsung pada tabel rekap wali kelas & pimpinan beserta template apresiasi cepat yang langsung tampil di HP siswa.
-- 🔑 **Superadmin Password Manager**: Fitur melihat password aktif (show/hide toggle) dan modal ubah/reset password siswa & staf langsung tersinkron ke Supabase Cloud.
-- 👁️ **Perbaikan Laporan Per Kelas (Gambar Mata)**: Integrasi modal drill-down rekapitulasi kelas interaktif untuk Superadmin, Kepala Sekolah, Kurikulum, dan Kesiswaan.
-- 📄 **Pembaruan Dokumentasi README.md**: Dokumentasi lengkap seluruh alur sistem, identitas sekolah, kredensial, dan konfigurasi teknis.
+---
 
-### `v0.3.0` (Revisi 02)
-- ☁️ **Migrasi 100% Supabase Cloud**: Seluruh 563 siswa riil dan 22 guru/staf SMPN 2 Glagah tersimpan penuh di database cloud Supabase dengan optimasi RLS policies.
-- 📱 **Sinkronisasi Multi-Perangkat**: Pengisian jurnal dari HP langsung sinkron ke dashboard wali kelas di komputer sekolah secara realtime.
-- 👥 **Struktur 18 Rombel**: Konfigurasi lengkap rombongan belajar Kelas 7A s.d. 9F.
+### [v0.7.0] - 2026-08-26 *(Superadmin Rename, Radar Inactivity 3 Hari, & Student Progress Dashboard)*
+- **Fitur Rename & Edit Data Lengkap Guru / Siswa (Khusus Superadmin)**: Superadmin dapat me-rename nama, memperbarui NISN/NIP, mengubah rombel kelas, atau memperbarui data staf dan siswa secara instan melalui modal `EditUserModal`.
+- **Radar & Laporan Siswa Tidak Mengisi Jurnal 3 Hari Berturut-turut**:
+  - Deteksi otomatis siswa pasif yang tidak memiliki satupun entri selama 3 hari terakhir secara berturut-turut.
+  - Dilengkapi **sebaran per 18 kelas (7A–9F)**, rincian tanggal terakhir mengisi, dan tombol **Export Laporan Excel (.xlsx)**.
+- **Dashboard Gambaran Lengkap Progress Siswa (`StudentProgressOverview`)**:
+  - Visualisasi distribusi tingkat kepatuhan siswa (🌟 *7/7 Tuntas Sempurna*, 🟢 *5-6 Sangat Aktif*, 🟡 *3-4 Cukup Aktif*, 🔴 *Belum Mengisi*).
+  - Capaian partisipasi per 7 Kebiasaan Resmi Kemendikdasmen.
+  - Peringkat & persentase kepatuhan 18 rombongan belajar (7A s.d 9F).
+- **Refleksi Literasi Gemar Belajar (Wajib Min. 100 Kata)**: Menerapkan validasi wajib cerita refleksi minimal 100 kata pada kebiasaan #5 (Gemar Belajar) dengan *live word counter badge*, *progress bar*, dan pemantik kalimat singkat.
 
-### `v0.2.0` (Revisi 01)
-- 📊 **Executive Dashboard**: Panel monitoring khusus Kepala Sekolah, Waka Kurikulum, dan Kesiswaan dengan fitur Arahan Wali Kelas.
-- 📸 **EXIF Analyzer & Image Compressor**: Proteksi kecurangan tanggal foto galeri dan kompresi otomatis client-side.
-- 📤 **Export Excel & WhatsApp**: Pembuatan modul export SheetJS dan integrasi share WhatsApp.
+---
 
-### `v0.1.0` (Inisiasi)
-- 🇮🇩 Implementasi awal 7 Kebiasaan Anak Indonesia Hebat Kemendikdasmen RI dengan autentikasi multi-role.
+### [v0.6.0] - 2026-08-26 *(Multi-Period Aggregation & Hall of Fame)*
+- **Agregasi Rekap Multi-Periode Fleksibel**: Filter evaluasi kinerja **Harian (Daily)**, **Mingguan (Weekly / 7 Hari)**, **Bulanan (Monthly)**, dan **1 Semester Penuh (Jul–Des / Jan–Jun)** untuk seluruh 18 rombel dan individu siswa.
+- **🌟 Hall of Fame: Apresiasi Siswa & Wali Kelas**:
+  - **🔥 Siswa Terkonsisten (Streak Master)**: Menghitung streak pengisian beruntun tanpa jeda (Kategori: *3 Hari*, *1 Minggu*, *1 Bulan*, dan *1 Semester 90+ Hari*).
+  - **🚀 Siswa Ter-Effort (Most Improved)**: Mengapresiasi siswa dengan lonjakan progresivitas kepatuhan tertinggi ($+\Delta\%$) dari hari-hari sebelumnya.
+  - **👑 Wali Kelas Ter-Istiqomah (Consistent Top Mentor)**: Menghargai wali kelas yang konsisten membawa kelas binaannya berada di papan atas klasemen sekolah.
+  - **⚡ Wali Kelas Ter-Effort (Highest Class Growth)**: Menghargai wali kelas yang paling gigih mendongkrak kepatuhan dan keaktifan kelasnya ($+\Delta\%$ lonjakan terbesar).
+- **Auto-Range Chunked Pagination**: Penarikan data Supabase secara bertingkat (*multi-page range pagination*) mengatasi limit 1.000 baris PostgREST agar seluruh riwayat tersaji 100% utuh.
+
+---
+
+### [v0.5.1] - 2026-08-25 *(Presisi Hisab Sholat Banyuwangi & Aturan Dhuhur)*
+- **Engine Hisab Astronomis Banyuwangi**: Menghitung jadwal 5 waktu sholat secara dinamis dan presisi berdasarkan titik koordinat SMPN 2 Glagah (Latitude -8.2192° S, Longitude 114.3691° E, Standar Kemenag RI).
+- **Aturan Sholat Dhuhur Hari Minggu vs. Hari Sekolah**:
+  - Hari Senin–Sabtu: Siswa sholat Dhuhur berjamaah di sekolah (target mandiri di rumah 4 waktu).
+  - Hari Minggu: Dinilai 5 waktu penuh dari rumah (termasuk Dhuhur).
+- **Koreksi Elevasi Sudut Ashar**: Memperbaiki rumus hisab sudut matahari Ashar di atas ufuk sehingga rentang waktu valid berada tepat di `14.47 – 17.25 WIB`.
+
+---
+
+### [v0.5.0] - 2026-08-25 *(Diversifikasi Peran, Gamifikasi & Rapor Karakter)*
+- **Diversifikasi Tupoksi Peran**:
+  - **Kepala Sekolah**: 1-Klik Cetak Piagam Penghargaan Resmi Juara 1 Siswa & Rombel Teladan.
+  - **Waka Kurikulum**: Portofolio Khusus Kebiasaan #5 (Gemar Belajar & Literasi Buku).
+  - **Kesiswaan & Guru BK**: Radar Pembinaan Dini (*Early Warning Radar*) untuk siswa pasif $\ge 3$ hari, sering terlambat, atau terindikasi anomali foto.
+  - **Wali Kelas**: Catatan motivasi instan (*Quick Feedback Chips*) langsung ke profil siswa.
+- **Gamifikasi & PWA**: 13 badge lencana pencapaian karakter dan PWA installable.
+- **Rapor Karakter 7KAIH (Standar A4 Resmi)**: Format cetak A4 resmi lengkap dengan Kop SMPN 2 Glagah, nilai capaian predikat (A/B/C/D), deskripsi otomatis, serta kolom tanda tangan Wali Kelas, Kepala Sekolah, dan Orang Tua/Wali Murid.
+
+---
+
+### [v0.4.0] - 2026-08-24 *(Papan Peringkat, Export Excel & Integrasi Cloud)*
+- **Papan Peringkat 18 Rombel (7A - 9F)**: Formula Skor Tertib berdasarkan persentase kepatuhan, siswa tuntas 7/7, dan minimnya pelanggaran foto.
+- **Siswa Teladan Tercepat & Terbersih**: Filter ketat untuk menyaring murid terbaik harian dengan integritas foto 100%.
+- **Export & Share**: Export rekapitulasi kelas dan sekolah ke Microsoft Excel (`.xlsx`) dan WhatsApp broadcast.
+
+---
+
+### [v0.3.1] - 2026-08-24 *(Jam Operasional & Feedback Realtime)*
+- **Jam Operasional Harian**: Penetapan jendela input jurnal setiap hari pukul **01.00 – 24.00 WIB** disertai pesan notifikasi jeda pergantian hari (00.00 – 01.00 WIB).
+- **Feedback Siswa Realtime**: Penambahan tombol feedback langsung pada tabel rekap wali kelas & pimpinan beserta template apresiasi cepat.
+- **Superadmin Password Manager**: Fitur melihat password aktif (show/hide toggle) dan modal ubah/reset password siswa & staf langsung tersinkron ke Supabase Cloud.
+
+---
+
+### [v0.3.0] - 2026-08-23 *(Integritas Foto EXIF & Anti-Fraud)*
+- **Pemeriksaan Metadata EXIF**: Pemeriksaan otomatis *DateTimeOriginal*, *Software*, dan *Device Model*.
+- **Deteksi Status Waktu Otomatis**: Evaluasi otomatis (*Tepat Waktu*, *Toleransi +15m*, *Terlambat*).
+- **Flag Anomali Foto**: Sistem deteksi foto mencurigakan untuk mencegah kecurangan unggahan galeri lawas atau manipulasi jam HP.
+
+---
+
+### [v0.2.0] - 2026-08-22 *(Manajemen Akun & Basis Data)*
+- **Manajemen Akun Siswa & Staf**: Manajemen akun 563 siswa dan 22 staf sekolah.
+- **Format Sandi Tanggal Lahir**: Format default sandi tanggal lahir siswa (`DDMMYYYY`) dan reset sandi.
+- **Sinkronisasi Realtime**: Sinkronisasi data realtime dengan PostgreSQL Supabase.
+
+---
+
+### [v0.1.0] - 2026-08-20 *(Inisiasi Proyek Jurnal 7KAIH)*
+- **Fondasi Aplikasi**: Implementasi 7 Kebiasaan Anak Indonesia Hebat (Bangun Pagi, Beribadah, Berolahraga, Makan Sehat, Gemar Belajar, Bermasyarakat, Tidur Cepat) dengan autentikasi multi-role.
+- **Kompresi Gambar Client-Side**: Otomatis kompresi gambar sebelum unggah ke cloud storage.
+
 
 ---
 
