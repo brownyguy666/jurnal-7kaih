@@ -194,7 +194,7 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                       className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
                     />
                     <div className="min-w-0">
-                      <span className="font-semibold text-slate-800 block truncate max-w-[130px] sm:max-w-[160px]">
+                      <span className="font-semibold text-slate-800 block truncate max-w-32.5 sm:max-w-40">
                         {entry.sub_tipe || entry.nama_kegiatan || `Entri #${entry.urutan_ke}`}
                       </span>
                       <span className="text-[10px] text-slate-400">
