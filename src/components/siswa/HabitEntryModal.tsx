@@ -630,47 +630,59 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
                     />
                   </div>
 
-                  {/* Template Pilihan Pemantik Refleksi */}
+                  {/* Template Pilihan Pemantik Refleksi (Singkat Sebagai Pemantik) */}
                   <div className="space-y-1.5 pt-1">
                     <span className="text-[11px] font-bold text-indigo-900 flex items-center gap-1">
                       <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-                      <span>Pilihan Topik & Panduan Kerangka Cerita:</span>
+                      <span>Gunakan Kalimat Pemantik Singkat (Lanjutkan Sendiri Minimal 100 Kata):</span>
                     </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                       <button
                         type="button"
                         onClick={() => {
                           setCatatan(
-                            "Hari ini saya telah mempelajari materi tentang [Tuliskan Mata Pelajaran & Topik, contoh: Matematika - Persamaan Linier]. Konsep penting yang saya pelajari adalah [Jelaskan apa inti materinya]. Awalnya saya sempat merasa kesulitan saat [Tuliskan hal yang sempat membingungkan], namun setelah mencoba mengerjakan latihan soal dan membaca kembali catatan, saya berhasil memahaminya. Pelajaran ini sangat bermanfaat karena dapat melatih kemampuan berpikir logis dan teliti. Saya merasa senang karena bisa menguasai materi hari ini dengan baik."
+                            "Hari ini saya mempelajari mata pelajaran ... Topik yang dibahas adalah ... Hal penting yang saya pahami yaitu ... "
                           );
                         }}
-                        className="text-left p-2.5 rounded-xl bg-white/95 hover:bg-white text-indigo-900 border border-indigo-200 hover:border-indigo-400 text-[11px] font-medium transition shadow-2xs group cursor-pointer"
+                        className="text-left p-2 rounded-xl bg-white/95 hover:bg-indigo-50 text-indigo-950 border border-indigo-200 hover:border-indigo-400 text-[11px] font-medium transition shadow-2xs group cursor-pointer"
                       >
                         <span className="font-bold flex items-center gap-1 text-indigo-700 group-hover:text-indigo-900">
-                          <BookMarked className="w-3.5 h-3.5" />
+                          <BookMarked className="w-3 h-3" />
                           <span>1. Pelajaran Hari Ini</span>
                         </span>
-                        <span className="text-slate-500 text-[10px] block mt-0.5 leading-tight">
-                          Materi yang baru dipelajari, rumus/konsep yang dipahami, dan tantangan yang diselesaikan.
-                        </span>
+                        <span className="text-slate-400 text-[9px] block mt-0.5">Pemantik rangkuman materi</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => {
                           setCatatan(
-                            "Malam ini saya mempersiapkan diri untuk mata pelajaran esok hari, yaitu [Tuliskan Mata Pelajaran & Bab, contoh: IPA - Sistem Pencernaan Manusia]. Saya telah membaca buku paket bab tersebut dan mencatat poin-poin utama seperti [Sebutkan fungsi organ / materi penting]. Dari bacaan ini, saya mendapatkan banyak wawasan baru. Ada beberapa bagian menarik yang ingin saya tanyakan kepada bapak/ibu guru di kelas besok agar pemahaman saya semakin mendalam. Dengan persiapan ini, saya merasa lebih siap dan percaya diri mengikuti pelajaran besok."
+                            "Untuk persiapan pelajaran besok, saya mempelajari materi ... Yang saya pahami dari materi ini adalah ... Hal yang ingin saya diskusikan di kelas yaitu ... "
                           );
                         }}
-                        className="text-left p-2.5 rounded-xl bg-white/95 hover:bg-white text-purple-900 border border-purple-200 hover:border-purple-400 text-[11px] font-medium transition shadow-2xs group cursor-pointer"
+                        className="text-left p-2 rounded-xl bg-white/95 hover:bg-purple-50 text-purple-950 border border-purple-200 hover:border-purple-400 text-[11px] font-medium transition shadow-2xs group cursor-pointer"
                       >
                         <span className="font-bold flex items-center gap-1 text-purple-700 group-hover:text-purple-900">
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>2. Persiapan Esok Hari</span>
+                          <Sparkles className="w-3 h-3" />
+                          <span>2. Persiapan Besok</span>
                         </span>
-                        <span className="text-slate-500 text-[10px] block mt-0.5 leading-tight">
-                          Materi yang dibaca untuk jadwal besok, poin penting yang dicatat, dan pertanyaan untuk guru.
+                        <span className="text-slate-400 text-[9px] block mt-0.5">Pemantik bacaan esok hari</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCatatan(
+                            "Hari ini saya membaca buku tentang ... Dari bacaan ini, saya mendapatkan wawasan baru yaitu ... "
+                          );
+                        }}
+                        className="text-left p-2 rounded-xl bg-white/95 hover:bg-emerald-50 text-emerald-950 border border-emerald-200 hover:border-emerald-400 text-[11px] font-medium transition shadow-2xs group cursor-pointer"
+                      >
+                        <span className="font-bold flex items-center gap-1 text-emerald-700 group-hover:text-emerald-900">
+                          <BookOpen className="w-3 h-3" />
+                          <span>3. Membaca Buku</span>
                         </span>
+                        <span className="text-slate-400 text-[9px] block mt-0.5">Pemantik literasi buku</span>
                       </button>
                     </div>
                   </div>
