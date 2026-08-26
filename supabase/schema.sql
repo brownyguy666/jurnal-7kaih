@@ -106,7 +106,7 @@ create index if not exists idx_entri_jurnal_kebiasaan on entri_jurnal(kebiasaan_
 -- ------------------------------------------------------------------------------
 -- 6. TABEL FEEDBACK (Komentar Wali Kelas ke Siswa)
 -- ------------------------------------------------------------------------------
-create table if not feedback (
+create table if not exists feedback (
   id uuid primary key default gen_random_uuid(),
   staf_id uuid not null references staf_sekolah(id) on delete cascade,
   siswa_id uuid not null references siswa(id) on delete cascade,

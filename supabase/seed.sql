@@ -9,7 +9,7 @@ insert into kebiasaan (
   maks_input_harian, butuh_sub_tipe, daftar_sub_tipe, butuh_nama_kegiatan, icon_name, warna_tema
 ) values
 (1, 'Bangun Pagi', 1, 'Bangun tepat waktu antara pukul 04.00 s.d 05.00 WIB untuk memulai hari dengan segar.', '04:00', '05:00', 0, 1, false, null, false, 'Sunrise', 'amber'),
-(2, 'Beribadah', 2, 'Melaksanakan sholat 5 waktu secara tertib dan khusyuk.', null, null, 0, 5, true, array['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya'], false, 'HeartHandshake', 'emerald'),
+(2, 'Beribadah', 2, 'Melaksanakan sholat 5 waktu secara tertib dan khusyuk.', null, null, 0, 5, true, ARRAY['Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya']::text[], false, 'HeartHandshake', 'emerald'),
 (3, 'Berolahraga', 3, 'Melakukan olahraga atau peregangan fisik minimal 15-30 menit.', null, null, 0, 1, false, null, false, 'Activity', 'blue'),
 (4, 'Makan Sehat dan Bergizi', 4, 'Sarapan dan makan makanan bergizi seimbang (sayur, buah, protein, karbohidrat).', null, null, 0, 2, false, null, false, 'Utensils', 'green'),
 (5, 'Gemar Belajar', 5, 'Membaca buku pengetahuan, mengulang materi sekolah, atau belajar hal baru.', null, null, 0, 1, false, null, false, 'BookOpen', 'indigo'),
