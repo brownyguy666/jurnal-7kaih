@@ -1,5 +1,4 @@
--- ==============================================================================
--- SKEMA DATABASE: JURNAL 7 KEBIASAAN ANAK INDONESIA HEBAT (KEMENDIKDASMEN)
+-- SKEMA DATABASE: JURNAL 7 KAIH (SMPN 2 GLAGAH)
 -- SMPN 2 Glagah • Superadmin, 18 Kelas (7A-9F), Password Default Tanggal Lahir (DDMMYYYY)
 -- ==============================================================================
 

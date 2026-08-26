@@ -107,13 +107,13 @@ export const LoginView: React.FC = () => {
                 <span>Program Resmi Kemendikdasmen RI</span>
               </div>
               <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-                v0.6.0 (Multi-Period & Hall of Fame)
+                v0.7.0 Official
               </span>
             </div>
 
             <div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight leading-tight">
-                Jurnal 7 Kebiasaan
+                Jurnal 7 KAIH
               </h1>
               <p className="text-sm font-bold text-purple-900 mt-0.5">
                 {SCHOOL_PROFILE.nama} • {SCHOOL_PROFILE.kabupaten}

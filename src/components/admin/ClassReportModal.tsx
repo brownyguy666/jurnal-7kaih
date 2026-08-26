@@ -189,7 +189,7 @@ export const ClassReportModal: React.FC<ClassReportModalProps> = ({
         {/* Footer */}
         <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50">
           <p className="text-xs text-slate-500">
-            SMPN 2 Glagah • Laporan Resmi Jurnal 7 Kebiasaan Anak Indonesia Hebat
+            SMPN 2 Glagah • Laporan Resmi Jurnal 7 KAIH
           </p>
           <button
             onClick={onClose}

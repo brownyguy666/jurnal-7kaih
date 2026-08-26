@@ -103,7 +103,7 @@ export function exportClassRekapToExcel(
   });
 
   const worksheetData: any[][] = [
-    ['JURNAL 7 KEBIASAAN ANAK INDONESIA HEBAT (KEMENDIKDASMEN RI)'],
+    ['JURNAL 7 KAIH (SMPN 2 GLAGAH)'],
     [`Sekolah: ${SCHOOL_PROFILE.nama} (NPSN: ${SCHOOL_PROFILE.npsn}) - Akreditasi ${SCHOOL_PROFILE.akreditasi}`],
     [`Alamat: ${SCHOOL_PROFILE.alamat}`],
     [`Laporan Harian Kelas: ${namaKelas} • Tanggal: ${formattedDate}`],
@@ -270,7 +270,7 @@ export function generateWhatsAppSummaryText(
     rekapRows.reduce((acc, curr) => acc + curr.totalSelesai, 0) / (totalSiswa * 7) * 100
   );
 
-  return `*🇮🇩 REKAP JURNAL 7 KEBIASAAN ANAK INDONESIA HEBAT*
+  return `*🇮🇩 REKAP JURNAL 7 KAIH*
 🏫 *${SCHOOL_PROFILE.nama}* (NPSN: ${SCHOOL_PROFILE.npsn})
 📅 *Hari/Tanggal:* ${formattedDate}
 👥 *Kelas:* ${namaKelas} (${totalSiswa} Siswa)
@@ -291,7 +291,7 @@ export async function shareToWhatsApp(text: string): Promise<boolean> {
   if (navigator.share) {
     try {
       await navigator.share({
-        title: `Rekap Jurnal 7 Kebiasaan - ${SCHOOL_PROFILE.nama}`,
+        title: `Rekap Jurnal 7 KAIH - ${SCHOOL_PROFILE.nama}`,
         text: text,
       });
       return true;
@@ -420,7 +420,7 @@ export function generateLeaderboardWhatsAppText(
   }
 
   msg += `\n✨ _Selamat kepada para juara dan mari terus tingkatkan karakter pembiasaan luhur setiap hari!_\n`;
-  msg += `_Laporan resmi telah direkap otomatis oleh Sistem Jurnal 7 Kebiasaan ${SCHOOL_PROFILE.nama}._`;
+  msg += `_Laporan resmi telah direkap otomatis oleh Sistem Jurnal 7 KAIH ${SCHOOL_PROFILE.nama}._`;
 
   return msg;
 }

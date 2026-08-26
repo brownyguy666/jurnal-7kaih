@@ -1,4 +1,4 @@
-# 🇮🇩 Jurnal 7 Kebiasaan Anak Indonesia Hebat (7 KAIH)
+# 🇮🇩 Jurnal 7 KAIH
 ### SMP Negeri 2 Glagah — Banyuwangi, Jawa Timur
 > **Versi: `v0.7.0` (Official Production)**  
 > Platform Web Pencatatan & Evaluasi Pembiasaan Karakter Luhur Peserta Didik Berbasis Cloud Database Realtime.

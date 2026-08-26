@@ -1,5 +1,4 @@
--- ==============================================================================
--- SEED DATA: JURNAL 7 KEBIASAAN ANAK INDONESIA HEBAT (SMPN 2 GLAGAH)
+-- SEED DATA: JURNAL 7 KAIH (SMPN 2 GLAGAH)
 -- Superadmin, 18 Kelas (7A-9F), Password Default Tanggal Lahir (DDMMYYYY)
 -- ==============================================================================
 

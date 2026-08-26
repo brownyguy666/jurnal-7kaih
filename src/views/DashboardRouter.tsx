@@ -49,7 +49,7 @@ export const DashboardRouter: React.FC = () => {
       {/* Footer */}
       <footer className="py-6 border-t border-slate-200 bg-white text-center text-xs text-slate-400">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>&copy; {new Date().getFullYear()} Jurnal 7 Kebiasaan Anak Indonesia Hebat</span>
+          <span>&copy; {new Date().getFullYear()} Jurnal 7 KAIH • SMP Negeri 2 Glagah</span>
           <span>Kementerian Pendidikan Dasar dan Menengah RI</span>
         </div>
       </footer>

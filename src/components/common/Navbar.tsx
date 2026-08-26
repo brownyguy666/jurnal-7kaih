@@ -75,7 +75,7 @@ export const Navbar: React.FC = () => {
               </a>
               <div>
                 <h1 className="font-extrabold text-slate-800 text-sm sm:text-base leading-tight tracking-tight flex items-center gap-1.5">
-                  <span>Jurnal 7 Kebiasaan</span>
+                  <span>Jurnal 7 KAIH</span>
                   <a 
                     href="https://smpnegeri2glagah.sch.id/" 
                     target="_blank" 

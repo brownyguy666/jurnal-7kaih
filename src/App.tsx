@@ -14,7 +14,7 @@ const MainApp: React.FC = () => {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center space-y-3">
           <Loader2 className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
-          <p className="text-xs font-semibold text-slate-500">Memuat Jurnal 7 Kebiasaan...</p>
+          <p className="text-xs font-semibold text-slate-500">Memuat Jurnal 7 KAIH...</p>
         </div>
       </div>
     );

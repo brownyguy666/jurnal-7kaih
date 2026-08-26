@@ -1,5 +1,5 @@
 -- ==============================================================================
--- FIX RLS & DATA SYNC UNTUK JURNAL 7 KEBIASAAN SMPN 2 GLAGAH
+-- FIX RLS & DATA SYNC UNTUK JURNAL 7 KAIH SMPN 2 GLAGAH
 -- Jalankan skrip ini di SQL Editor Supabase Anda untuk memperbaiki error:
 -- "infinite recursion detected in policy for relation staf_sekolah"
 -- ==============================================================================

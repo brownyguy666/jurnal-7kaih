@@ -635,7 +635,7 @@ export const StudentProgressOverview: React.FC<StudentProgressOverviewProps> = (
                                 onClick={() => {
                                   onOpenArahanModal(
                                     item.siswa.kelas_id || '',
-                                    `Mohon pendampingan untuk ananda ${item.siswa.nama} (Kelas ${item.namaKelas}) yang belum mengisi jurnal 7 Kebiasaan selama 3 hari berturut-turut.`
+                                    `Mohon pendampingan untuk ananda ${item.siswa.nama} (Kelas ${item.namaKelas}) yang belum mengisi jurnal 7 KAIH selama 3 hari berturut-turut.`
                                   );
                                 }}
                                 className="px-2.5 py-1 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] transition flex items-center gap-1 shadow-xs active:scale-95"
