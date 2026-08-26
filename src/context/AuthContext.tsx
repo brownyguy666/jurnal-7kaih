@@ -87,15 +87,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const student = allSiswa.find((s) => s.nisn === nisn.trim());
 
       if (!student) {
-        return { success: false, message: 'NISN tidak terdaftar di sistem sekolah.' };
+        return { 
+          success: false, 
+          message: 'Username tidak ditemukan. Silakan periksa kembali NISN yang Anda masukkan.' 
+        };
       }
 
       const defaultPassword = getDefaultDobPassword(student.tanggal_lahir);
+      const isPasswordMatch = passwordInput === defaultPassword || (student as any).password === passwordInput;
 
-      if (passwordInput !== defaultPassword && !student.sudah_ganti_password) {
+      if (!isPasswordMatch) {
         return {
           success: false,
-          message: `Password default untuk login pertama adalah tanggal lahir (DDMMYYYY).`
+          message: 'Password salah. Silakan tanyakan kepada bapak/ibu wali kelas atau guru Anda jika Anda lupa password.'
         };
       }
 
@@ -133,12 +137,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         const defaultPass = getDefaultDobPassword(superAdmin.tanggal_lahir); // '06081994'
+        const isPasswordMatch = passwordInput === '060894' || passwordInput === defaultPass || (superAdmin as any).password === passwordInput;
 
-        if (passwordInput === '060894' || passwordInput === defaultPass || superAdmin.sudah_ganti_password) {
+        if (isPasswordMatch) {
           saveUserSession({ type: 'staf', data: superAdmin });
           return { success: true };
         } else {
-          return { success: false, message: 'Password Superadmin salah.' };
+          return { 
+            success: false, 
+            message: 'Password salah. Silakan periksa kembali password akun Superadmin Anda.' 
+          };
         }
       }
 
@@ -147,15 +155,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const staf = allStaf.find((st) => st.nip_atau_nik.toLowerCase() === cleanInput);
 
       if (!staf) {
-        return { success: false, message: 'NIP, NIK, atau Username tidak ditemukan dalam data pendidik sekolah.' };
+        return { 
+          success: false, 
+          message: 'Username tidak ditemukan. Silakan periksa kembali NIP, NIK, atau Username yang Anda masukkan.' 
+        };
       }
 
       const defaultPassword = getDefaultDobPassword(staf.tanggal_lahir);
+      const isPasswordMatch = passwordInput === defaultPassword || (staf as any).password === passwordInput;
 
-      if (passwordInput !== defaultPassword && !staf.sudah_ganti_password) {
+      if (!isPasswordMatch) {
         return {
           success: false,
-          message: `Password default untuk login pertama adalah tanggal lahir (DDMMYYYY).`
+          message: 'Password salah. Silakan menghubungi Superadmin sekolah untuk memeriksa atau mereset password akun Anda.'
         };
       }
 

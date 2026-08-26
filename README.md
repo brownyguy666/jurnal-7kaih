@@ -156,6 +156,10 @@ npm run build
   - Menghapus inisialisasi mock data dummy (`suara-1` dari `s-01`) agar data yang tampil 100% merupakan aspirasi nyata siswa yang telah tersinkronkan.
 - **Pemetaan Kelas Tangguh (*Resilient Class Mapping*)**:
   - Menyempurnakan filter suara siswa untuk Wali Kelas, Kepala Sekolah, Waka Kurikulum, Kesiswaan, dan Superadmin agar tidak terhalang variasi ID string / UUID rombel kelas.
+- **Pemberitahuan Login Informatif & Tepat Sasaran**:
+  - Validasi username/NISN/NIP: jika salah, menampilkan pesan *"Username tidak ditemukan"*.
+  - Validasi password siswa: jika salah, menampilkan *"Password salah. Silakan tanyakan kepada bapak/ibu wali kelas atau guru Anda jika Anda lupa password."*
+  - Validasi password guru/staf: jika salah, menampilkan *"Password salah. Silakan menghubungi Superadmin sekolah untuk memeriksa atau mereset password akun Anda."*
 
 ---
 

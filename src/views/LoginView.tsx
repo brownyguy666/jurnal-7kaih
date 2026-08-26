@@ -107,7 +107,7 @@ export const LoginView: React.FC = () => {
                 <span>Program Resmi Kemendikdasmen RI</span>
               </div>
               <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-                v0.7.0 Official
+                v0.9.1 Official
               </span>
             </div>
 
@@ -134,7 +134,7 @@ export const LoginView: React.FC = () => {
                   setActiveTab('siswa');
                   setErrorMessage(null);
                 }}
-                className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 ${
+                className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
                   activeTab === 'siswa'
                     ? 'bg-white text-emerald-800 shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
@@ -150,7 +150,7 @@ export const LoginView: React.FC = () => {
                   setActiveTab('staf');
                   setErrorMessage(null);
                 }}
-                className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 ${
+                className={`py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
                   activeTab === 'staf'
                     ? 'bg-white text-purple-900 shadow-sm'
                     : 'text-slate-500 hover:text-slate-800'
@@ -163,9 +163,9 @@ export const LoginView: React.FC = () => {
 
             {/* Error Message */}
             {errorMessage && (
-              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2.5 animate-fade-in">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{errorMessage}</span>
+              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-300 text-rose-800 text-xs flex items-start gap-2.5 shadow-2xs animate-fade-in">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <span className="font-semibold leading-relaxed">{errorMessage}</span>
               </div>
             )}
 

@@ -12,6 +12,10 @@ Semua pembaruan, perbaikan, dan penambahan fitur aplikasi Jurnal 7 KAIH (7 Karak
    - Menghapus inisialisasi dummy data `suara-1` dari penyimpanan lokal agar data yang tampil di dashboard Kepala Sekolah, Wali Kelas, dan Superadmin 100% merupakan curhatan/ide riil siswa.
 3. **Penyempurnaan Pemetaan Kelas (*Resilient Class Mapping*)**:
    - Memperbaiki logika filter suara siswa untuk Wali Kelas dan Kepala Sekolah agar mengenali seluruh variasi ID rombel kelas tanpa terputus.
+4. **Pemberitahuan Login Informatif & Tepat Sasaran**:
+   - Jika **NISN / NIP / NIK salah**: Menampilkan pesan `"Username tidak ditemukan. Silakan periksa kembali NISN / NIP / Username yang Anda masukkan."`
+   - Jika **Username benar tapi password salah (Siswa)**: Menampilkan pesan `"Password salah. Silakan tanyakan kepada bapak/ibu wali kelas atau guru Anda jika Anda lupa password."`
+   - Jika **Username benar tapi password salah (Guru/Staf)**: Menampilkan pesan `"Password salah. Silakan menghubungi Superadmin sekolah untuk memeriksa atau mereset password akun Anda."`
 
 ---
 
