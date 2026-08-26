@@ -39,6 +39,7 @@ import { ClassReportModal } from '../admin/ClassReportModal';
 import { PortofolioLiterasiView } from './PortofolioLiterasiView';
 import { EarlyWarningRadar } from './EarlyWarningRadar';
 import { PiagamPenghargaanModal } from './PiagamPenghargaanModal';
+import { PiagamGeneratorSection } from './PiagamGeneratorSection';
 import { RaporKarakterModal } from '../common/RaporKarakterModal';
 import { HallOfFameSection } from '../admin/HallOfFameSection';
 import { SuaraSiswaModerationView } from '../common/SuaraSiswaModerationView';
@@ -463,162 +464,18 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
 
       {/* TAB: PIAGAM PENGHARGAAN JUARA (KEPALA SEKOLAH) */}
       {activeTab === 'piagam' && (
-        <div className="space-y-6 animate-fade-in">
-          <div className="rounded-3xl p-6 bg-linear-to-r from-amber-800 via-amber-900 to-slate-900 text-white shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/30 border border-amber-400/40 flex items-center justify-center text-amber-200 shrink-0">
-                <Crown className="w-6 h-6" />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/40 text-amber-200 border border-amber-400/30 uppercase">
-                  Hak Akses Kepala Sekolah
-                </span>
-                <h3 className="text-xl font-extrabold text-white mt-0.5">
-                  Penerbitan Piagam Penghargaan Karakter
-                </h3>
-                <p className="text-xs text-amber-200/80">
-                  Cetak sertifikat resmi 1-klik untuk penyerahan apresiasi saat apel/upacara bendera.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Kartu Piagam Kelas Terbaik */}
-            {(() => {
-              const classRankings = LeaderboardService.calculateClassRankings(kelasList, siswaList, entries, stafList, selectedDate);
-              const top1Class = classRankings[0];
-
-              return (
-                <div className="bg-white rounded-3xl p-6 border border-amber-200 shadow-sm space-y-4 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1.5">
-                        <Crown className="w-3.5 h-3.5" />
-                        <span>Juara 1 Kelas Terdisiplin Hari Ini</span>
-                      </span>
-                      <span className="text-xs text-slate-400 font-medium">
-                        Tanggal: {selectedDate}
-                      </span>
-                    </div>
-
-                    {top1Class ? (
-                      <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2">
-                        <h4 className="text-2xl font-extrabold text-slate-900">
-                          Kelas {top1Class.namaKelas}
-                        </h4>
-                        <p className="text-xs text-slate-600">
-                          Wali Kelas: <span className="font-semibold text-slate-900">{top1Class.waliKelasNama}</span>
-                        </p>
-                        <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
-                          <div>
-                            <span className="text-slate-400 block text-[10px]">Kepatuhan</span>
-                            <span className="font-bold text-emerald-700">{top1Class.persentaseKepatuhan}%</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 block text-[10px]">Skor Tertib</span>
-                            <span className="font-bold text-amber-900">{top1Class.score} Poin</span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-400">Belum ada data ranking kelas pada tanggal ini.</p>
-                    )}
-                  </div>
-
-                  <button
-                    disabled={!top1Class}
-                    onClick={() => {
-                      if (!top1Class) return;
-                      setPiagamData({
-                        tipe: 'kelas_terbaik',
-                        judul: 'PIAGAM PENGHARGAAN KELAS TERDISIPLIN',
-                        nomorSurat: `421.3 / 7KAIH-01 / SMPN2 / ${new Date().getFullYear()}`,
-                        diberikanKepada: `KELAS ${top1Class.namaKelas}`,
-                        keterangan: `Sebagai KELAS PALING TERTIB & BERKARAKTER JUARA 1 dalam pelaksanaan 7 Kebiasaan Anak Indonesia Hebat`,
-                        tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-                        namaKepalaSekolah: staf.nama,
-                        nipKepalaSekolah: staf.nip_atau_nik || '197508122002121003',
-                        skor: top1Class.score
-                      });
-                    }}
-                    className="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 text-xs font-extrabold shadow-sm transition flex items-center justify-center gap-2"
-                  >
-                    <Printer className="w-4 h-4" />
-                    <span>Terbitkan & Cetak Piagam Kelas Terbaik</span>
-                  </button>
-                </div>
-              );
-            })()}
-
-            {/* Kartu Piagam Siswa Teladan */}
-            {(() => {
-              const topStudents = LeaderboardService.calculateTopStudents(siswaList, entries, kelasList, selectedDate);
-              const top1Student = topStudents.qualifiedStudents[0];
-
-              return (
-                <div className="bg-white rounded-3xl p-6 border border-amber-200 shadow-sm space-y-4 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>Siswa Teladan Tercepat & Terbersih</span>
-                      </span>
-                      <span className="text-xs text-slate-400 font-medium">
-                        Tanggal: {selectedDate}
-                      </span>
-                    </div>
-
-                    {top1Student ? (
-                      <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-2">
-                        <h4 className="text-2xl font-extrabold text-slate-900">
-                          {top1Student.nama}
-                        </h4>
-                        <p className="text-xs text-slate-600">
-                          Kelas {top1Student.namaKelas} • NISN: {top1Student.nisn}
-                        </p>
-                        <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
-                          <div>
-                            <span className="text-slate-400 block text-[10px]">Tuntas 7/7 Pukul</span>
-                            <span className="font-bold text-indigo-700">{top1Student.selesaiFormatted} WIB</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 block text-[10px]">Status Bukti Foto</span>
-                            <span className="font-bold text-emerald-700">100% Asli Valid</span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-slate-400">Belum ada siswa yang tuntas sempurna pada tanggal ini.</p>
-                    )}
-                  </div>
-
-                  <button
-                    disabled={!top1Student}
-                    onClick={() => {
-                      if (!top1Student) return;
-                      setPiagamData({
-                        tipe: 'siswa_teladan',
-                        judul: 'PIAGAM PENGHARGAAN SISWA TELADAN',
-                        nomorSurat: `421.3 / 7KAIH-ST / SMPN2 / ${new Date().getFullYear()}`,
-                        diberikanKepada: top1Student.nama.toUpperCase(),
-                        keterangan: `Sebagai SISWA TELADAN BERKARAKTER HEBAT (Kelas ${top1Student.namaKelas}) atas ketepatan waktu, kejujuran, dan konsistensi 7 Kebiasaan`,
-                        tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-                        namaKepalaSekolah: staf.nama,
-                        nipKepalaSekolah: staf.nip_atau_nik || '197508122002121003',
-                        skor: `${top1Student.totalKebiasaan}/7 Tuntas`
-                      });
-                    }}
-                    className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-extrabold shadow-sm transition flex items-center justify-center gap-2"
-                  >
-                    <Printer className="w-4 h-4" />
-                    <span>Terbitkan & Cetak Piagam Siswa Teladan</span>
-                  </button>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
+        <PiagamGeneratorSection
+          kelasList={kelasList}
+          siswaList={siswaList}
+          entries={entries}
+          stafList={stafList}
+          feedbacks={feedbacks}
+          kebiasaanList={kebiasaanList}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+          currentStaf={staf}
+          onGeneratePiagam={(p) => setPiagamData(p)}
+        />
       )}
 
       {/* TAB: REKAP PER KELAS 7A - 9F */}

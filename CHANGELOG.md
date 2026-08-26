@@ -2,6 +2,28 @@
 
 Semua pembaruan, perbaikan, dan penambahan fitur aplikasi Jurnal 7 KAIH (7 Karakter Anak Indonesia Hebat) dicatat secara kronologis di bawah ini.
 
+## [v0.9.0] - 2026-08-26 *(Pusat Piagam Penghargaan Kepala Sekolah: Multi-Periode & Kategori Prestasi Siswa / Guru)*
+
+### 🌟 Fitur Baru & Peningkatan
+1. **Penerbitan Piagam Multi-Periode Fleksibel (Kepala Sekolah)**:
+   - Kepala Sekolah dapat menerbitkan dan mencetak sertifikat piagam penghargaan resmi untuk 4 rentang periode evaluasi: **📅 Harian (Daily)**, **🗓️ Mingguan (Weekly / 7 Hari)**, **📊 Bulanan (Monthly / 1 Bulan Penuh)**, dan **🏛️ Semester (Semester Ganjil & Genap)**.
+2. **Diversifikasi Kategori Piagam Prestasi Siswa**:
+   - 🌟 **Siswa Teladan Terdisiplin**: Capaian ketuntasan 100% dan integritas bukti foto asli valid.
+   - 🔥 **Siswa Terkonsisten (Streak Master)**: Rekor hari pengisian berturut-turut terpanjang tanpa terputus.
+   - 🚀 **Siswa Ter-Effort (Most Improved)**: Lonjakan pertumbuhan dan daya juang kepatuhan karakter tertinggi ($+\Delta\%$).
+   - 📖 **Duta Literasi 7KAIH (Gemar Belajar #5)**: Siswa paling aktif menuliskan refleksi bacaan dan pembelajaran bermutu tinggi.
+   - 🤝 **Bintang Karakter Sosial (Bermasyarakat #6)**: Keaktifan gotong royong dan kontribusi sosial teraktif.
+   - 🏃 **Bintang Kebugaran & Olahraga (Berolahraga #3)**: Kedisiplinan berolahraga dan menjaga kebugaran fisik jasmani.
+3. **Kategori Piagam Prestasi Kelas & Pendidik / Wali Kelas**:
+   - 👑 **Kelas Juara 1 Terdisiplin**: Kelas dengan Skor Tertib dan persentase kepatuhan kolektif tertinggi pada periode tersebut.
+   - 🥇 **Wali Kelas Ter-Istiqomah**: Wali kelas pembina yang konsisten mendampingi kelasnya di peringkat atas klasemen.
+   - ⚡ **Wali Kelas Ter-Effort (Highest Growth)**: Wali kelas dengan lonjakan pertumbuhan kepatuhan siswa terbesar ($+\Delta\%$).
+   - 💬 **Wali Kelas Paling Responsif & Inspiratif**: Pendidik paling aktif memberikan pendampingan, arahan, dan feedback motivasi harian.
+4. **Penerbitan Piagam Kustom Fleksibel**:
+   - Formulir penerbitan piagam kustom untuk memilih siswa, guru/staf, atau rombel kelas tertentu di luar sistem pemenang otomatis dengan kustomisasi judul, nomor surat resmi, kategori, dan deskripsi apresiasi.
+5. **Format Cetak A4 Landscape Standar Resmi**:
+   - Desain sertifikat bernuansa emas elegan dengan ornamen ganda, watermark garuda/bintang karakter, nomor surat dinamis, badge kategori, dan tanda tangan Kepala Sekolah.
+
 ---
 
 ## [v0.8.0] - 2026-08-26 *(Branding Resmi Jurnal 7 KAIH, Suara & Curhat Siswa, Date Range Picker, & Bulk Reminder WA)*

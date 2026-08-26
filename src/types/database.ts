@@ -229,12 +229,27 @@ export interface WarningStudentItem {
   rekomendasiTindakan: string;
 }
 
+export type TipePiagam = 
+  | 'kelas_terbaik'
+  | 'siswa_teladan'
+  | 'siswa_istiqomah'
+  | 'siswa_effort'
+  | 'siswa_literasi'
+  | 'siswa_sosial'
+  | 'siswa_olahraga'
+  | 'wali_istiqomah'
+  | 'wali_effort'
+  | 'wali_responsif';
+
 export interface PiagamData {
-  tipe: 'kelas_terbaik' | 'siswa_teladan';
+  tipe: TipePiagam;
+  kategoriLabel: string; // Misal: "Siswa Terkonsisten (Streak Master)", "Wali Kelas Ter-Istiqomah", dll.
   judul: string;
   nomorSurat: string;
-  diberikanKepada: string; // Nama Kelas atau Nama Siswa
-  keterangan: string; // Misal: "Sebagai Kelas Paling Tertib & Berkarakter Juara 1..."
+  diberikanKepada: string; // Nama Kelas / Siswa / Wali Kelas
+  subPenerima?: string; // Misal: "NISN: 0112345678 • Kelas 7A" atau "NIP. 1980... • Wali Kelas 8B"
+  periodeLabel: string; // Misal: "Periode Mingguan (19 - 26 Agustus 2026)", "Bulan Agustus 2026", "Semester Ganjil 2026/2027"
+  keterangan: string; // Deskripsi penghargaan resmi
   tanggal: string;
   namaKepalaSekolah: string;
   nipKepalaSekolah: string;

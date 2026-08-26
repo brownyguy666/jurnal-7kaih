@@ -81,46 +81,59 @@ export const PiagamPenghargaanModal: React.FC<PiagamPenghargaanModalProps> = ({
             </div>
 
             {/* Judul Piagam */}
-            <div className="text-center my-6 sm:my-8 relative z-10 space-y-1">
+            <div className="text-center my-5 sm:my-6 relative z-10 space-y-1.5">
+              <span className="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black tracking-wider uppercase">
+                {data.kategoriLabel || 'PIAGAM PENGHARGAAN KARAKTER'}
+              </span>
               <h1 className="text-2xl sm:text-4xl font-serif font-extrabold tracking-wider text-amber-900 uppercase">
-                PIAGAM PENGHARGAAN
+                {data.judul || 'PIAGAM PENGHARGAAN'}
               </h1>
-              <p className="text-xs text-slate-500 font-mono">
-                Nomor: {data.nomorSurat}
-              </p>
+              <div className="flex items-center justify-center gap-3 text-xs text-slate-500 font-mono">
+                <span>Nomor: {data.nomorSurat}</span>
+                <span>•</span>
+                <span className="font-sans font-bold text-amber-800">{data.periodeLabel}</span>
+              </div>
             </div>
 
             {/* Penerima */}
-            <div className="text-center space-y-3 relative z-10 max-w-2xl mx-auto">
+            <div className="text-center space-y-2.5 relative z-10 max-w-2xl mx-auto">
               <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                Diberikan dengan penuh rasa bangga dan apresiasi kepada:
+                Diberikan dengan penuh rasa bangga dan apresiasi tertinggi kepada:
               </p>
               
               <div className="py-2 border-b-2 border-amber-400 inline-block px-8">
                 <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                   {data.diberikanKepada}
                 </h3>
+                {data.subPenerima && (
+                  <p className="text-xs text-slate-500 font-bold mt-1">
+                    {data.subPenerima}
+                  </p>
+                )}
               </div>
 
               <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium pt-2">
-                {data.keterangan} dengan perolehan skor ketertiban dan kepatuhan{' '}
-                <span className="font-bold text-amber-900">({data.skor} Poin)</span>.
+                {data.keterangan}{' '}
+                {data.skor ? (
+                  <span className="font-bold text-amber-900">({data.skor})</span>
+                ) : null}.
               </p>
             </div>
 
             {/* Tanda Tangan Kepala Sekolah */}
-            <div className="mt-10 sm:mt-12 flex justify-between items-end relative z-10 px-4 sm:px-12 text-xs">
+            <div className="mt-8 sm:mt-10 flex justify-between items-end relative z-10 px-4 sm:px-12 text-xs">
               <div className="text-center space-y-1">
-                <div className="w-20 h-20 rounded-full border border-amber-400 bg-amber-50 flex items-center justify-center text-amber-700 font-bold mx-auto">
-                  🏆 JUARA
+                <div className="w-20 h-20 rounded-full border-2 border-amber-400 bg-amber-50/80 flex flex-col items-center justify-center text-amber-800 font-black mx-auto shadow-xs">
+                  <Crown className="w-6 h-6 text-amber-600 mb-0.5" />
+                  <span className="text-[9px] uppercase tracking-wider">RESMI 7KAIH</span>
                 </div>
-                <p className="text-[10px] text-slate-400">Terverifikasi Sistem 7KAIH</p>
+                <p className="text-[10px] text-slate-400 font-mono">SMPN 2 GLAGAH</p>
               </div>
 
-              <div className="text-center space-y-14">
+              <div className="text-center space-y-12">
                 <div>
                   <p className="text-slate-500">Glagah, {data.tanggal}</p>
-                  <p className="font-bold text-slate-900">Kepala SMPN 2 Glagah</p>
+                  <p className="font-bold text-slate-900">Kepala SMP Negeri 2 Glagah</p>
                 </div>
                 <div>
                   <p className="font-bold text-slate-900 underline underline-offset-4 text-sm">

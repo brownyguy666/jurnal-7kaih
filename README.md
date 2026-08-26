@@ -1,6 +1,6 @@
 # 🇮🇩 Jurnal 7 KAIH
 ### SMP Negeri 2 Glagah — Banyuwangi, Jawa Timur
-> **Versi: `v0.8.0` (Official Production)**  
+> **Versi: `v0.9.0` (Official Production)**  
 > Platform Web Pencatatan & Evaluasi Pembiasaan Karakter Luhur Peserta Didik Berbasis Cloud Database Realtime.
 
 ---
@@ -147,6 +147,27 @@ npm run build
 ---
 
 ## 📜 Catatan Perubahan & Riwayat Rilis (Changelog)
+
+### [v0.9.0] - 2026-08-26 *(Pusat Piagam Penghargaan Kepala Sekolah: Multi-Periode & Kategori Prestasi Siswa / Guru)*
+- **Penerbitan Piagam Multi-Periode Fleksibel (Kepala Sekolah)**:
+  - Kepala Sekolah dapat menerbitkan dan mencetak sertifikat piagam resmi untuk 4 rentang periode evaluasi: **📅 Harian (Daily)**, **🗓️ Mingguan (Weekly / 7 Hari)**, **📊 Bulanan (Monthly / 1 Bulan Penuh)**, dan **🏛️ Semester (Semester Ganjil & Genap)**.
+- **Diversifikasi Kategori Piagam Prestasi Siswa**:
+  1. 🌟 **Siswa Teladan Terdisiplin**: Capaian ketuntasan 100% dan integritas bukti foto asli valid.
+  2. 🔥 **Siswa Terkonsisten (Streak Master)**: Rekor hari pengisian berturut-turut terpanjang tanpa terputus.
+  3. 🚀 **Siswa Ter-Effort (Most Improved)**: Lonjakan pertumbuhan dan daya juang kepatuhan karakter tertinggi ($+\Delta\%$).
+  4. 📖 **Duta Literasi 7KAIH (Gemar Belajar #5)**: Siswa paling aktif menuliskan refleksi bacaan dan pembelajaran bermutu.
+  5. 🤝 **Bintang Karakter Sosial (Bermasyarakat #6)**: Keaktifan gotong royong dan kontribusi sosial teraktif.
+  6. 🏃 **Bintang Kebugaran & Olahraga (Berolahraga #3)**: Kedisiplinan berolahraga dan menjaga kebugaran fisik jasmani.
+- **Kategori Piagam Prestasi Kelas & Pendidik / Wali Kelas**:
+  1. 👑 **Kelas Juara 1 Terdisiplin**: Kelas dengan Skor Tertib dan persentase kepatuhan kolektif tertinggi pada periode tersebut.
+  2. 🥇 **Wali Kelas Ter-Istiqomah**: Wali kelas pembina yang konsisten mendampingi kelasnya di peringkat atas klasemen.
+  3. ⚡ **Wali Kelas Ter-Effort (Highest Growth)**: Wali kelas dengan lonjakan pertumbuhan kepatuhan siswa terbesar ($+\Delta\%$).
+  4. 💬 **Wali Kelas Paling Responsif & Inspiratif**: Pendidik paling aktif memberikan pendampingan, arahan, dan feedback motivasi harian.
+- **Penerbitan Piagam Kustom Fleksibel**:
+  - Formulir penerbitan piagam kustom untuk memilih siswa, guru/staf, atau rombel kelas tertentu di luar sistem pemenang otomatis dengan kustomisasi judul, nomor surat resmi, kategori, dan deskripsi apresiasi.
+- **Format Cetak A4 Landscape Standar Resmi**: Desain sertifikat bernuansa emas elegan dengan ornamen ganda, watermark garuda/bintang karakter, nomor surat dinamis, badge kategori, dan tanda tangan Kepala Sekolah.
+
+---
 
 ### [v0.8.0] - 2026-08-26 *(Branding Resmi Jurnal 7 KAIH, Suara & Curhat Siswa, Date Range Picker, & Bulk Reminder WA)*
 - **Branding Resmi & Standarisasi Aplikasi (`Jurnal 7 KAIH`)**: Menstandarkan seluruh antarmuka, navbar, footer, login view, dashboard router, modal rapor, header ekspor Excel, dan format WhatsApp ke nama resmi **Jurnal 7 KAIH**.
