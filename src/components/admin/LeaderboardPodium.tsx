@@ -88,8 +88,17 @@ export const LeaderboardPodium: React.FC<LeaderboardPodiumProps> = ({
             </div>
             <div className="h-6 w-px bg-black/10" />
             <div>
-              <span className="text-[10px] block opacity-80 font-bold">Tuntas 7</span>
-              <strong className="text-base font-black">{item.siswaTuntasCount} / {item.totalSiswa}</strong>
+              <span className="text-[10px] block opacity-80 font-bold">
+                {item.isMultiDay ? 'Tuntas 7 (Rerata)' : 'Tuntas 7'}
+              </span>
+              <strong className="text-base font-black">
+                {item.isMultiDay ? `~${item.siswaTuntasCount}` : item.siswaTuntasCount} / {item.totalSiswa}
+              </strong>
+              {item.isMultiDay && item.totalTuntasAkumulasi !== undefined && (
+                <span className="text-[9px] block opacity-75 font-normal tracking-tight">
+                  Total: {item.totalTuntasAkumulasi} kali
+                </span>
+              )}
             </div>
           </div>
         </div>

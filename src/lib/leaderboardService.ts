@@ -52,7 +52,8 @@ export class LeaderboardService {
       );
 
       let totalHabitsCompleted = 0;
-      let perfectCount = 0;
+      let singleDayPerfectCount = 0;
+      let totalClassTuntasDays = 0; // Akumulasi hari tuntas 7 untuk seluruh siswa
       let flagCount = 0;
       let tepatWaktuCount = 0;
 
@@ -62,21 +63,20 @@ export class LeaderboardService {
         if (totalDays === 1) {
           const distinct = new Set(studentEntries.map((e) => e.kebiasaan_id)).size;
           totalHabitsCompleted += distinct;
-          if (distinct === 7) perfectCount++;
+          if (distinct === 7) singleDayPerfectCount++;
         } else {
           // Multi-day: hitung total hari-kebiasaan unik
           const distinctPerDay = new Set(studentEntries.map((e) => `${e.tanggal}_${e.kebiasaan_id}`)).size;
           totalHabitsCompleted += distinctPerDay;
-          // Hitung berapa hari siswa tuntas 7
+
+          // Hitung berapa kali siswa ini menuntaskan 7 kebiasaan di hari-hari dalam rentang
           const datesSet = new Set(studentEntries.map((e) => e.tanggal));
-          let daysTuntas7 = 0;
           datesSet.forEach((tgl) => {
             const habitsOnDate = new Set(studentEntries.filter((e) => e.tanggal === tgl).map((e) => e.kebiasaan_id));
-            if (habitsOnDate.size >= 7) daysTuntas7++;
+            if (habitsOnDate.size >= 7) {
+              totalClassTuntasDays++;
+            }
           });
-          if (daysTuntas7 >= Math.ceil(totalDays * 0.7)) {
-            perfectCount++; // Konsisten minimal 70% periode
-          }
         }
 
         if (studentEntries.some((e) => e.flag_foto_mencurigakan)) flagCount++;
@@ -87,6 +87,11 @@ export class LeaderboardService {
       const rate = totalStudents > 0 
         ? Math.min(100, Math.round((totalHabitsCompleted / (totalStudents * 7 * totalDays)) * 100)) 
         : 0;
+
+      // Untuk mode multi-hari: siswaTuntasCount adalah RERATA siswa tuntas per hari dalam rentang waktu
+      const perfectCount = totalDays > 1 
+        ? (totalDays > 0 ? Math.round(totalClassTuntasDays / totalDays) : 0)
+        : singleDayPerfectCount;
 
       const tuntasPercent = totalStudents > 0
         ? Math.round((perfectCount / totalStudents) * 100)
@@ -104,6 +109,9 @@ export class LeaderboardService {
         waliKelasNama: wali?.nama || 'Wali Kelas',
         totalSiswa: totalStudents,
         siswaTuntasCount: perfectCount,
+        totalTuntasAkumulasi: totalClassTuntasDays,
+        isMultiDay: totalDays > 1,
+        totalDays,
         tuntasPercentage: tuntasPercent,
         totalEntri: classEntries.length,
         persentaseKepatuhan: rate,

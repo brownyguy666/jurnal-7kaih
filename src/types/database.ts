@@ -132,6 +132,9 @@ export interface ClassRankingItem {
   waliKelasNama: string;
   totalSiswa: number;
   siswaTuntasCount: number;
+  totalTuntasAkumulasi?: number;
+  isMultiDay?: boolean;
+  totalDays?: number;
   tuntasPercentage: number;
   totalEntri: number;
   persentaseKepatuhan: number; // 0 - 100%

@@ -12,7 +12,8 @@ import {
   Search,
   Eye,
   Flame,
-  Sparkles
+  Sparkles,
+  CheckCircle2
 } from 'lucide-react';
 import { ClassRankingItem, EntriJurnal, Kebiasaan, Kelas, Siswa, StafSekolah } from '../../types/database';
 import { LeaderboardService } from '../../lib/leaderboardService';
@@ -89,6 +90,24 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
       label: `Kustom (${customStartDate} s.d ${customEndDate})` 
     };
   }, [periodeMode, selectedDate, customStartDate, customEndDate]);
+
+  // Label periode dinamis untuk podium dan tabel
+  const podiumPeriodeText = useMemo(() => {
+    switch (periodeMode) {
+      case 'harian':
+        return 'Hari Ini';
+      case 'mingguan':
+        return 'Minggu Ini';
+      case 'bulanan':
+        return 'Bulan Ini';
+      case 'semester':
+        return 'Semester Ini';
+      case 'kustom':
+        return `(${activeDateRange.startDate} s.d ${activeDateRange.endDate})`;
+      default:
+        return 'Periode Terpilih';
+    }
+  }, [periodeMode, activeDateRange]);
 
   // 1. Hitung Perangkingan 18 Kelas berdasarkan range aktif
   const classRankings: ClassRankingItem[] = useMemo(() => {
@@ -331,10 +350,10 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
             <div className="text-center space-y-1">
               <h3 className="text-base sm:text-lg font-black text-slate-800 flex items-center justify-center gap-2">
                 <Crown className="w-5 h-5 text-amber-500" />
-                <span>Podium Juara Kelas Terdisiplin Hari Ini</span>
+                <span>Podium Juara Kelas Terdisiplin {podiumPeriodeText}</span>
               </h3>
               <p className="text-xs text-slate-400">
-                Peringkat tertinggi berdasarkan rata-rata kepatuhan 7 kebiasaan dan jumlah siswa tuntas 100%
+                Peringkat tertinggi berdasarkan rata-rata kepatuhan 7 kebiasaan dan jumlah siswa tuntas 100% {periodeMode !== 'harian' ? '(rerata harian)' : ''}
               </p>
             </div>
 
@@ -353,7 +372,7 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
             <div className="p-4 sm:px-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
               <div>
                 <h4 className="font-extrabold text-slate-800 text-sm sm:text-base">
-                  Klasemen Lengkap 18 Rombel (Kelas 7A - 9F)
+                  Klasemen Lengkap 18 Rombel (Kelas 7A - 9F) • {podiumPeriodeText}
                 </h4>
                 <p className="text-xs text-slate-400">
                   Klik baris kelas untuk membuka laporan rincian siswa dan bukti foto
@@ -365,10 +384,10 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari kelas atau wali kelas..."
-                  className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Cari kelas / nama wali..."
+                  className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-semibold focus:outline-none focus:border-purple-500 shadow-xs"
                 />
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               </div>
             </div>
 
@@ -380,7 +399,9 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
                     <th className="py-3.5 px-4 min-w-27.5">Kelas</th>
                     <th className="py-3.5 px-4 min-w-45">Wali Kelas</th>
                     <th className="py-3.5 px-4 text-center">Total Siswa</th>
-                    <th className="py-3.5 px-4 text-center">Tuntas (7/7)</th>
+                    <th className="py-3.5 px-4 text-center">
+                      {periodeMode === 'harian' ? 'Tuntas (7/7)' : 'Tuntas 7 (Rerata/Hari)'}
+                    </th>
                     <th className="py-3.5 px-4 text-center min-w-32.5">Tingkat Kepatuhan</th>
                     <th className="py-3.5 px-4 text-center">Foto Flag</th>
                     <th className="py-3.5 px-4 text-center">Skor Tertib</th>
@@ -453,11 +474,16 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
                           {/* Tuntas 7 */}
                           <td className="py-3 px-4 text-center">
                             <span className="font-extrabold text-emerald-700 block">
-                              {c.siswaTuntasCount} <span className="text-[10px] text-slate-400">/ {c.totalSiswa}</span>
+                              {c.isMultiDay ? `~${c.siswaTuntasCount}` : c.siswaTuntasCount} <span className="text-[10px] text-slate-400">/ {c.totalSiswa}</span>
                             </span>
-                            <span className="text-[10px] text-emerald-600 font-medium">
+                            <span className="text-[10px] text-emerald-600 font-medium block">
                               ({c.tuntasPercentage}%)
                             </span>
+                            {c.isMultiDay && c.totalTuntasAkumulasi !== undefined && (
+                              <span className="text-[9px] text-slate-400 font-normal block tracking-tight">
+                                Total: {c.totalTuntasAkumulasi} kali
+                              </span>
+                            )}
                           </td>
 
                           {/* Persentase Kepatuhan & Progress */}
@@ -480,11 +506,14 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
                           {/* Flag Foto EXIF */}
                           <td className="py-3 px-4 text-center">
                             {c.flaggedPhotosCount > 0 ? (
-                              <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 font-bold border border-amber-200 text-[10px]">
-                                {c.flaggedPhotosCount} Flag
+                              <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-bold border border-rose-200 text-[11px]">
+                                ⚠️ {c.flaggedPhotosCount}
                               </span>
                             ) : (
-                              <span className="text-emerald-600 font-bold text-[11px]">✓ Bersih</span>
+                              <span className="text-[11px] text-emerald-600 font-semibold flex items-center justify-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                <span>Aman</span>
+                              </span>
                             )}
                           </td>
 
@@ -525,7 +554,7 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
             </div>
             <div className="space-y-0.5 text-xs">
               <h4 className="font-extrabold text-emerald-950">
-                Kriteria Khusus Siswa Teladan Harian SMPN 2 Glagah
+                Kriteria Khusus Siswa Teladan {podiumPeriodeText} SMPN 2 Glagah
               </h4>
               <p className="text-emerald-800/90 leading-relaxed">
                 Hanya siswa yang <strong>menuntaskan ke-7 kebiasaan</strong> dengan <strong>100% foto asli/sinkron (bebas peringatan EXIF)</strong> dan <strong>tepat waktu</strong> pada Bangun Pagi (04.00-05.00) serta Tidur Cepat (20.00-22.00). Peringkat disusun dari yang tercepat menyelesaikan hari ini.
@@ -543,7 +572,7 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
             <div className="text-center space-y-1">
               <h3 className="text-base sm:text-lg font-black text-slate-800 flex items-center justify-center gap-2">
                 <Crown className="w-5 h-5 text-emerald-600" />
-                <span>Podium Siswa Teladan Tercepat & Terdisiplin</span>
+                <span>Podium Siswa Teladan Tercepat & Terdisiplin {podiumPeriodeText}</span>
               </h3>
               <p className="text-xs text-slate-400">
                 Murid dengan karakter paling konsisten, jujur dalam bukti foto, dan tepat waktu

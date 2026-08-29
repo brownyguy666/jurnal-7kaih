@@ -421,10 +421,14 @@ export function generateLeaderboardWhatsAppText(
   msg += `🏫 *${getProfile().nama}*\n`;
   msg += `📅 *Periode/Tanggal:* ${formattedDate}\n\n`;
 
-  msg += `*🥇 TOP 3 KELAS TERDISIPLIN HARI INI:*\n`;
+  const isMulti = formattedDate.includes(' s.d') || formattedDate.includes('_sd_') || formattedDate.includes('Periode');
+  msg += `*🥇 TOP 3 KELAS TERDISIPLIN ${isMulti ? 'PERIODE INI' : 'HARI INI'}:*\n`;
   top3Class.forEach((c, idx) => {
     const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
-    msg += `${medal} *Kelas ${c.namaKelas}* (Kepatuhan: ${c.persentaseKepatuhan}% • ${c.siswaTuntasCount}/${c.totalSiswa} Siswa Tuntas • Skor: ${c.score})\n   _Wali Kelas: ${c.waliKelasNama}_\n`;
+    const tuntasLabel = c.isMultiDay 
+      ? `~${c.siswaTuntasCount}/${c.totalSiswa} Siswa Tuntas (Rerata/Hari)` 
+      : `${c.siswaTuntasCount}/${c.totalSiswa} Siswa Tuntas`;
+    msg += `${medal} *Kelas ${c.namaKelas}* (Kepatuhan: ${c.persentaseKepatuhan}% • ${tuntasLabel} • Skor: ${c.score})\n   _Wali Kelas: ${c.waliKelasNama}_\n`;
   });
 
   msg += `\n*🌟 TOP 3 SISWA TELADAN TERCEPAT & TERBERSIH:*\n`;
