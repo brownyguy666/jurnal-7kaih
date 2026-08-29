@@ -411,7 +411,7 @@ export const EditSchoolProfileModal: React.FC<EditSchoolProfileModalProps> = ({
             <div className="space-y-5 animate-fade-in">
               {/* Motto / Slogan Sekolah */}
               <div>
-                <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                <label className="font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                   <span>Motto / Slogan Sekolah</span>
                 </label>
@@ -566,7 +566,7 @@ export const EditSchoolProfileModal: React.FC<EditSchoolProfileModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <label className="font-bold text-slate-700 mb-1 flex items-center gap-1">
                     <Phone className="w-3.5 h-3.5 text-slate-500" />
                     <span>No. Telepon / WA</span>
                   </label>
@@ -580,7 +580,7 @@ export const EditSchoolProfileModal: React.FC<EditSchoolProfileModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <label className="font-bold text-slate-700 mb-1 flex items-center gap-1">
                     <Mail className="w-3.5 h-3.5 text-slate-500" />
                     <span>Email Resmi</span>
                   </label>
@@ -594,7 +594,7 @@ export const EditSchoolProfileModal: React.FC<EditSchoolProfileModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                  <label className="font-bold text-slate-700 mb-1 flex items-center gap-1">
                     <Globe className="w-3.5 h-3.5 text-slate-500" />
                     <span>Website Sekolah</span>
                   </label>

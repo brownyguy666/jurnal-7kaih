@@ -385,7 +385,7 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Cari kelas / nama wali..."
-                  className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-semibold focus:outline-none focus:border-purple-500 shadow-xs"
+                  className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-xs"
                 />
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               </div>
