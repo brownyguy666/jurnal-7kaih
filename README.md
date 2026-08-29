@@ -3,6 +3,16 @@
 > **Versi: `v0.9.1` (Official Production)**  
 > Platform Web Pencatatan & Evaluasi Pembiasaan Karakter Luhur Peserta Didik Berbasis Cloud Database Realtime.
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/brownyguy666/jurnal-7kaih)
+
+---
+
+## 🏫 Ingin Menggunakan Aplikasi Ini untuk Sekolah Anda? (Replikasi Mandiri)
+Aplikasi ini bersifat sumber terbuka (*open source*) dan dapat direplikasi secara **100% GRATIS** oleh sekolah mana pun di Indonesia!
+- 📜 **Skrip SQL Database 1-Klik**: [`supabase/SETUP_SEKOLAH_BARU.sql`](supabase/SETUP_SEKOLAH_BARU.sql)
+- 📖 **Panduan Langkah Demi Langkah Operator/Guru TIK**: [**Baca Panduan Replikasi Lengkap di Sini**](PANDUAN_REPLIKASI_SEKOLAH.md)
+- ⏱️ **Waktu Setup**: Hanya butuh 10–15 menit untuk mengaktifkan sistem lengkap dengan domain sekolah sendiri.
+
 ---
 
 ## 📌 Identitas Satuan Pendidikan
