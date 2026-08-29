@@ -251,3 +251,40 @@ values (
   true
 )
 on conflict (nip_atau_nik) do nothing;
+
+-- ==============================================================================
+-- 10. TABEL PROFIL & KUSTOMISASI SEKOLAH (NAMA, LOGO, NPSN, MOTTO, KONTAK)
+-- ==============================================================================
+create table if not exists profil_sekolah (
+  id text primary key default 'main',
+  nama text not null default 'SMPN 2 Glagah',
+  jenjang text default 'SMP',
+  npsn text not null default '20525649',
+  status text default 'Negeri',
+  alamat text not null default 'Jl. Kenjo No.45, Glagah, Banyuwangi, Jawa Timur',
+  kabupaten text not null default 'Kabupaten Banyuwangi',
+  provinsi text not null default 'Jawa Timur',
+  akreditasi text default 'A',
+  tahun_ajaran text default '2026/2027',
+  telepon text default '(0333) 421000',
+  email text default 'smpn2glagah@gmail.com',
+  website text default 'https://smpnegeri2glagah.sch.id',
+  motto text default 'Berakhlak Mulia, Berprestasi, dan Berkarakter Luhur',
+  logo_url text default '/logos/logo_smpn2_glagah.png',
+  logo_kabupaten_url text default '/logos/logo_banyuwangi.png',
+  nama_kepala_sekolah text default 'Drs. Bambang Sudarmono, M.Pd',
+  nip_kepala_sekolah text default '197201011998031002',
+  updated_at timestamptz default now()
+);
+
+alter table profil_sekolah enable row level security;
+
+create policy "Allow read profil_sekolah" on profil_sekolah for select using (true);
+create policy "Allow insert profil_sekolah" on profil_sekolah for insert with check (true);
+create policy "Allow update profil_sekolah" on profil_sekolah for update using (true);
+create policy "Allow delete profil_sekolah" on profil_sekolah for delete using (true);
+
+insert into profil_sekolah (id, nama, npsn, alamat, kabupaten, provinsi)
+values ('main', 'SMPN 2 Glagah', '20525649', 'Jl. Kenjo No.45, Glagah, Banyuwangi, Jawa Timur', 'Kabupaten Banyuwangi', 'Jawa Timur')
+on conflict (id) do nothing;
+

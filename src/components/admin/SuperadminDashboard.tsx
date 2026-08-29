@@ -32,6 +32,8 @@ import { KebiasaanConfigModal } from './KebiasaanConfigModal';
 import { PasswordManagerModal } from './PasswordManagerModal';
 import { EditUserModal } from './EditUserModal';
 import { DeleteStudentModal } from './DeleteStudentModal';
+import { EditSchoolProfileModal } from './EditSchoolProfileModal';
+import { useSchoolProfile } from '../../context/SchoolProfileContext';
 import { ClassReportModal } from './ClassReportModal';
 import { ClassComparisonTable } from '../pejabat/ClassComparisonTable';
 import { ArahanWaliKelasModal } from '../pejabat/ArahanWaliKelasModal';
@@ -44,6 +46,7 @@ interface SuperadminDashboardProps {
 }
 
 export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }) => {
+  const { profile } = useSchoolProfile();
   const [activeTab, setActiveTab] = useState<'leaderboard' | 'monitoring' | 'suara' | 'siswa' | 'staf' | 'kebiasaan'>('leaderboard');
   const todayStr = getTodayDateString();
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
@@ -81,6 +84,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
   } | null>(null);
   const [selectedStudentForDelete, setSelectedStudentForDelete] = useState<Siswa | null>(null);
   const [selectedClassForReport, setSelectedClassForReport] = useState<Kelas | null>(null);
+  const [isSchoolProfileModalOpen, setIsSchoolProfileModalOpen] = useState(false);
 
   const loadAllData = async () => {
     try {
@@ -165,14 +169,22 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
             <span>Hak Akses Tertinggi • Super Administrator</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Panel Kendali Superadmin SMPN 2 Glagah
+            Panel Kendali Superadmin {profile.nama}
           </h2>
           <p className="text-xs text-purple-200/80 mt-1 max-w-2xl">
-            Kelola data 563 Siswa, 22 Pendidik & Staf, rename data, lihat serta ubah password, pantau radar siswa tidak aktif 3 hari, dan periksa laporan 18 kelas.
+            Kelola data {siswaList.length} Siswa, {stafList.length} Pendidik & Staf, rename data, lihat serta ubah password, pantau radar siswa tidak aktif 3 hari, dan periksa laporan {kelasList.length} kelas.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setIsSchoolProfileModalOpen(true)}
+            className="px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition flex items-center gap-2 active:scale-95 cursor-pointer"
+            title="Kustomisasi nama sekolah, logo, motto, dan kontak"
+          >
+            <Building2 className="w-4 h-4 text-slate-950" />
+            <span>⚙️ Profil & Logo Sekolah</span>
+          </button>
           <button
             onClick={loadAllData}
             title="Refresh Data Cloud"
@@ -742,6 +754,11 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
           await JournalService.sendArahanWaliKelas(staf.id, kId, kat, jud, pes);
           await loadAllData();
         }}
+      />
+
+      <EditSchoolProfileModal
+        isOpen={isSchoolProfileModalOpen}
+        onClose={() => setIsSchoolProfileModalOpen(false)}
       />
     </div>
   );

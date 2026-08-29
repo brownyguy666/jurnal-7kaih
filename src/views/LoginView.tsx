@@ -13,7 +13,7 @@ import {
   HelpCircle,
   X
 } from 'lucide-react';
-import { SCHOOL_PROFILE } from '../lib/schoolProfile';
+import { useSchoolProfile } from '../context/SchoolProfileContext';
 
 interface ErrorModalState {
   isOpen: boolean;
@@ -26,6 +26,7 @@ interface ErrorModalState {
 
 export const LoginView: React.FC = () => {
   const { loginSiswa, loginStaf } = useAuth();
+  const { profile } = useSchoolProfile();
   const [activeTab, setActiveTab] = useState<'siswa' | 'staf'>('siswa');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -166,29 +167,29 @@ export const LoginView: React.FC = () => {
             {/* Logos Berdampingan: Klik untuk menuju website resmi */}
             <div className="flex items-center justify-center gap-4 sm:gap-6 pt-2">
               <a
-                href="https://pendidikan.banyuwangikab.go.id/inovasi-daerah/"
+                href={profile.website || "https://pendidikan.banyuwangikab.go.id/inovasi-daerah/"}
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Buka Website Dinas Pendidikan Kab. Banyuwangi (Inovasi Daerah)"
+                title={`Logo Daerah / Kabupaten (${profile.kabupaten})`}
                 className="w-16 h-16 sm:w-20 sm:h-20 p-2 rounded-2xl bg-white shadow-lg shadow-slate-200/70 border border-slate-100 flex items-center justify-center transform hover:scale-110 hover:shadow-xl hover:border-emerald-200 transition duration-300 group cursor-pointer"
               >
                 <img 
-                  src="/logos/logo_banyuwangi.png" 
-                  alt="Logo Kabupaten Banyuwangi" 
+                  src={profile.logoKabupatenUrl || "/logos/logo_banyuwangi.png"} 
+                  alt={`Logo ${profile.kabupaten}`} 
                   className="max-h-full max-w-full object-contain group-hover:drop-shadow-sm transition"
                 />
               </a>
 
               <a
-                href="https://smpnegeri2glagah.sch.id/"
+                href={profile.website || "https://smpnegeri2glagah.sch.id/"}
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Buka Website Resmi SMPN 2 Glagah"
+                title={`Website Resmi ${profile.nama}`}
                 className="w-16 h-16 sm:w-20 sm:h-20 p-2 rounded-2xl bg-white shadow-lg shadow-slate-200/70 border border-slate-100 flex items-center justify-center transform hover:scale-110 hover:shadow-xl hover:border-purple-200 transition duration-300 group cursor-pointer"
               >
                 <img 
-                  src="/logos/logo_smpn2_glagah.png" 
-                  alt="Logo SMPN 2 Glagah" 
+                  src={profile.logoUrl || "/logos/logo_smpn2_glagah.png"} 
+                  alt={`Logo ${profile.nama}`} 
                   className="max-h-full max-w-full object-contain group-hover:drop-shadow-sm transition"
                 />
               </a>
@@ -200,7 +201,7 @@ export const LoginView: React.FC = () => {
                 <span>Program Resmi Kemendikdasmen RI</span>
               </div>
               <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-                v0.9.1 Official
+                v0.9.2 Official
               </span>
             </div>
 
@@ -209,11 +210,16 @@ export const LoginView: React.FC = () => {
                 Jurnal 7 KAIH
               </h1>
               <p className="text-sm font-bold text-purple-900 mt-0.5">
-                {SCHOOL_PROFILE.nama} • {SCHOOL_PROFILE.kabupaten}
+                {profile.nama} • {profile.kabupaten}
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                NPSN: {SCHOOL_PROFILE.npsn} • Status: {SCHOOL_PROFILE.status} • Akreditasi: {SCHOOL_PROFILE.akreditasi}
+                NPSN: {profile.npsn} • Status: {profile.status} • Akreditasi: {profile.akreditasi}
               </p>
+              {profile.motto && (
+                <p className="text-xs italic text-purple-700/90 mt-1 max-w-md mx-auto">
+                  "{profile.motto}"
+                </p>
+              )}
             </div>
           </div>
 
@@ -377,7 +383,7 @@ export const LoginView: React.FC = () => {
 
       {/* Footer */}
       <footer className="p-4 text-center text-xs text-slate-400">
-        &copy; {new Date().getFullYear()} {SCHOOL_PROFILE.nama} ({SCHOOL_PROFILE.npsn}) • {SCHOOL_PROFILE.alamat}
+        &copy; {new Date().getFullYear()} {profile.nama} ({profile.npsn}) • {profile.alamat} {profile.telepon ? `• Telp: ${profile.telepon}` : ''}
       </footer>
 
       {/* Pop-up Modal Pemberitahuan Kesalahan Login */}

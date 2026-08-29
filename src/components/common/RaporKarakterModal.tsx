@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { X, Printer, Download, Award, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { EntriJurnal, Kebiasaan, Siswa, StafSekolah } from '../../types/database';
 import { getTodayDateString } from '../../lib/timeCalculator';
+import { useSchoolProfile } from '../../context/SchoolProfileContext';
 
 interface RaporKarakterModalProps {
   isOpen: boolean;
@@ -22,10 +23,11 @@ export const RaporKarakterModal: React.FC<RaporKarakterModalProps> = ({
   entries,
   kebiasaanList,
   namaKelas,
-  waliKelasNama = 'Wali Kelas SMPN 2 Glagah',
-  kepalaSekolahNama = 'H. Abdul Kirom, M.Pd.',
-  kepalaSekolahNip = '197508122002121003'
+  waliKelasNama,
+  kepalaSekolahNama,
+  kepalaSekolahNip
 }) => {
+  const { profile } = useSchoolProfile();
   const printAreaRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen || !siswa) return null;
@@ -147,25 +149,33 @@ export const RaporKarakterModal: React.FC<RaporKarakterModalProps> = ({
         <div className="p-6 sm:p-10 overflow-y-auto max-h-[80vh] print:max-h-none print:p-0 print:overflow-visible bg-white text-slate-900 font-sans" ref={printAreaRef}>
           {/* KOP SURAT RESMI */}
           <div className="border-b-2 border-slate-900 pb-4 mb-6 flex items-center gap-4 text-center justify-between">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 flex items-center justify-center font-extrabold text-2xl text-emerald-800 border-2 border-emerald-800 rounded-full">
-              7K
+            <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 flex items-center justify-center p-1">
+              <img 
+                src={profile.logoKabupatenUrl || "/logos/logo_banyuwangi.png"} 
+                alt={`Logo ${profile.kabupaten}`} 
+                className="max-h-full max-w-full object-contain"
+              />
             </div>
             <div className="flex-1 space-y-0.5">
               <h4 className="text-xs sm:text-sm font-bold tracking-wider uppercase text-slate-600">
-                PEMERINTAH KABUPATEN BANYUWANGI • DINAS PENDIDIKAN
+                PEMERINTAH {profile.kabupaten.toUpperCase()} • DINAS PENDIDIKAN
               </h4>
               <h2 className="text-lg sm:text-xl font-extrabold tracking-tight uppercase text-slate-900">
-                SMP NEGERI 2 GLAGAH
+                {profile.nama}
               </h2>
               <p className="text-[11px] text-slate-600 leading-tight">
-                Jl. Raya Licin No. 45 Glagah, Banyuwangi, Jawa Timur | Telp: (0333) 421xxx | Web: smpn2glagah.sch.id
+                {profile.alamat} {profile.telepon ? `| Telp: ${profile.telepon}` : ''} {profile.website ? `| Web: ${profile.website.replace(/^https?:\/\//, '')}` : ''}
               </p>
               <p className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider pt-0.5">
                 PROGRAM 7 KEBIASAAN ANAK INDONESIA HEBAT (KEMENDIKDASMEN RI)
               </p>
             </div>
-            <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 hidden sm:flex items-center justify-center font-bold text-xs text-slate-400 border border-slate-200 rounded-full">
-              LOGO
+            <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 hidden sm:flex items-center justify-center p-1">
+              <img 
+                src={profile.logoUrl || "/logos/logo_smpn2_glagah.png"} 
+                alt={`Logo ${profile.nama}`} 
+                className="max-h-full max-w-full object-contain"
+              />
             </div>
           </div>
 
@@ -295,11 +305,11 @@ export const RaporKarakterModal: React.FC<RaporKarakterModalProps> = ({
             {/* Wali Kelas */}
             <div className="space-y-16">
               <div>
-                <p className="text-slate-500">Glagah, {tanggalCetakFormatted}</p>
+                <p className="text-slate-500">{profile.kabupaten.replace(/^Kabupaten\s+/i, '')}, {tanggalCetakFormatted}</p>
                 <p className="font-bold text-slate-900">Wali Kelas {namaKelas}</p>
               </div>
               <div>
-                <p className="font-bold text-slate-900 underline underline-offset-2">{waliKelasNama}</p>
+                <p className="font-bold text-slate-900 underline underline-offset-2">{waliKelasNama || `Wali Kelas ${namaKelas}`}</p>
                 <p className="text-[11px] text-slate-500">NIP. ....................................</p>
               </div>
             </div>
@@ -308,11 +318,11 @@ export const RaporKarakterModal: React.FC<RaporKarakterModalProps> = ({
             <div className="space-y-16">
               <div>
                 <p className="text-slate-500">Mengesahkan,</p>
-                <p className="font-bold text-slate-900">Kepala SMPN 2 Glagah</p>
+                <p className="font-bold text-slate-900">Kepala {profile.nama}</p>
               </div>
               <div>
-                <p className="font-bold text-slate-900 underline underline-offset-2">{kepalaSekolahNama}</p>
-                <p className="text-[11px] text-slate-500">NIP. {kepalaSekolahNip}</p>
+                <p className="font-bold text-slate-900 underline underline-offset-2">{profile.namaKepalaSekolah || kepalaSekolahNama || 'Kepala Sekolah'}</p>
+                <p className="text-[11px] text-slate-500">NIP. {profile.nipKepalaSekolah || kepalaSekolahNip || '....................................'}</p>
               </div>
             </div>
           </div>

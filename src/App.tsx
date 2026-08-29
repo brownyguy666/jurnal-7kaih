@@ -2,6 +2,7 @@ import React from 'react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SchoolProfileProvider } from './context/SchoolProfileContext';
 import { LoginView } from './views/LoginView';
 import { DashboardRouter } from './views/DashboardRouter';
 import { Loader2 } from 'lucide-react';
@@ -25,10 +26,12 @@ const MainApp: React.FC = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <MainApp />
-      <SpeedInsights />
-      <Analytics />
-    </AuthProvider>
+    <SchoolProfileProvider>
+      <AuthProvider>
+        <MainApp />
+        <SpeedInsights />
+        <Analytics />
+      </AuthProvider>
+    </SchoolProfileProvider>
   );
 }

@@ -1,6 +1,8 @@
 import * as XLSX from 'xlsx';
 import { EntriJurnal, Kebiasaan, Kelas, Siswa, StafSekolah } from '../types/database';
-import { SCHOOL_PROFILE } from './schoolProfile';
+import { getLocalSchoolProfile } from './schoolProfile';
+
+const getProfile = () => getLocalSchoolProfile();
 
 export interface ClassRekapRow {
   nisn: string;
@@ -103,9 +105,9 @@ export function exportClassRekapToExcel(
   });
 
   const worksheetData: any[][] = [
-    ['JURNAL 7 KAIH (SMPN 2 GLAGAH)'],
-    [`Sekolah: ${SCHOOL_PROFILE.nama} (NPSN: ${SCHOOL_PROFILE.npsn}) - Akreditasi ${SCHOOL_PROFILE.akreditasi}`],
-    [`Alamat: ${SCHOOL_PROFILE.alamat}`],
+    [`JURNAL 7 KAIH (${getProfile().nama.toUpperCase()})`],
+    [`Sekolah: ${getProfile().nama} (NPSN: ${getProfile().npsn}) - Akreditasi ${getProfile().akreditasi}`],
+    [`Alamat: ${getProfile().alamat}`],
     [`Laporan Harian Kelas: ${namaKelas} • Tanggal: ${formattedDate}`],
     [`Waktu Unduh: ${new Date().toLocaleString('id-ID')}`],
     [],
@@ -168,7 +170,7 @@ export function exportClassRekapToExcel(
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, `Rekap ${namaKelas}`);
 
-  const fileName = `Rekap_7KAIH_${SCHOOL_PROFILE.nama.replace(/\s+/g, '_')}_${namaKelas.replace(/\s+/g, '_')}_${tanggalStr}.xlsx`;
+  const fileName = `Rekap_7KAIH_${getProfile().nama.replace(/\s+/g, '_')}_${namaKelas.replace(/\s+/g, '_')}_${tanggalStr}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
 
@@ -187,9 +189,9 @@ export function exportSchoolComparisonToExcel(
   });
 
   const worksheetData: any[][] = [
-    ['REKAPITULASI 7 KEBIASAAN ANAK INDONESIA HEBAT (SELURUH KELAS 7A - 9F)'],
-    [`Sekolah: ${SCHOOL_PROFILE.nama} (NPSN: ${SCHOOL_PROFILE.npsn}) • ${SCHOOL_PROFILE.kabupaten}, ${SCHOOL_PROFILE.provinsi}`],
-    [`Alamat: ${SCHOOL_PROFILE.alamat} • Status: ${SCHOOL_PROFILE.status} • Akreditasi: ${SCHOOL_PROFILE.akreditasi}`],
+    [`REKAPITULASI 7 KEBIASAAN ANAK INDONESIA HEBAT (${getProfile().nama.toUpperCase()})`],
+    [`Sekolah: ${getProfile().nama} (NPSN: ${getProfile().npsn}) • ${getProfile().kabupaten}, ${getProfile().provinsi}`],
+    [`Alamat: ${getProfile().alamat} • Status: ${getProfile().status} • Akreditasi: ${getProfile().akreditasi}`],
     [`Tanggal Rekap: ${formattedDate}`],
     [`Waktu Ekspor: ${new Date().toLocaleString('id-ID')}`],
     [],
@@ -244,7 +246,7 @@ export function exportSchoolComparisonToExcel(
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Rekap 18 Kelas (7A-9F)');
 
-  const fileName = `Rekap_Sekolah_18_Kelas_${SCHOOL_PROFILE.nama.replace(/\s+/g, '_')}_${tanggalStr}.xlsx`;
+  const fileName = `Rekap_Sekolah_18_Kelas_${getProfile().nama.replace(/\s+/g, '_')}_${tanggalStr}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
 
@@ -271,7 +273,7 @@ export function generateWhatsAppSummaryText(
   );
 
   return `*🇮🇩 REKAP JURNAL 7 KAIH*
-🏫 *${SCHOOL_PROFILE.nama}* (NPSN: ${SCHOOL_PROFILE.npsn})
+🏫 *${getProfile().nama}* (NPSN: ${getProfile().npsn})
 📅 *Hari/Tanggal:* ${formattedDate}
 👥 *Kelas:* ${namaKelas} (${totalSiswa} Siswa)
 
@@ -281,7 +283,7 @@ export function generateWhatsAppSummaryText(
 • Perlu Review Foto/Audit: *${flaggedCount} catatan*
 
 ⭐ _Mari dukung putra-putri kita menjadi generasi hebat berkarakter luhur!_
-_Laporan resmi telah diexport ke format Excel oleh Wali Kelas ${SCHOOL_PROFILE.nama}._`;
+_Laporan resmi telah diexport ke format Excel oleh Wali Kelas ${getProfile().nama}._`;
 }
 
 /**
@@ -291,7 +293,7 @@ export async function shareToWhatsApp(text: string): Promise<boolean> {
   if (navigator.share) {
     try {
       await navigator.share({
-        title: `Rekap Jurnal 7 KAIH - ${SCHOOL_PROFILE.nama}`,
+        title: `Rekap Jurnal 7 KAIH - ${getProfile().nama}`,
         text: text,
       });
       return true;
@@ -327,7 +329,7 @@ export function exportLeaderboardToExcel(
   // Sheet 1: Peringkat Kelas
   const classSheetData: any[][] = [
     ['PAPAN PERINGKAT KELAS TERDISIPLIN 7 KEBIASAAN'],
-    [`Sekolah: ${SCHOOL_PROFILE.nama} (NPSN: ${SCHOOL_PROFILE.npsn})`],
+    [`Sekolah: ${getProfile().nama} (NPSN: ${getProfile().npsn})`],
     [`Tanggal Rekapitulasi: ${formattedDate}`],
     [`Waktu Generate: ${new Date().toLocaleString('id-ID')}`],
     [],
@@ -349,12 +351,12 @@ export function exportLeaderboardToExcel(
 
   const wsClass = XLSX.utils.aoa_to_sheet(classSheetData);
   wsClass['!cols'] = [{ wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 28 }, { wch: 14 }, { wch: 22 }, { wch: 16 }, { wch: 14 }];
-  XLSX.utils.book_append_sheet(wb, wsClass, 'Peringkat 18 Kelas');
+  XLSX.utils.book_append_sheet(wb, wsClass, 'Peringkat Kelas');
 
   // Sheet 2: Siswa Teladan Tercepat
   const studentSheetData: any[][] = [
     ['PAPAN SISWA TELADAN TERCEPAT & TERDISIPLIN (BEBAS FLAG EXIF)'],
-    [`Sekolah: ${SCHOOL_PROFILE.nama}`],
+    [`Sekolah: ${getProfile().nama}`],
     [`Tanggal Rekapitulasi: ${formattedDate}`],
     [],
     ['Peringkat', 'Nama Siswa', 'NISN', 'Kelas', 'Total Kebiasaan', 'Waktu Tuntas', 'Status Foto EXIF', 'Status Waktu']
@@ -377,7 +379,7 @@ export function exportLeaderboardToExcel(
   wsStudent['!cols'] = [{ wch: 10 }, { wch: 28 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 16 }];
   XLSX.utils.book_append_sheet(wb, wsStudent, 'Siswa Teladan Tercepat');
 
-  const fileName = `Leaderboard_7Kebiasaan_${SCHOOL_PROFILE.nama.replace(/\s+/g, '_')}_${tanggalStr}.xlsx`;
+  const fileName = `Leaderboard_7Kebiasaan_${getProfile().nama.replace(/\s+/g, '_')}_${tanggalStr}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
 
@@ -400,7 +402,7 @@ export function generateLeaderboardWhatsAppText(
   const top3Students = topStudents.slice(0, 3);
 
   let msg = `*🏆 PENGUMUMAN JUARA HARIAN 7 KEBIASAAN ANAK INDONESIA HEBAT*\n`;
-  msg += `🏫 *${SCHOOL_PROFILE.nama}*\n`;
+  msg += `🏫 *${getProfile().nama}*\n`;
   msg += `📅 *Hari/Tanggal:* ${formattedDate}\n\n`;
 
   msg += `*🥇 TOP 3 KELAS TERDISIPLIN HARI INI:*\n`;
@@ -420,7 +422,7 @@ export function generateLeaderboardWhatsAppText(
   }
 
   msg += `\n✨ _Selamat kepada para juara dan mari terus tingkatkan karakter pembiasaan luhur setiap hari!_\n`;
-  msg += `_Laporan resmi telah direkap otomatis oleh Sistem Jurnal 7 KAIH ${SCHOOL_PROFILE.nama}._`;
+  msg += `_Laporan resmi telah direkap otomatis oleh Sistem Jurnal 7 KAIH ${getProfile().nama}._`;
 
   return msg;
 }

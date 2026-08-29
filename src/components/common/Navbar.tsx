@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { LogOut, KeyRound, ChevronDown } from 'lucide-react';
 import { ChangePasswordModal } from './ChangePasswordModal';
-import { SCHOOL_PROFILE } from '../../lib/schoolProfile';
+import { useSchoolProfile } from '../../context/SchoolProfileContext';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
+  const { profile } = useSchoolProfile();
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -13,7 +14,7 @@ export const Navbar: React.FC = () => {
 
   const getRoleLabel = () => {
     if (user.type === 'siswa') {
-      return `Siswa • ${SCHOOL_PROFILE.nama}`;
+      return `Siswa • ${profile.nama}`;
     }
     const staf = user.data;
     switch (staf.role) {
@@ -61,15 +62,15 @@ export const Navbar: React.FC = () => {
             {/* Logo & Title */}
             <div className="flex items-center gap-3">
               <a
-                href="https://smpnegeri2glagah.sch.id/"
+                href={profile.website || "https://smpnegeri2glagah.sch.id/"}
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Buka Website Resmi SMPN 2 Glagah"
+                title={`Website Resmi ${profile.nama}`}
                 className="w-10 h-10 rounded-xl bg-white p-1 shadow-md shadow-slate-200 border border-slate-100 flex items-center justify-center hover:scale-105 transition"
               >
                 <img 
-                  src="/logos/logo_smpn2_glagah.png" 
-                  alt="Logo SMPN 2 Glagah" 
+                  src={profile.logoUrl || "/logos/logo_smpn2_glagah.png"} 
+                  alt={`Logo ${profile.nama}`} 
                   className="w-full h-full object-contain"
                 />
               </a>
@@ -77,18 +78,18 @@ export const Navbar: React.FC = () => {
                 <h1 className="font-extrabold text-slate-800 text-sm sm:text-base leading-tight tracking-tight flex items-center gap-1.5">
                   <span>Jurnal 7 KAIH</span>
                   <a 
-                    href="https://smpnegeri2glagah.sch.id/" 
+                    href={profile.website || "https://smpnegeri2glagah.sch.id/"} 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-1.5 py-0.2 rounded border border-slate-200 font-bold hidden sm:inline-block transition"
                   >
-                    {SCHOOL_PROFILE.nama}
+                    {profile.nama}
                   </a>
                 </h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[11px] text-slate-400 font-medium">SMPN 2 Glagah</span>
+                  <span className="text-[11px] text-slate-400 font-medium">{profile.nama}</span>
                   <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-                    v0.6.0
+                    v0.9.2
                   </span>
                 </div>
               </div>
@@ -134,7 +135,7 @@ export const Navbar: React.FC = () => {
                           {user.type === 'siswa' ? `NISN: ${(user.data as any).nisn}` : `NIP/NIK: ${(user.data as any).nip_atau_nik}`}
                         </p>
                         <p className="text-[10px] text-purple-700 font-medium mt-0.5">
-                          {SCHOOL_PROFILE.nama} (NPSN: {SCHOOL_PROFILE.npsn})
+                          {profile.nama} (NPSN: {profile.npsn})
                         </p>
                       </div>
 
