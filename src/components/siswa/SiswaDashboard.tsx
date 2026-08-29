@@ -12,9 +12,10 @@ import {
   Heart,
   Flame,
   FileText,
-  MessageSquareHeart
+  MessageSquareHeart,
+  MessageCircle
 } from 'lucide-react';
-import { EntriJurnal, Feedback, Kebiasaan, Siswa } from '../../types/database';
+import { EntriJurnal, Feedback, Kebiasaan, Siswa, Kelas, StafSekolah } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
 import { getTodayDateString } from '../../lib/timeCalculator';
 import { GamificationService } from '../../lib/gamificationService';
@@ -24,6 +25,7 @@ import { PhotoViewerModal } from '../common/PhotoViewerModal';
 import { SiswaHistory } from './SiswaHistory';
 import { BadgesShowcaseModal } from './BadgesShowcaseModal';
 import { SuaraSiswaModal } from './SuaraSiswaModal';
+import { KomunikasiSiswaGuruModal } from '../common/KomunikasiSiswaGuruModal';
 
 interface SiswaDashboardProps {
   siswa: Siswa;
@@ -35,6 +37,8 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
   const [kebiasaanList, setKebiasaanList] = useState<Kebiasaan[]>([]);
   const [entries, setEntries] = useState<EntriJurnal[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [kelasList, setKelasList] = useState<Kelas[]>([]);
+  const [stafList, setStafList] = useState<StafSekolah[]>([]);
   const [activeTab, setActiveTab] = useState<'today' | 'history'>('today');
   
   // Modal states
@@ -42,19 +46,24 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
   const [selectedEntryForPhoto, setSelectedEntryForPhoto] = useState<EntriJurnal | null>(null);
   const [isBadgesModalOpen, setIsBadgesModalOpen] = useState<boolean>(false);
   const [isSuaraModalOpen, setIsSuaraModalOpen] = useState<boolean>(false);
+  const [isKomunikasiModalOpen, setIsKomunikasiModalOpen] = useState<boolean>(false);
 
   // Load data
   const loadData = async () => {
     try {
-      const [habits, allEntries, studentFeedbacks] = await Promise.all([
+      const [habits, allEntries, studentFeedbacks, allKelas, allStaf] = await Promise.all([
         JournalService.getKebiasaan(),
         JournalService.getEntriJurnal(undefined, siswa.id),
-        JournalService.getFeedback(siswa.id)
+        JournalService.getFeedback(siswa.id),
+        JournalService.getKelas(),
+        JournalService.getStaf()
       ]);
 
-      setKebiasaanList(habits.sort((a, b) => a.urutan - b.urutan));
+      setKebiasaanList(habits.sort((a: Kebiasaan, b: Kebiasaan) => a.urutan - b.urutan));
       setEntries(allEntries);
       setFeedbacks(studentFeedbacks);
+      setKelasList(allKelas);
+      setStafList(allStaf);
     } catch (e) {
       console.warn('Error loading student data:', e);
     }
@@ -228,13 +237,23 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
           )}
         </button>
 
-        <button
-          onClick={() => setIsSuaraModalOpen(true)}
-          className="ml-auto px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 bg-linear-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white shadow-md shadow-pink-500/20 active:scale-95 cursor-pointer"
-        >
-          <MessageSquareHeart className="w-4 h-4" />
-          <span>Suara & Curhat Siswa</span>
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => setIsKomunikasiModalOpen(true)}
+            className="px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 active:scale-95 cursor-pointer"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>💬 Hubungi Guru</span>
+          </button>
+
+          <button
+            onClick={() => setIsSuaraModalOpen(true)}
+            className="px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 bg-linear-to-r from-pink-500 via-purple-600 to-indigo-600 hover:from-pink-600 hover:to-indigo-700 text-white shadow-md shadow-pink-500/20 active:scale-95 cursor-pointer"
+          >
+            <MessageSquareHeart className="w-4 h-4" />
+            <span>Suara & Curhat Siswa</span>
+          </button>
+        </div>
       </div>
 
       {/* Tab 1: 7 Kebiasaan Hari Ini */}
@@ -308,6 +327,15 @@ export const SiswaDashboard: React.FC<SiswaDashboardProps> = ({ siswa }) => {
         isOpen={isSuaraModalOpen}
         onClose={() => setIsSuaraModalOpen(false)}
         siswa={siswa}
+      />
+
+      <KomunikasiSiswaGuruModal
+        isOpen={isKomunikasiModalOpen}
+        onClose={() => setIsKomunikasiModalOpen(false)}
+        currentUser={{ type: 'siswa', data: siswa }}
+        kelasList={kelasList}
+        siswaList={[siswa]}
+        stafList={stafList}
       />
     </div>
   );

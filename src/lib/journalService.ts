@@ -8,10 +8,12 @@ import {
   Kelas, 
   LogHapus, 
   Siswa, 
-  StafSekolah,
-  SuaraSiswa,
-  KategoriSuara,
-  KategoriArahan
+  StafSekolah, 
+  SuaraSiswa, 
+  KategoriSuara, 
+  KategoriArahan,
+  PesanKomunikasi,
+  TanggapanSuaraItem
 } from '../types/database';
 
 export class JournalService {
@@ -803,19 +805,66 @@ export class JournalService {
 
   /**
    * Pendidik / Pimpinan Sekolah Memberikan Tanggapan / Respons terhadap Suara Siswa
+   * Mendukung banyak tanggapan dari guru/wali kelas/KS/kesiswaan/kurikulum/superadmin
    */
   static async tanggapiSuaraSiswa(
     suaraId: string,
     stafId: string,
-    tanggapan: string
+    tanggapan: string,
+    stafNama?: string,
+    stafRole?: string
   ): Promise<boolean> {
-    MockDatabase.tanggapiSuaraSiswa(suaraId, stafId, tanggapan);
+    const localSuara = MockDatabase.getSuaraSiswa().find(s => s.id === suaraId);
+    let responses: TanggapanSuaraItem[] = [];
+
+    if (localSuara && localSuara.tanggapan) {
+      if (localSuara.tanggapan.trim().startsWith('[')) {
+        try {
+          responses = JSON.parse(localSuara.tanggapan);
+        } catch {
+          responses = [];
+        }
+      } else {
+        responses = [{
+          id: `tg-${localSuara.tanggapan_oleh_staf_id || '1'}`,
+          staf_id: localSuara.tanggapan_oleh_staf_id || '',
+          staf_nama: 'Bapak/Ibu Guru',
+          staf_role: 'Guru',
+          tanggapan: localSuara.tanggapan,
+          created_at: localSuara.tanggapan_at || new Date().toISOString()
+        }];
+      }
+    }
+
+    const existingIdx = responses.findIndex(r => r.staf_id === stafId);
+    const newEntry: TanggapanSuaraItem = {
+      id: `tg-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      staf_id: stafId,
+      staf_nama: stafNama || 'Bapak/Ibu Guru',
+      staf_role: stafRole || 'Guru',
+      tanggapan,
+      created_at: new Date().toISOString()
+    };
+
+    if (existingIdx >= 0) {
+      responses[existingIdx] = {
+        ...responses[existingIdx],
+        tanggapan,
+        created_at: new Date().toISOString()
+      };
+    } else {
+      responses.push(newEntry);
+    }
+
+    const serialized = JSON.stringify(responses);
+    MockDatabase.tanggapiSuaraSiswa(suaraId, stafId, serialized);
+
     if (isSupabaseConfigured) {
       try {
         await supabase
           .from('suara_siswa')
           .update({
-            tanggapan,
+            tanggapan: serialized,
             tanggapan_oleh_staf_id: stafId,
             tanggapan_at: new Date().toISOString()
           })
@@ -878,6 +927,77 @@ export class JournalService {
       this.sendArahanWaliKelas(stafPengirimId, kelasId, kategori, judul, pesan)
     );
     await Promise.all(promises);
+  }
+
+  /**
+   * Mengambil semua Pesan Komunikasi Siswa-Guru
+   */
+  static async getPesanKomunikasi(userId?: string): Promise<PesanKomunikasi[]> {
+    let localList = MockDatabase.getPesanKomunikasi();
+
+    if (isSupabaseConfigured) {
+      try {
+        const { data: fileData, error } = await supabase.storage.from('bukti_foto').download('chat/messages.json');
+        if (fileData && !error) {
+          const text = await fileData.text();
+          const remoteList: PesanKomunikasi[] = JSON.parse(text);
+          if (Array.isArray(remoteList)) {
+            const map = new Map<string, PesanKomunikasi>();
+            remoteList.forEach(m => map.set(m.id, m));
+            localList.forEach(m => map.set(m.id, m));
+            localList = Array.from(map.values()).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            localStorage.setItem('jurnal_7k_pesan_komunikasi', JSON.stringify(localList));
+          }
+        }
+      } catch {
+        // silent
+      }
+    }
+
+    if (userId) {
+      return localList.filter(m => m.pengirim_id === userId || m.penerima_id === userId);
+    }
+    return localList;
+  }
+
+  /**
+   * Mengirim Pesan Komunikasi Siswa-Guru
+   */
+  static async kirimPesanKomunikasi(data: Omit<PesanKomunikasi, 'id' | 'created_at' | 'sudah_dibaca'>): Promise<PesanKomunikasi> {
+    const newMsg = MockDatabase.kirimPesanKomunikasi(data);
+    const all = MockDatabase.getPesanKomunikasi();
+
+    if (isSupabaseConfigured) {
+      try {
+        const blob = new Blob([JSON.stringify(all)], { type: 'application/json' });
+        await supabase.storage.from('bukti_foto').upload('chat/messages.json', blob, {
+          upsert: true,
+          contentType: 'application/json'
+        });
+      } catch (e) {
+        console.warn('Failed cloud sync pesan komunikasi:', e);
+      }
+    }
+    return newMsg;
+  }
+
+  /**
+   * Menandai Pesan Komunikasi sudah dibaca
+   */
+  static async tandaiPesanDibaca(pesanId: string): Promise<void> {
+    MockDatabase.tandaiPesanDibaca(pesanId);
+    const all = MockDatabase.getPesanKomunikasi();
+    if (isSupabaseConfigured) {
+      try {
+        const blob = new Blob([JSON.stringify(all)], { type: 'application/json' });
+        await supabase.storage.from('bukti_foto').upload('chat/messages.json', blob, {
+          upsert: true,
+          contentType: 'application/json'
+        });
+      } catch {
+        // silent
+      }
+    }
   }
 }
 

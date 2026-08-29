@@ -291,30 +291,61 @@ export const SuaraSiswaModal: React.FC<SuaraSiswaModalProps> = ({
                     </p>
                   </div>
 
-                  {/* Tanggapan Guru */}
-                  {item.tanggapan ? (
-                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-extrabold text-emerald-800 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          Tanggapan dari Bapak/Ibu Guru & Pimpinan:
-                        </span>
-                        {item.tanggapan_at && (
-                          <span className="text-[10px] text-emerald-600 font-mono">
-                            {new Date(item.tanggapan_at).toLocaleDateString('id-ID')}
+                  {/* Tanggapan Guru & Pimpinan */}
+                  {(() => {
+                    let responses: Array<{ id: string; staf_nama?: string; staf_role?: string; tanggapan: string; created_at?: string }> = [];
+                    if (item.tanggapan) {
+                      if (item.tanggapan.trim().startsWith('[')) {
+                        try {
+                          responses = JSON.parse(item.tanggapan);
+                        } catch {
+                          responses = [];
+                        }
+                      } else {
+                        responses = [{
+                          id: 'legacy',
+                          staf_nama: 'Bapak/Ibu Guru',
+                          tanggapan: item.tanggapan,
+                          created_at: item.tanggapan_at || item.created_at
+                        }];
+                      }
+                    }
+
+                    if (responses.length > 0) {
+                      return (
+                        <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                          <span className="text-[10px] font-bold text-slate-500">
+                            Tanggapan dari Guru & Pimpinan Sekolah ({responses.length}):
                           </span>
-                        )}
+                          {responses.map((resp, rIdx) => (
+                            <div key={resp.id || rIdx} className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 space-y-1">
+                              <div className="flex items-center justify-between flex-wrap gap-1">
+                                <span className="text-[11px] font-extrabold text-emerald-800 flex items-center gap-1">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  {resp.staf_nama || 'Bapak/Ibu Guru'}
+                                </span>
+                                {resp.created_at && (
+                                  <span className="text-[10px] text-emerald-600 font-mono">
+                                    {new Date(resp.created_at).toLocaleDateString('id-ID')}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-emerald-950 leading-relaxed font-medium">
+                                "{resp.tanggapan}"
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="flex items-center gap-1.5 text-[11px] text-amber-700 bg-amber-50 p-2 rounded-xl border border-amber-200">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Sedang ditinjau oleh tim guru / pimpinan sekolah.</span>
                       </div>
-                      <p className="text-xs text-emerald-950 leading-relaxed font-medium">
-                        "{item.tanggapan}"
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-[11px] text-amber-700 bg-amber-50 p-2 rounded-xl border border-amber-200">
-                      <Clock className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Sedang ditinjau oleh tim guru / pimpinan sekolah.</span>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               ))
             )}

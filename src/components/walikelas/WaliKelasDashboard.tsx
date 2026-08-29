@@ -15,7 +15,8 @@ import {
   Sparkles,
   ArrowUpRight,
   Send,
-  MessageSquareHeart
+  MessageSquareHeart,
+  MessageCircle
 } from 'lucide-react';
 import { 
   EntriJurnal, 
@@ -37,6 +38,7 @@ import { ExportSharePanel } from './ExportSharePanel';
 import { ModerationDeleteModal } from './ModerationDeleteModal';
 import { RaporKarakterModal } from '../common/RaporKarakterModal';
 import { SuaraSiswaModerationView } from '../common/SuaraSiswaModerationView';
+import { KomunikasiSiswaGuruModal } from '../common/KomunikasiSiswaGuruModal';
 
 interface WaliKelasDashboardProps {
   staf: StafSekolah;
@@ -64,6 +66,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
   const [entryToDelete, setEntryToDelete] = useState<EntriJurnal | null>(null);
   const [studentForRapor, setStudentForRapor] = useState<Siswa | null>(null);
   const [showSuaraModal, setShowSuaraModal] = useState<boolean>(false);
+  const [showKomunikasiModal, setShowKomunikasiModal] = useState<boolean>(false);
 
   const dateRange = useMemo(() => {
     return PeriodAggregationService.getDateRange(period, selectedDate);
@@ -262,6 +265,15 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
               className="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer"
             />
           </div>
+
+          <button
+            onClick={() => setShowKomunikasiModal(true)}
+            className="px-3.5 py-1.5 rounded-2xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-xs transition flex items-center gap-1.5 border border-emerald-200 cursor-pointer"
+            title="Kirim pesan langsung dan bimbingan ke siswa kelas binaan"
+          >
+            <MessageCircle className="w-3.5 h-3.5 text-emerald-700" />
+            <span>💬 Komunikasi Siswa</span>
+          </button>
 
           <button
             onClick={() => setShowSuaraModal(true)}
@@ -594,6 +606,15 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
           </div>
         </div>
       )}
+
+      <KomunikasiSiswaGuruModal
+        isOpen={showKomunikasiModal}
+        onClose={() => setShowKomunikasiModal(false)}
+        currentUser={{ type: 'staf', data: staf }}
+        kelasList={kelasList.length > 0 ? kelasList : (currentKelas ? [currentKelas] : [])}
+        siswaList={siswaList}
+        stafList={stafList}
+      />
     </div>
   );
 };

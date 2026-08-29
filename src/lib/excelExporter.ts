@@ -317,12 +317,20 @@ export function exportLeaderboardToExcel(
   classRankings: import('../types/database').ClassRankingItem[],
   topStudents: import('../types/database').StudentRankingItem[]
 ) {
-  const formattedDate = new Date(tanggalStr).toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  let formattedDate = tanggalStr;
+  if (tanggalStr.includes('_sd_') || tanggalStr.includes(' s.d ')) {
+    formattedDate = `Periode ${tanggalStr.replace(/_sd_/g, ' s.d. ')}`;
+  } else {
+    const d = new Date(tanggalStr);
+    if (!isNaN(d.getTime())) {
+      formattedDate = d.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+  }
 
   const wb = XLSX.utils.book_new();
 
@@ -384,26 +392,34 @@ export function exportLeaderboardToExcel(
 }
 
 /**
- * Format teks pengumuman perangkingan harian untuk WhatsApp
+ * Format teks pengumuman perangkingan untuk WhatsApp
  */
 export function generateLeaderboardWhatsAppText(
   tanggalStr: string,
   classRankings: import('../types/database').ClassRankingItem[],
   topStudents: import('../types/database').StudentRankingItem[]
 ): string {
-  const formattedDate = new Date(tanggalStr).toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  let formattedDate = tanggalStr;
+  if (tanggalStr.includes('_sd_') || tanggalStr.includes(' s.d ')) {
+    formattedDate = `Periode ${tanggalStr.replace(/_sd_/g, ' s.d. ')}`;
+  } else {
+    const d = new Date(tanggalStr);
+    if (!isNaN(d.getTime())) {
+      formattedDate = d.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+  }
 
   const top3Class = classRankings.slice(0, 3);
   const top3Students = topStudents.slice(0, 3);
 
-  let msg = `*🏆 PENGUMUMAN JUARA HARIAN 7 KEBIASAAN ANAK INDONESIA HEBAT*\n`;
+  let msg = `*🏆 PENGUMUMAN JUARA EVALUASI 7 KEBIASAAN ANAK INDONESIA HEBAT*\n`;
   msg += `🏫 *${getProfile().nama}*\n`;
-  msg += `📅 *Hari/Tanggal:* ${formattedDate}\n\n`;
+  msg += `📅 *Periode/Tanggal:* ${formattedDate}\n\n`;
 
   msg += `*🥇 TOP 3 KELAS TERDISIPLIN HARI INI:*\n`;
   top3Class.forEach((c, idx) => {

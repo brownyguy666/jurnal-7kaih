@@ -17,7 +17,7 @@ import {
   HelpCircle,
   X
 } from 'lucide-react';
-import { Kelas, Siswa, StafSekolah, SuaraSiswa, KategoriSuara } from '../../types/database';
+import { Kelas, Siswa, StafSekolah, SuaraSiswa, KategoriSuara, TanggapanSuaraItem } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
 
 interface SuaraSiswaModerationViewProps {
@@ -42,13 +42,43 @@ export const SuaraSiswaModerationView: React.FC<SuaraSiswaModerationViewProps> =
 
   const [filterKategori, setFilterKategori] = useState<string>('all');
   const [filterKelas, setFilterKelas] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'belum_ditanggapi' | 'sudah_ditanggapi'>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // State untuk form tanggapan
   const [respondingItem, setRespondingItem] = useState<SuaraSiswa | null>(null);
   const [tanggapanText, setTanggapanText] = useState<string>('');
   const [isSavingTanggapan, setIsSavingTanggapan] = useState<boolean>(false);
+
+  const formatRoleLabel = (role: string) => {
+    switch (role) {
+      case 'wali_kelas': return 'Wali Kelas';
+      case 'kepala_sekolah': return 'Kepala Sekolah';
+      case 'waka_kurikulum': return 'Waka Kurikulum';
+      case 'kesiswaan': return 'Kesiswaan & BK';
+      case 'superadmin': return 'Super Administrator';
+      default: return 'Guru / Pendidik';
+    }
+  };
+
+  const parseResponses = (item: SuaraSiswa): TanggapanSuaraItem[] => {
+    if (!item.tanggapan) return [];
+    if (item.tanggapan.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(item.tanggapan);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+    const staf = stafList.find(s => s.id === item.tanggapan_oleh_staf_id);
+    return [{
+      id: `tg-${item.tanggapan_oleh_staf_id || '1'}`,
+      staf_id: item.tanggapan_oleh_staf_id || '',
+      staf_nama: staf?.nama || 'Bapak/Ibu Guru',
+      staf_role: staf?.role || 'wali_kelas',
+      tanggapan: item.tanggapan,
+      created_at: item.tanggapan_at || item.created_at || new Date().toISOString()
+    }];
+  };
 
   // Filter list
   const filteredList = useMemo(() => {
@@ -89,9 +119,9 @@ export const SuaraSiswaModerationView: React.FC<SuaraSiswaModerationViewProps> =
     });
   }, [suaraList, filterKategori, filterKelas, filterStatus, searchQuery, isWaliKelas, currentStaf, siswaList, kelasList]);
 
-  const handleOpenResponseModal = (item: SuaraSiswa) => {
+  const handleOpenResponseModal = (item: SuaraSiswa, defaultText: string = '') => {
     setRespondingItem(item);
-    setTanggapanText(item.tanggapan || '');
+    setTanggapanText(defaultText);
   };
 
   const handleSaveTanggapan = async (e: React.FormEvent) => {
@@ -100,7 +130,13 @@ export const SuaraSiswaModerationView: React.FC<SuaraSiswaModerationViewProps> =
 
     setIsSavingTanggapan(true);
     try {
-      await JournalService.tanggapiSuaraSiswa(respondingItem.id, currentStaf.id, tanggapanText.trim());
+      await JournalService.tanggapiSuaraSiswa(
+        respondingItem.id, 
+        currentStaf.id, 
+        tanggapanText.trim(),
+        currentStaf.nama,
+        currentStaf.role
+      );
       setRespondingItem(null);
       setTanggapanText('');
       onRefreshData();
@@ -305,52 +341,90 @@ export const SuaraSiswaModerationView: React.FC<SuaraSiswaModerationViewProps> =
                 </div>
 
                 {/* Bagian Tanggapan & Aksi */}
-                <div className="space-y-3 pt-2 border-t border-slate-100">
-                  {item.tanggapan ? (
-                    <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          Tanggapan dari: {penanggap?.nama || 'Bapak/Ibu Guru'}
-                        </span>
-                        {item.tanggapan_at && (
-                          <span className="text-[10px] text-emerald-600 font-mono">
-                            {new Date(item.tanggapan_at).toLocaleDateString('id-ID')}
+                {(() => {
+                  const responses = parseResponses(item);
+                  const myResponse = responses.find(r => r.staf_id === currentStaf.id);
+
+                  return (
+                    <div className="space-y-3 pt-2 border-t border-slate-100">
+                      {responses.length > 0 ? (
+                        <div className="space-y-2">
+                          <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1.5">
+                            <MessageSquare className="w-3.5 h-3.5 text-purple-600" />
+                            Tanggapan Guru & Pimpinan ({responses.length}):
                           </span>
+                          {responses.map((resp) => (
+                            <div key={resp.id} className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[11px] font-bold text-emerald-900 flex items-center gap-1">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                    {resp.staf_nama}
+                                  </span>
+                                  <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-emerald-200/70 text-emerald-950">
+                                    {formatRoleLabel(resp.staf_role)}
+                                  </span>
+                                </div>
+                                {resp.created_at && (
+                                  <span className="text-[10px] text-emerald-700 font-mono">
+                                    {new Date(resp.created_at).toLocaleDateString('id-ID')}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-emerald-950 font-medium leading-relaxed">
+                                "{resp.tanggapan}"
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200">
+                          <span className="flex items-center gap-1.5 font-bold">
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                            Belum Diberikan Tanggapan
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        {isSuperadmin && (
+                          <button
+                            onClick={() => handleDeleteSuara(item.id)}
+                            className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition"
+                            title="Hapus Aspirasi Siswa"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {myResponse ? (
+                          <>
+                            <button
+                              onClick={() => handleOpenResponseModal(item, myResponse.tanggapan)}
+                              className="px-3.5 py-1.5 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                              <span>Ubah Tanggapan Saya</span>
+                            </button>
+                            <button
+                              onClick={() => handleOpenResponseModal(item, '')}
+                              className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                            >
+                              <span>+ Tanggapi Lagi</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleOpenResponseModal(item, '')}
+                            className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>+ Beri Tanggapan ({formatRoleLabel(currentStaf.role)})</span>
+                          </button>
                         )}
                       </div>
-                      <p className="text-xs text-emerald-950 font-medium leading-relaxed">
-                        "{item.tanggapan}"
-                      </p>
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-between text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded-xl border border-amber-200">
-                      <span className="flex items-center gap-1.5 font-bold">
-                        <Clock className="w-3.5 h-3.5 text-amber-600" />
-                        Belum Diberikan Tanggapan
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-end gap-2">
-                    {isSuperadmin && (
-                      <button
-                        onClick={() => handleDeleteSuara(item.id)}
-                        className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition"
-                        title="Hapus Aspirasi Siswa"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleOpenResponseModal(item)}
-                      className="px-4 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>{item.tanggapan ? 'Ubah Tanggapan' : 'Beri Tanggapan'}</span>
-                    </button>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
             );
           })

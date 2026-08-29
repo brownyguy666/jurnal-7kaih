@@ -25,32 +25,63 @@ export const SchoolProfileProvider: React.FC<{ children: React.ReactNode }> = ({
     const fetchRemoteProfile = async () => {
       try {
         if (isSupabaseConfigured) {
-          const { data, error } = await supabase
-            .from('profil_sekolah')
-            .select('*')
-            .eq('id', 'main')
-            .maybeSingle();
+          let remoteData: any = null;
 
-          if (data && !error) {
+          // 1. Coba dari tabel profil_sekolah jika ada
+          try {
+            const { data, error } = await supabase
+              .from('profil_sekolah')
+              .select('*')
+              .eq('id', 'main')
+              .maybeSingle();
+
+            if (data && !error) {
+              remoteData = data;
+            }
+          } catch {
+            // Abaikan jika tabel belum dibuat di schema cache
+          }
+
+          // 2. Jika tabel belum ada, ambil dari Supabase Storage bukti_foto/config/school_profile.json
+          if (!remoteData) {
+            try {
+              const { data: storageFile, error: storageErr } = await supabase
+                .storage
+                .from('bukti_foto')
+                .download('config/school_profile.json');
+
+              if (storageFile && !storageErr) {
+                const text = await storageFile.text();
+                const parsed = JSON.parse(text);
+                if (parsed && parsed.nama) {
+                  remoteData = parsed;
+                }
+              }
+            } catch (errStorage) {
+              console.warn('Gagal membaca storage profil sekolah:', errStorage);
+            }
+          }
+
+          if (remoteData) {
             const merged: SchoolProfile = {
               ...DEFAULT_SCHOOL_PROFILE,
-              nama: data.nama || DEFAULT_SCHOOL_PROFILE.nama,
-              jenjang: data.jenjang || DEFAULT_SCHOOL_PROFILE.jenjang,
-              npsn: data.npsn || DEFAULT_SCHOOL_PROFILE.npsn,
-              status: data.status || DEFAULT_SCHOOL_PROFILE.status,
-              alamat: data.alamat || DEFAULT_SCHOOL_PROFILE.alamat,
-              kabupaten: data.kabupaten || DEFAULT_SCHOOL_PROFILE.kabupaten,
-              provinsi: data.provinsi || DEFAULT_SCHOOL_PROFILE.provinsi,
-              akreditasi: data.akreditasi || DEFAULT_SCHOOL_PROFILE.akreditasi,
-              tahunAjaran: data.tahun_ajaran || DEFAULT_SCHOOL_PROFILE.tahunAjaran,
-              telepon: data.telepon || DEFAULT_SCHOOL_PROFILE.telepon,
-              email: data.email || DEFAULT_SCHOOL_PROFILE.email,
-              website: data.website || DEFAULT_SCHOOL_PROFILE.website,
-              motto: data.motto || DEFAULT_SCHOOL_PROFILE.motto,
-              logoUrl: data.logo_url || DEFAULT_SCHOOL_PROFILE.logoUrl,
-              logoKabupatenUrl: data.logo_kabupaten_url || DEFAULT_SCHOOL_PROFILE.logoKabupatenUrl,
-              namaKepalaSekolah: data.nama_kepala_sekolah || DEFAULT_SCHOOL_PROFILE.namaKepalaSekolah,
-              nipKepalaSekolah: data.nip_kepala_sekolah || DEFAULT_SCHOOL_PROFILE.nipKepalaSekolah
+              nama: remoteData.nama || DEFAULT_SCHOOL_PROFILE.nama,
+              jenjang: remoteData.jenjang || DEFAULT_SCHOOL_PROFILE.jenjang,
+              npsn: remoteData.npsn || DEFAULT_SCHOOL_PROFILE.npsn,
+              status: remoteData.status || DEFAULT_SCHOOL_PROFILE.status,
+              alamat: remoteData.alamat || DEFAULT_SCHOOL_PROFILE.alamat,
+              kabupaten: remoteData.kabupaten || DEFAULT_SCHOOL_PROFILE.kabupaten,
+              provinsi: remoteData.provinsi || DEFAULT_SCHOOL_PROFILE.provinsi,
+              akreditasi: remoteData.akreditasi || DEFAULT_SCHOOL_PROFILE.akreditasi,
+              tahunAjaran: remoteData.tahun_ajaran || remoteData.tahunAjaran || DEFAULT_SCHOOL_PROFILE.tahunAjaran,
+              telepon: remoteData.telepon || DEFAULT_SCHOOL_PROFILE.telepon,
+              email: remoteData.email || DEFAULT_SCHOOL_PROFILE.email,
+              website: remoteData.website || DEFAULT_SCHOOL_PROFILE.website,
+              motto: remoteData.motto || DEFAULT_SCHOOL_PROFILE.motto,
+              logoUrl: remoteData.logo_url || remoteData.logoUrl || DEFAULT_SCHOOL_PROFILE.logoUrl,
+              logoKabupatenUrl: remoteData.logo_kabupaten_url || remoteData.logoKabupatenUrl || DEFAULT_SCHOOL_PROFILE.logoKabupatenUrl,
+              namaKepalaSekolah: remoteData.nama_kepala_sekolah || remoteData.namaKepalaSekolah || DEFAULT_SCHOOL_PROFILE.namaKepalaSekolah,
+              nipKepalaSekolah: remoteData.nip_kepala_sekolah || remoteData.nipKepalaSekolah || DEFAULT_SCHOOL_PROFILE.nipKepalaSekolah
             };
             setProfile(merged);
             localStorage.setItem(SCHOOL_PROFILE_STORAGE_KEY, JSON.stringify(merged));
@@ -72,6 +103,18 @@ export const SchoolProfileProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.setItem(SCHOOL_PROFILE_STORAGE_KEY, JSON.stringify(updated));
 
     if (isSupabaseConfigured) {
+      // 1. Simpan ke Supabase Storage bukti_foto/config/school_profile.json (pasti sukses di semua proyek)
+      try {
+        const jsonBlob = new Blob([JSON.stringify(updated)], { type: 'application/json' });
+        await supabase.storage.from('bukti_foto').upload('config/school_profile.json', jsonBlob, {
+          upsert: true,
+          contentType: 'application/json'
+        });
+      } catch (errStorage) {
+        console.warn('Gagal upload config profil ke storage:', errStorage);
+      }
+
+      // 2. Simpan juga ke tabel profil_sekolah jika ada
       try {
         await supabase
           .from('profil_sekolah')
@@ -97,7 +140,7 @@ export const SchoolProfileProvider: React.FC<{ children: React.ReactNode }> = ({
             updated_at: new Date().toISOString()
           });
       } catch (e) {
-        console.error('Gagal menyimpan profil sekolah ke Supabase:', e);
+        // Table profil_sekolah mungkin belum di-run SQL
       }
     }
   };
@@ -108,10 +151,12 @@ export const SchoolProfileProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (isSupabaseConfigured) {
       try {
-        await supabase
-          .from('profil_sekolah')
-          .delete()
-          .eq('id', 'main');
+        const jsonBlob = new Blob([JSON.stringify(DEFAULT_SCHOOL_PROFILE)], { type: 'application/json' });
+        await supabase.storage.from('bukti_foto').upload('config/school_profile.json', jsonBlob, {
+          upsert: true,
+          contentType: 'application/json'
+        });
+        await supabase.from('profil_sekolah').delete().eq('id', 'main');
       } catch (e) {
         console.error('Gagal reset profil sekolah di Supabase:', e);
       }

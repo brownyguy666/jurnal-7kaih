@@ -2,6 +2,37 @@
 
 Semua pembaruan, perbaikan, dan penambahan fitur aplikasi Jurnal 7 KAIH (7 Karakter Anak Indonesia Hebat) dicatat secara kronologis di bawah ini.
 
+## [v1.0.0] - 2026-08-30 *(Komunikasi Siswa-Guru Dua Arah, Multi-Tanggapan Dewan Guru, Sinkronisasi Cloud Profil Sekolah, Rentang Tanggal Leaderboard, & Rapor Karakter Berkeadilan)*
+
+### 🌟 Fitur Baru & Peningkatan Besar
+1. **Komunikasi Dua Arah Siswa dan Guru/Pimpinan Sekolah (`KomunikasiSiswaGuruModal`)**:
+   - **Mode Pendidik / Staf (Superadmin, Kepala Sekolah, Wali Kelas, Kesiswaan, Kurikulum)**: Dapat memilih rombel/kelas, memilih nama siswa target, menentukan topik/subjek apresiasi atau bimbingan, serta mengirim pesan motivasi langsung ke siswa.
+   - **Mode Siswa**: Siswa dapat memilih menghubungi guru yang diinginkan (Wali Kelas, Kesiswaan & BK, Waka Kurikulum, Kepala Sekolah, hingga Superadmin) untuk berkonsultasi seputar ibadah, belajar, atau curhat pembiasaan.
+   - **Kotak Masuk & Riwayat Percakapan**: Dilengkapi indikator pesan baru belum dibaca (*unread badge*), fitur otomatis tandai pesan dibaca, serta tombol *Balas Pesan* instan.
+   - **Sinkronisasi Cloud**: Pesan tersinkronisasi otomatis via Supabase Storage dan tabel database `pesan_komunikasi`.
+
+2. **Multi-Tanggapan Dewan Guru pada Suara/Aspirasi Siswa**:
+   - Mengubah sistem respons suara siswa dari yang sebelumnya bersifat tunggal/timpa, menjadi **Thread / Timeline Tanggapan Multi-Pendidik**.
+   - Seluruh pemangku kepentingan (Wali Kelas, Kesiswaan, Kurikulum, Kepala Sekolah, Superadmin) dapat memberikan catatan tanggapan dan nasihat masing-masing tanpa menghapus respons dari guru sebelumnya.
+   - Antarmuka menampilkan identitas nama guru, badge jabatan/role, tanggal tanggapan, serta opsi *Ubah Tanggapan Saya* atau *Tanggapi Lagi*.
+   - Siswa dapat membaca seluruh masukan dari para guru di tab Riwayat Suara Siswa.
+
+3. **Sinkronisasi Profil Sekolah Antar-Browser (*Cross-Browser Persistence*)**:
+   - Menerapkan arsitektur *Dual-Persistence* menggunakan Supabase Storage bucket `bukti_foto/config/school_profile.json` dan tabel database `profil_sekolah`.
+   - Mengunggah logo sekolah baru langsung ke Supabase Storage CDN (`bukti_foto/logos/`), menjamin logo dan profil sekolah (nama sekolah, NPSN, alamat, motto, nama KS) langsung tersinkronisasi di seluruh browser, laptop, dan perangkat mobile tanpa terkendala DDL cache.
+
+4. **Filter Rentang Tanggal Papan Peringkat / Leaderboard**:
+   - Papan Peringkat / Leaderboard kini dilengkapi filter rentang tanggal: **📅 Harian (Hari Ini)**, **🗓️ 7 Hari Terakhir**, **📊 30 Hari Terakhir**, **🏛️ 1 Semester**, serta **🎯 Rentang Kustom (Start Date s.d. End Date)**.
+   - `LeaderboardService` menghitung persentase kepatuhan kelas dan siswa secara akurat terhadap total hari dalam rentang waktu yang dipilih.
+   - Menyesuaikan ekspor data Excel dan teks broadcast WhatsApp agar menyertakan label rentang tanggal yang dipilih secara otomatis.
+
+5. **Standarisasi & Keadilan Evaluasi Rapor Karakter Siswa**:
+   - Memperbaiki kelemahan sistem lama di mana siswa yang hanya mengisi 1 hari mendapatkan nilai 100% (tidak adil bagi siswa yang rajin mengisi setiap hari).
+   - Menghadirkan selektor periode evaluasi standar di toolbar Rapor: **Bulan Berjalan**, **30 Hari Terakhir**, **Semester Ganjil**, dan **Rentang Kustom**.
+   - `totalHariEvaluasi` dihitung objektif berdasarkan jumlah hari kalender periode evaluasi, kepatuhan kebiasaan dihitung terhadap target hari tersebut, serta menampilkan kolom perbandingan *Target Pelaksanaan* vs *Keaktifan Riil Siswa*.
+
+---
+
 ## [v0.9.1] - 2026-08-26 *(Sinkronisasi Realtime Suara & Curhat Siswa, Migrasi Cloud Schema, & Pembersihan Mock)*
 
 ### 🌟 Fitur Baru & Perbaikan

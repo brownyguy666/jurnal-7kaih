@@ -9,7 +9,7 @@ import {
 
 export class LeaderboardService {
   /**
-   * Menghitung perangkingan 18 kelas untuk tanggal tertentu
+   * Menghitung perangkingan kelas untuk tanggal tertentu atau rentang tanggal (Harian, Mingguan, Bulanan, Semester, Kustom)
    * Kriteria:
    * 1. Persentase kepatuhan rata-rata 7 kebiasaan (% tertinggi)
    * 2. Jumlah & persentase siswa tuntas 7 kebiasaan
@@ -20,9 +20,17 @@ export class LeaderboardService {
     siswaList: Siswa[],
     entries: EntriJurnal[],
     stafList: StafSekolah[],
-    selectedDate: string
+    dateOrRange: string | { startDate: string; endDate: string }
   ): ClassRankingItem[] {
-    const currentDayEntries = entries.filter((e) => e.tanggal === selectedDate);
+    const isRange = typeof dateOrRange === 'object';
+    const startDate = isRange ? dateOrRange.startDate : dateOrRange;
+    const endDate = isRange ? dateOrRange.endDate : dateOrRange;
+
+    const currentEntries = entries.filter((e) => e.tanggal >= startDate && e.tanggal <= endDate);
+
+    const startD = new Date(startDate);
+    const endD = new Date(endDate);
+    const totalDays = Math.max(1, Math.round((endD.getTime() - startD.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
     const rankings: Omit<ClassRankingItem, 'rank'>[] = kelasList.map((k) => {
       // Temukan siswa kelas ini (support UUID, nama kelas '7A', 'k-7a')
@@ -39,7 +47,7 @@ export class LeaderboardService {
         (st.kelas_id && String(st.kelas_id).toUpperCase().replace(/^K-/, '') === k.nama_kelas.toUpperCase())
       );
 
-      const classEntries = currentDayEntries.filter((e) => 
+      const classEntries = currentEntries.filter((e) => 
         classStudents.some((s) => s.id === e.siswa_id)
       );
 
@@ -50,16 +58,34 @@ export class LeaderboardService {
 
       classStudents.forEach((student) => {
         const studentEntries = classEntries.filter((e) => e.siswa_id === student.id);
-        const distinct = new Set(studentEntries.map((e) => e.kebiasaan_id)).size;
-        totalHabitsCompleted += distinct;
-        if (distinct === 7) perfectCount++;
+        
+        if (totalDays === 1) {
+          const distinct = new Set(studentEntries.map((e) => e.kebiasaan_id)).size;
+          totalHabitsCompleted += distinct;
+          if (distinct === 7) perfectCount++;
+        } else {
+          // Multi-day: hitung total hari-kebiasaan unik
+          const distinctPerDay = new Set(studentEntries.map((e) => `${e.tanggal}_${e.kebiasaan_id}`)).size;
+          totalHabitsCompleted += distinctPerDay;
+          // Hitung berapa hari siswa tuntas 7
+          const datesSet = new Set(studentEntries.map((e) => e.tanggal));
+          let daysTuntas7 = 0;
+          datesSet.forEach((tgl) => {
+            const habitsOnDate = new Set(studentEntries.filter((e) => e.tanggal === tgl).map((e) => e.kebiasaan_id));
+            if (habitsOnDate.size >= 7) daysTuntas7++;
+          });
+          if (daysTuntas7 >= Math.ceil(totalDays * 0.7)) {
+            perfectCount++; // Konsisten minimal 70% periode
+          }
+        }
+
         if (studentEntries.some((e) => e.flag_foto_mencurigakan)) flagCount++;
         tepatWaktuCount += studentEntries.filter((e) => e.status_waktu === 'tepat_waktu').length;
       });
 
       const totalStudents = classStudents.length;
       const rate = totalStudents > 0 
-        ? Math.round((totalHabitsCompleted / (totalStudents * 7)) * 100) 
+        ? Math.min(100, Math.round((totalHabitsCompleted / (totalStudents * 7 * totalDays)) * 100)) 
         : 0;
 
       const tuntasPercent = totalStudents > 0
@@ -67,7 +93,7 @@ export class LeaderboardService {
         : 0;
 
       // Formula Skor Tertib Total:
-      // (Persentase Kepatuhan * 0.6) + (Persentase Siswa Tuntas * 0.35) - (Penalti Flag * 2) + bonus keaktifan
+      // (Persentase Kepatuhan * 0.6) + (Persentase Siswa Tuntas * 0.35) - (Penalti Flag * 2)
       const penalty = flagCount * 2;
       const calculatedScore = Math.max(0, Math.round((rate * 0.6) + (tuntasPercent * 0.35) - penalty));
 
@@ -102,23 +128,23 @@ export class LeaderboardService {
   }
 
   /**
-   * Menghitung Siswa Teladan Hari Ini (Murid Tercepat & Terdisiplin)
-   * Syarat Ketat:
-   * 1. Menuntaskan ke-7 kebiasaan hari itu (distinct 7)
-   * 2. TANPA peringatan foto EXIF (flag_foto_mencurigakan = false pada seluruh entri)
-   * 3. Tepat waktu saat bangun pagi (kebiasaan 1) & tidur cepat (kebiasaan 7)
-   * 4. Diurutkan dari yang selesai paling awal pada hari itu
+   * Menghitung Siswa Teladan (Murid Tercepat & Terdisiplin)
+   * Mendukung mode Harian maupun Rentang Tanggal (Mingguan, Bulanan, Semester)
    */
   static calculateTopStudents(
     siswaList: Siswa[],
     entries: EntriJurnal[],
     kelasList: Kelas[],
-    selectedDate: string
+    dateOrRange: string | { startDate: string; endDate: string }
   ): {
     qualifiedStudents: StudentRankingItem[];
     disqualifiedCount: number;
   } {
-    const currentDayEntries = entries.filter((e) => e.tanggal === selectedDate);
+    const isRange = typeof dateOrRange === 'object';
+    const startDate = isRange ? dateOrRange.startDate : dateOrRange;
+    const endDate = isRange ? dateOrRange.endDate : dateOrRange;
+
+    const currentEntries = entries.filter((e) => e.tanggal >= startDate && e.tanggal <= endDate);
     const kelasMap = new Map<string, { nama: string; tingkat: number }>();
 
     kelasList.forEach((k) => {
@@ -127,69 +153,102 @@ export class LeaderboardService {
       kelasMap.set(`k-${k.nama_kelas.toLowerCase()}`, { nama: k.nama_kelas, tingkat: k.tingkat });
     });
 
-    const candidates: Omit<StudentRankingItem, 'rank'>[] = [];
+    const candidates: (Omit<StudentRankingItem, 'rank'> & { tuntasHariCount?: number; totalValidHabits?: number })[] = [];
     let disqualified = 0;
 
     siswaList.forEach((student) => {
-      const studentEntries = currentDayEntries.filter((e) => e.siswa_id === student.id);
-      const distinctHabits = new Set(studentEntries.map((e) => e.kebiasaan_id));
+      const studentEntries = currentEntries.filter((e) => e.siswa_id === student.id);
+      if (studentEntries.length === 0) return;
 
-      // 1. Wajib menyelesaikan 7 kebiasaan
-      if (distinctHabits.size < 7) return;
-
-      // 2. Cek flag foto EXIF mencurigakan
       const hasFlag = studentEntries.some((e) => e.flag_foto_mencurigakan);
-
-      // 3. Cek ketepatan waktu (khusus Bangun Pagi dan Tidur Cepat)
-      const hasLateEntry = studentEntries.some((e) => 
-        (e.kebiasaan_id === 1 || e.kebiasaan_id === 7) && e.status_waktu === 'terlambat'
-      );
-
-      if (hasFlag || hasLateEntry) {
+      if (hasFlag) {
         disqualified++;
-        return; // Tidak lolos kriteria Siswa Teladan Terbersih
+        return;
       }
-
-      // Cari waktu submit entri terakhir (kapan siswa resmi tuntas 7 kebiasaan)
-      const submitTimestamps = studentEntries.map((e) => {
-        const d = new Date(e.waktu_submit || e.waktu_ambil_foto || `${selectedDate}T23:59:59Z`);
-        return isNaN(d.getTime()) ? 0 : d.getTime();
-      });
-
-      const finishTimestamp = Math.max(...submitTimestamps);
-      const finishDate = new Date(finishTimestamp);
 
       const kInfo = kelasMap.get(student.kelas_id) || 
                     kelasMap.get(student.kelas_id?.toUpperCase()) || 
                     { nama: student.kelas_id || '7A', tingkat: 7 };
 
-      const timeFormatted = finishDate.toLocaleTimeString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      }) + ' WIB';
+      if (!isRange || startDate === endDate) {
+        // Mode Harian (1 Hari)
+        const distinctHabits = new Set(studentEntries.map((e) => e.kebiasaan_id));
+        if (distinctHabits.size < 7) return;
 
-      candidates.push({
-        siswaId: student.id,
-        nama: student.nama,
-        nisn: student.nisn,
-        namaKelas: kInfo.nama,
-        tingkat: kInfo.tingkat,
-        totalKebiasaan: 7,
-        selesaiPada: finishDate.toISOString(),
-        selesaiFormatted: timeFormatted,
-        hasFlaggedPhoto: false,
-        isTepatWaktu: true,
-        scoreKerapian: 100
+        const hasLateEntry = studentEntries.some((e) => 
+          (e.kebiasaan_id === 1 || e.kebiasaan_id === 7) && e.status_waktu === 'terlambat'
+        );
+        if (hasLateEntry) {
+          disqualified++;
+          return;
+        }
+
+        const submitTimestamps = studentEntries.map((e) => {
+          const d = new Date(e.waktu_submit || e.waktu_ambil_foto || `${startDate}T23:59:59Z`);
+          return isNaN(d.getTime()) ? 0 : d.getTime();
+        });
+
+        const finishTimestamp = Math.max(...submitTimestamps);
+        const finishDate = new Date(finishTimestamp);
+
+        const timeFormatted = finishDate.toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        }) + ' WIB';
+
+        candidates.push({
+          siswaId: student.id,
+          nama: student.nama,
+          nisn: student.nisn,
+          namaKelas: kInfo.nama,
+          tingkat: kInfo.tingkat,
+          totalKebiasaan: 7,
+          selesaiPada: finishDate.toISOString(),
+          selesaiFormatted: timeFormatted,
+          hasFlaggedPhoto: false,
+          isTepatWaktu: true,
+          scoreKerapian: 100
+        });
+      } else {
+        // Mode Rentang Tanggal (Mingguan / Bulanan / Kustom)
+        const datesSet = new Set(studentEntries.map((e) => e.tanggal));
+        let daysTuntas7 = 0;
+        datesSet.forEach((tgl) => {
+          const habitsOnDate = new Set(studentEntries.filter((e) => e.tanggal === tgl).map((e) => e.kebiasaan_id));
+          if (habitsOnDate.size >= 7) daysTuntas7++;
+        });
+
+        if (daysTuntas7 === 0 && studentEntries.length < 7) return;
+
+        candidates.push({
+          siswaId: student.id,
+          nama: student.nama,
+          nisn: student.nisn,
+          namaKelas: kInfo.nama,
+          tingkat: kInfo.tingkat,
+          totalKebiasaan: daysTuntas7 > 0 ? 7 : Math.round(studentEntries.length / datesSet.size),
+          selesaiPada: new Date(Date.now() - daysTuntas7 * 86400000).toISOString(),
+          selesaiFormatted: `${daysTuntas7} Hari Tuntas (${studentEntries.length} entri)`,
+          hasFlaggedPhoto: false,
+          isTepatWaktu: true,
+          scoreKerapian: 100,
+          tuntasHariCount: daysTuntas7,
+          totalValidHabits: studentEntries.length
+        });
+      }
+    });
+
+    if (!isRange || startDate === endDate) {
+      candidates.sort((a, b) => new Date(a.selesaiPada).getTime() - new Date(b.selesaiPada).getTime());
+    } else {
+      candidates.sort((a, b) => {
+        if ((b.tuntasHariCount || 0) !== (a.tuntasHariCount || 0)) {
+          return (b.tuntasHariCount || 0) - (a.tuntasHariCount || 0);
+        }
+        return (b.totalValidHabits || 0) - (a.totalValidHabits || 0);
       });
-    });
-
-    // Urutkan dari waktu selesai paling cepat (earliest timestamp)
-    candidates.sort((a, b) => {
-      const timeA = new Date(a.selesaiPada).getTime();
-      const timeB = new Date(b.selesaiPada).getTime();
-      return timeA - timeB;
-    });
+    }
 
     const rankedStudents = candidates.map((item, idx) => ({
       ...item,

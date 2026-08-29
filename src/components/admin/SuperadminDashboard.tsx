@@ -20,7 +20,8 @@ import {
   Edit2,
   Pencil,
   MessageSquareHeart,
-  Trash2
+  Trash2,
+  MessageCircle
 } from 'lucide-react';
 import { Kebiasaan, Kelas, Siswa, StafSekolah, EntriJurnal, SuaraSiswa } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
@@ -33,6 +34,7 @@ import { PasswordManagerModal } from './PasswordManagerModal';
 import { EditUserModal } from './EditUserModal';
 import { DeleteStudentModal } from './DeleteStudentModal';
 import { EditSchoolProfileModal } from './EditSchoolProfileModal';
+import { KomunikasiSiswaGuruModal } from '../common/KomunikasiSiswaGuruModal';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
 import { ClassReportModal } from './ClassReportModal';
 import { ClassComparisonTable } from '../pejabat/ClassComparisonTable';
@@ -85,6 +87,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
   const [selectedStudentForDelete, setSelectedStudentForDelete] = useState<Siswa | null>(null);
   const [selectedClassForReport, setSelectedClassForReport] = useState<Kelas | null>(null);
   const [isSchoolProfileModalOpen, setIsSchoolProfileModalOpen] = useState(false);
+  const [isKomunikasiModalOpen, setIsKomunikasiModalOpen] = useState(false);
 
   const loadAllData = async () => {
     try {
@@ -177,6 +180,14 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setIsKomunikasiModalOpen(true)}
+            className="px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/25 transition flex items-center gap-2 active:scale-95 cursor-pointer"
+            title="Kirim pesan langsung dan bimbingan ke siswa"
+          >
+            <MessageCircle className="w-4 h-4 text-white" />
+            <span>💬 Komunikasi Siswa</span>
+          </button>
           <button
             onClick={() => setIsSchoolProfileModalOpen(true)}
             className="px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/20 transition flex items-center gap-2 active:scale-95 cursor-pointer"
@@ -759,6 +770,15 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
       <EditSchoolProfileModal
         isOpen={isSchoolProfileModalOpen}
         onClose={() => setIsSchoolProfileModalOpen(false)}
+      />
+
+      <KomunikasiSiswaGuruModal
+        isOpen={isKomunikasiModalOpen}
+        onClose={() => setIsKomunikasiModalOpen(false)}
+        currentUser={{ type: 'staf', data: staf }}
+        kelasList={kelasList}
+        siswaList={siswaList}
+        stafList={stafList}
       />
     </div>
   );

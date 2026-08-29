@@ -34,6 +34,8 @@ interface SuperadminLeaderboardViewProps {
   onSelectStudent?: (siswa: Siswa) => void;
 }
 
+type PeriodeEvaluasi = 'harian' | 'mingguan' | 'bulanan' | 'semester' | 'kustom';
+
 export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps> = ({
   kelasList,
   siswaList,
@@ -51,36 +53,73 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
   const [isExported, setIsExported] = useState(false);
   const [isShared, setIsShared] = useState(false);
 
-  // 1. Hitung Perangkingan 18 Kelas
+  // Mode Rentang Tanggal Evaluasi (Harian, Mingguan, Bulanan, Semester, Kustom)
+  const [periodeMode, setPeriodeMode] = useState<PeriodeEvaluasi>('harian');
+  const [customStartDate, setCustomStartDate] = useState<string>(() => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 6);
+    return d.toISOString().split('T')[0];
+  });
+  const [customEndDate, setCustomEndDate] = useState<string>(selectedDate);
+
+  // Hitung range aktif
+  const activeDateRange = useMemo(() => {
+    if (periodeMode === 'harian') {
+      return { startDate: selectedDate, endDate: selectedDate, label: 'Harian' };
+    }
+    if (periodeMode === 'mingguan') {
+      const d = new Date(selectedDate);
+      d.setDate(d.getDate() - 6);
+      const start = d.toISOString().split('T')[0];
+      return { startDate: start, endDate: selectedDate, label: 'Mingguan (7 Hari Terakhir)' };
+    }
+    if (periodeMode === 'bulanan') {
+      const d = new Date(selectedDate);
+      d.setDate(d.getDate() - 29);
+      const start = d.toISOString().split('T')[0];
+      return { startDate: start, endDate: selectedDate, label: 'Bulanan (30 Hari Terakhir)' };
+    }
+    if (periodeMode === 'semester') {
+      return { startDate: '2026-07-15', endDate: selectedDate, label: 'Semester Ini (Mulai 15 Juli)' };
+    }
+    // kustom
+    return { 
+      startDate: customStartDate || selectedDate, 
+      endDate: customEndDate || selectedDate, 
+      label: `Kustom (${customStartDate} s.d ${customEndDate})` 
+    };
+  }, [periodeMode, selectedDate, customStartDate, customEndDate]);
+
+  // 1. Hitung Perangkingan 18 Kelas berdasarkan range aktif
   const classRankings: ClassRankingItem[] = useMemo(() => {
     return LeaderboardService.calculateClassRankings(
       kelasList,
       siswaList,
       entries,
       stafList,
-      selectedDate
+      activeDateRange
     );
-  }, [kelasList, siswaList, entries, stafList, selectedDate]);
+  }, [kelasList, siswaList, entries, stafList, activeDateRange]);
 
-  // 2. Hitung Siswa Teladan Tercepat & Terbersih
+  // 2. Hitung Siswa Teladan Tercepat & Terbersih berdasarkan range aktif
   const { qualifiedStudents, disqualifiedCount } = useMemo(() => {
     return LeaderboardService.calculateTopStudents(
       siswaList,
       entries,
       kelasList,
-      selectedDate
+      activeDateRange
     );
-  }, [siswaList, entries, kelasList, selectedDate]);
+  }, [siswaList, entries, kelasList, activeDateRange]);
 
   // Handlers
   const handleExportExcel = () => {
-    exportLeaderboardToExcel(selectedDate, classRankings, qualifiedStudents);
+    exportLeaderboardToExcel(activeDateRange.startDate === activeDateRange.endDate ? activeDateRange.startDate : `${activeDateRange.startDate}_sd_${activeDateRange.endDate}`, classRankings, qualifiedStudents);
     setIsExported(true);
     setTimeout(() => setIsExported(false), 2500);
   };
 
   const handleShareWhatsApp = async () => {
-    const text = generateLeaderboardWhatsAppText(selectedDate, classRankings, qualifiedStudents);
+    const text = generateLeaderboardWhatsAppText(activeDateRange.startDate === activeDateRange.endDate ? activeDateRange.startDate : `${activeDateRange.startDate} s.d ${activeDateRange.endDate}`, classRankings, qualifiedStudents);
     await shareToWhatsApp(text);
     setIsShared(true);
     setTimeout(() => setIsShared(false), 2500);
@@ -108,27 +147,86 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold border border-amber-400/30">
               <Trophy className="w-3.5 h-3.5" />
-              <span>Rekapitulasi Evaluasi Harian (Pukul 24.00 WIB)</span>
+              <span>Rekapitulasi Evaluasi: {activeDateRange.label}</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2.5">
-              <span>Papan Peringkat & Juara Harian 7 Kebiasaan</span>
+              <span>Papan Peringkat & Juara {periodeMode === 'harian' ? 'Harian' : periodeMode === 'mingguan' ? 'Mingguan' : periodeMode === 'bulanan' ? 'Bulanan' : periodeMode === 'semester' ? 'Semester' : 'Periode'} 7 Kebiasaan</span>
             </h2>
             <p className="text-xs text-purple-200/80 max-w-2xl leading-relaxed">
-              Mengevaluasi secara objektif tingkat keteraturan 18 kelas serta menyaring murid teladan tercepat yang menyelesaikan 7 kebiasaan dengan integritas foto EXIF 100% valid dan tepat waktu.
+              Mengevaluasi secara objektif kepatuhan {kelasList.length} kelas serta prestasi siswa teladan ({activeDateRange.startDate} s.d {activeDateRange.endDate}) bebas flag anomali foto dan tertib waktu.
             </p>
           </div>
 
-          {/* Action & Date Selector */}
+          {/* Action & Date Range Controls */}
           <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3.5 py-2.5 rounded-2xl">
-              <Calendar className="w-4 h-4 text-purple-300" />
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => onDateChange(e.target.value)}
-                className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer"
-              />
+            {/* Range Presets Selector */}
+            <div className="flex items-center bg-white/10 p-1 rounded-2xl border border-white/15 text-xs font-bold">
+              <button
+                onClick={() => setPeriodeMode('harian')}
+                className={`px-3 py-1.5 rounded-xl transition ${periodeMode === 'harian' ? 'bg-amber-400 text-slate-950 shadow-sm' : 'text-purple-200 hover:text-white'}`}
+              >
+                Harian
+              </button>
+              <button
+                onClick={() => setPeriodeMode('mingguan')}
+                className={`px-3 py-1.5 rounded-xl transition ${periodeMode === 'mingguan' ? 'bg-amber-400 text-slate-950 shadow-sm' : 'text-purple-200 hover:text-white'}`}
+              >
+                Mingguan
+              </button>
+              <button
+                onClick={() => setPeriodeMode('bulanan')}
+                className={`px-3 py-1.5 rounded-xl transition ${periodeMode === 'bulanan' ? 'bg-amber-400 text-slate-950 shadow-sm' : 'text-purple-200 hover:text-white'}`}
+              >
+                Bulanan
+              </button>
+              <button
+                onClick={() => setPeriodeMode('semester')}
+                className={`px-3 py-1.5 rounded-xl transition ${periodeMode === 'semester' ? 'bg-amber-400 text-slate-950 shadow-sm' : 'text-purple-200 hover:text-white'}`}
+              >
+                Semester
+              </button>
+              <button
+                onClick={() => setPeriodeMode('kustom')}
+                className={`px-3 py-1.5 rounded-xl transition ${periodeMode === 'kustom' ? 'bg-amber-400 text-slate-950 shadow-sm' : 'text-purple-200 hover:text-white'}`}
+              >
+                Kustom
+              </button>
             </div>
+
+            {/* Input Tanggal Harian vs Kustom Range */}
+            {periodeMode === 'harian' ? (
+              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 px-3 py-2 rounded-2xl">
+                <Calendar className="w-4 h-4 text-purple-300" />
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => onDateChange(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer"
+                />
+              </div>
+            ) : periodeMode === 'kustom' ? (
+              <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-2xl text-xs">
+                <span className="text-[11px] text-purple-200">Dari:</span>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer"
+                />
+                <span className="text-[11px] text-purple-200">s.d.</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-white/10 px-3 py-2 rounded-2xl text-xs text-purple-200 border border-white/10">
+                <Calendar className="w-3.5 h-3.5 text-amber-300" />
+                <span>{activeDateRange.startDate} s.d {activeDateRange.endDate}</span>
+              </div>
+            )}
 
             <button
               onClick={onRefreshData}
@@ -210,7 +308,7 @@ export const SuperadminLeaderboardView: React.FC<SuperadminLeaderboardViewProps>
         </div>
 
         <span className="text-xs text-slate-400 hidden md:inline-block font-medium">
-          Rekap Tanggal: <strong className="text-slate-700">{selectedDate}</strong>
+          Rekap: <strong className="text-slate-700">{activeDateRange.startDate === activeDateRange.endDate ? activeDateRange.startDate : `${activeDateRange.startDate} s.d ${activeDateRange.endDate}`}</strong>
         </span>
       </div>
 

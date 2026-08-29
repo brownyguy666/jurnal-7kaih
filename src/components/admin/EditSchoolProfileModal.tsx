@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
 import { SchoolProfile, DEFAULT_SCHOOL_PROFILE } from '../../lib/schoolProfile';
+import { isSupabaseConfigured, supabase } from '../../lib/supabase';
 
 interface EditSchoolProfileModalProps {
   isOpen: boolean;
@@ -102,9 +103,45 @@ export const EditSchoolProfileModal: React.FC<EditSchoolProfileModalProps> = ({
       return;
     }
 
-    // Batas 3MB
     if (file.size > 3 * 1024 * 1024) {
       setErrorMessage('Ukuran file maksimal 3 MB.');
+      return;
+    }
+
+    // Coba upload langsung ke Supabase Storage agar URL cloud permanen bisa diakses semua browser
+    if (isSupabaseConfigured) {
+      const ext = file.name.split('.').pop() || 'png';
+      const cleanExt = ext.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const storagePath = `logos/logo_${Date.now()}_${Math.random().toString(36).substring(7)}.${cleanExt}`;
+
+      supabase.storage
+        .from('bukti_foto')
+        .upload(storagePath, file, { upsert: true })
+        .then(({ data: uploadData, error: uploadErr }) => {
+          if (uploadData && !uploadErr) {
+            const { data: urlData } = supabase.storage.from('bukti_foto').getPublicUrl(storagePath);
+            if (urlData?.publicUrl) {
+              setter(urlData.publicUrl);
+              setErrorMessage(null);
+              return;
+            }
+          }
+          // Fallback base64 jika gagal
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setter(event.target?.result as string);
+            setErrorMessage(null);
+          };
+          reader.readAsDataURL(file);
+        })
+        .catch(() => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setter(event.target?.result as string);
+            setErrorMessage(null);
+          };
+          reader.readAsDataURL(file);
+        });
       return;
     }
 

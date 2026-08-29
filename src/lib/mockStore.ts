@@ -8,7 +8,8 @@ import {
   ArahanWaliKelas, 
   LogHapus,
   SuaraSiswa,
-  KategoriSuara
+  KategoriSuara,
+  PesanKomunikasi
 } from '../types/database';
 import { 
   INITIAL_KEBIASAAN, 
@@ -30,7 +31,8 @@ const STORAGE_KEYS = {
   FEEDBACK: 'jurnal_7k_feedback',
   ARAHAN: 'jurnal_7k_arahan',
   LOG_HAPUS: 'jurnal_7k_log_hapus',
-  SUARA_SISWA: 'jurnal_7k_suara_siswa'
+  SUARA_SISWA: 'jurnal_7k_suara_siswa',
+  PESAN_KOMUNIKASI: 'jurnal_7k_pesan_komunikasi'
 };
 
 const INITIAL_SUARA_SISWA: SuaraSiswa[] = [];
@@ -294,6 +296,40 @@ export class MockDatabase {
     const current = this.getSuaraSiswa();
     const filtered = current.filter(s => s.id !== suaraId);
     setStored(STORAGE_KEYS.SUARA_SISWA, filtered);
+    return true;
+  }
+
+  static getPesanKomunikasi(): PesanKomunikasi[] {
+    return getStored<PesanKomunikasi[]>(STORAGE_KEYS.PESAN_KOMUNIKASI, []);
+  }
+
+  static kirimPesanKomunikasi(pesan: Omit<PesanKomunikasi, 'id' | 'created_at' | 'sudah_dibaca'>): PesanKomunikasi {
+    const current = this.getPesanKomunikasi();
+    const newPesan: PesanKomunikasi = {
+      ...pesan,
+      id: `msg-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      sudah_dibaca: false,
+      created_at: new Date().toISOString()
+    };
+    setStored(STORAGE_KEYS.PESAN_KOMUNIKASI, [newPesan, ...current]);
+    return newPesan;
+  }
+
+  static tandaiPesanDibaca(pesanId: string): boolean {
+    const current = this.getPesanKomunikasi();
+    const idx = current.findIndex(p => p.id === pesanId);
+    if (idx >= 0) {
+      current[idx] = { ...current[idx], sudah_dibaca: true };
+      setStored(STORAGE_KEYS.PESAN_KOMUNIKASI, current);
+      return true;
+    }
+    return false;
+  }
+
+  static deletePesanKomunikasi(pesanId: string): boolean {
+    const current = this.getPesanKomunikasi();
+    const filtered = current.filter(p => p.id !== pesanId);
+    setStored(STORAGE_KEYS.PESAN_KOMUNIKASI, filtered);
     return true;
   }
 

@@ -258,6 +258,15 @@ export interface PiagamData {
 
 export type KategoriSuara = 'curhat_pembiasaan' | 'keluhan_kendala' | 'ide_saran_aplikasi' | 'lainnya';
 
+export interface TanggapanSuaraItem {
+  id: string;
+  staf_id: string;
+  staf_nama: string;
+  staf_role: string;
+  tanggapan: string;
+  created_at: string;
+}
+
 export interface SuaraSiswa {
   id: string;
   siswa_id: string;
@@ -269,11 +278,28 @@ export interface SuaraSiswa {
   tanggapan?: string | null;
   tanggapan_oleh_staf_id?: string | null;
   tanggapan_at?: string | null;
+  daftar_tanggapan?: TanggapanSuaraItem[];
   created_at?: string;
   // Join properties
   siswa?: Siswa;
   kelas?: Kelas;
   staf_penanggap?: StafSekolah;
+}
+
+export interface PesanKomunikasi {
+  id: string;
+  pengirim_id: string;
+  pengirim_nama: string;
+  pengirim_role: 'siswa' | 'wali_kelas' | 'kepala_sekolah' | 'waka_kurikulum' | 'kesiswaan' | 'superadmin';
+  penerima_id: string;
+  penerima_nama: string;
+  penerima_role: 'siswa' | 'wali_kelas' | 'kepala_sekolah' | 'waka_kurikulum' | 'kesiswaan' | 'superadmin';
+  kelas_id?: string;
+  kelas_nama?: string;
+  subjek: string;
+  pesan: string;
+  sudah_dibaca: boolean;
+  created_at: string;
 }
 
 

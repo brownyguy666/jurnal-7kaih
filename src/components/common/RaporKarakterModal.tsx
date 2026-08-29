@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { X, Printer, Download, Award, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { EntriJurnal, Kebiasaan, Siswa, StafSekolah } from '../../types/database';
 import { getTodayDateString } from '../../lib/timeCalculator';
@@ -30,21 +30,73 @@ export const RaporKarakterModal: React.FC<RaporKarakterModalProps> = ({
   const { profile } = useSchoolProfile();
   const printAreaRef = useRef<HTMLDivElement>(null);
 
+  // Periode Evaluasi Rapor (Bulan Berjalan, 30 Hari Terakhir, Semester, Kustom)
+  const [periodeMode, setPeriodeMode] = useState<'bulan_ini' | '30_hari' | 'semester' | 'kustom'>('bulan_ini');
+  const [customStartDate, setCustomStartDate] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [customEndDate, setCustomEndDate] = useState<string>(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+
+  // Hitung rentang tanggal efektif
+  const { startDate, endDate, periodeLabel } = useMemo(() => {
+    const d = new Date();
+    const todayStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    if (periodeMode === 'bulan_ini') {
+      const startOfMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+      return { 
+        startDate: startOfMonth, 
+        endDate: todayStr, 
+        periodeLabel: `Bulan Berjalan (${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })})` 
+      };
+    }
+    if (periodeMode === '30_hari') {
+      const past30 = new Date(d);
+      past30.setDate(past30.getDate() - 29);
+      const start30 = `${past30.getFullYear()}-${String(past30.getMonth() + 1).padStart(2, '0')}-${String(past30.getDate()).padStart(2, '0')}`;
+      return { startDate: start30, endDate: todayStr, periodeLabel: '30 Hari Terakhir' };
+    }
+    if (periodeMode === 'semester') {
+      return { startDate: '2026-07-15', endDate: todayStr, periodeLabel: 'Semester Ganjil 2026/2027' };
+    }
+    // kustom
+    return { 
+      startDate: customStartDate, 
+      endDate: customEndDate, 
+      periodeLabel: `Rentang Kustom (${customStartDate} s.d ${customEndDate})` 
+    };
+  }, [periodeMode, customStartDate, customEndDate]);
+
+  // Hitung total hari kalender dalam periode evaluasi yang adil dan objektif
+  const totalHariEvaluasi = useMemo(() => {
+    const s = new Date(startDate);
+    const e = new Date(endDate);
+    const diffTime = Math.abs(e.getTime() - s.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return Math.max(diffDays, 1);
+  }, [startDate, endDate]);
+
   if (!isOpen || !siswa) return null;
 
-  // Filter entri milik siswa ini
-  const studentEntries = entries.filter((e) => e.siswa_id === siswa.id);
+  // Filter entri siswa dalam rentang periode evaluasi
+  const studentEntries = entries.filter(
+    (e) => e.siswa_id === siswa.id && e.tanggal >= startDate && e.tanggal <= endDate
+  );
 
-  // Hitung jumlah hari aktif unik siswa
+  // Jumlah hari siswa aktif mengisi dalam rentang ini
   const uniqueDates = new Set(studentEntries.map((e) => e.tanggal));
-  const totalHariAktif = Math.max(uniqueDates.size, 1);
+  const totalHariSiswaAktif = uniqueDates.size;
 
-  // Hitung capaian per 7 kebiasaan
+  // Hitung capaian per 7 kebiasaan terhadap TARGET totalHariEvaluasi
   const habitDetails = kebiasaanList.sort((a, b) => a.urutan - b.urutan).map((k) => {
     const habitEntries = studentEntries.filter((e) => e.kebiasaan_id === k.id);
     const totalTerisi = habitEntries.length;
-    // Persentase terhadap total hari aktif
-    const persentase = Math.min(Math.round((totalTerisi / totalHariAktif) * 100), 100);
+    // Persentase dihitung objektif terhadap total hari periode evaluasi
+    const persentase = Math.min(Math.round((totalTerisi / totalHariEvaluasi) * 100), 100);
 
     let predikat: 'Sangat Baik' | 'Baik' | 'Cukup' | 'Perlu Bimbingan' = 'Perlu Bimbingan';
     let kodePredikat = 'D';
@@ -113,9 +165,9 @@ export const RaporKarakterModal: React.FC<RaporKarakterModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto animate-fade-in">
       <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full my-auto overflow-hidden flex flex-col border border-slate-200 animate-slide-up">
         {/* Modal Toolbar (Non-printable) */}
-        <div className="p-4 sm:px-6 bg-slate-900 text-white flex items-center justify-between print:hidden">
+        <div className="p-4 sm:px-6 bg-slate-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold shadow-xs shrink-0">
               <Award className="w-5 h-5" />
             </div>
             <div>
@@ -123,12 +175,58 @@ export const RaporKarakterModal: React.FC<RaporKarakterModalProps> = ({
                 Pratinjau Rapor Karakter 7KAIH
               </h3>
               <p className="text-xs text-slate-400">
-                Dokumen Resmi Pembiasaan Karakter - SMPN 2 Glagah
+                Dokumen Resmi Pembiasaan Karakter - {profile.nama}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {/* Pilihan Periode Evaluasi */}
+            <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 text-xs">
+              <button
+                onClick={() => setPeriodeMode('bulan_ini')}
+                className={`px-2.5 py-1 rounded-lg transition font-medium ${periodeMode === 'bulan_ini' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'}`}
+              >
+                Bulan Ini
+              </button>
+              <button
+                onClick={() => setPeriodeMode('30_hari')}
+                className={`px-2.5 py-1 rounded-lg transition font-medium ${periodeMode === '30_hari' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'}`}
+              >
+                30 Hari
+              </button>
+              <button
+                onClick={() => setPeriodeMode('semester')}
+                className={`px-2.5 py-1 rounded-lg transition font-medium ${periodeMode === 'semester' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'}`}
+              >
+                Semester
+              </button>
+              <button
+                onClick={() => setPeriodeMode('kustom')}
+                className={`px-2.5 py-1 rounded-lg transition font-medium ${periodeMode === 'kustom' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'}`}
+              >
+                Kustom
+              </button>
+            </div>
+
+            {periodeMode === 'kustom' && (
+              <div className="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded-xl border border-slate-700 text-xs">
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="bg-transparent text-white text-xs focus:outline-none"
+                />
+                <span className="text-slate-400">-</span>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="bg-transparent text-white text-xs focus:outline-none"
+                />
+              </div>
+            )}
+
             <button
               onClick={handlePrint}
               className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center gap-2 shadow-sm"
@@ -185,35 +283,42 @@ export const RaporKarakterModal: React.FC<RaporKarakterModalProps> = ({
               LEMBAR LAPORAN PEMBIASAAN KARAKTER SISWA
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-1">
-              Tahun Ajaran 2026/2027 • Semester Ganjil
+              Tahun Ajaran {profile.tahunAjaran || '2026/2027'} • Periode: {new Date(startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} s.d. {new Date(endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} ({totalHariEvaluasi} Hari Pelaksanaan)
             </p>
           </div>
 
           {/* IDENTITAS SISWA */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs mb-6 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
             <div>
-              <span className="text-slate-500 w-28 inline-block">Nama Lengkap</span>
+              <span className="text-slate-500 w-32 inline-block">Nama Lengkap</span>
               <span className="font-bold text-slate-900">: {siswa.nama}</span>
             </div>
             <div>
-              <span className="text-slate-500 w-28 inline-block">Kelas / Rombel</span>
+              <span className="text-slate-500 w-32 inline-block">Kelas / Rombel</span>
               <span className="font-bold text-slate-900">: Kelas {namaKelas}</span>
             </div>
             <div>
-              <span className="text-slate-500 w-28 inline-block">NISN</span>
+              <span className="text-slate-500 w-32 inline-block">NISN</span>
               <span className="font-semibold text-slate-900">: {siswa.nisn}</span>
             </div>
             <div>
-              <span className="text-slate-500 w-28 inline-block">Guru Wali Kelas</span>
+              <span className="text-slate-500 w-32 inline-block">Guru Wali Kelas</span>
               <span className="font-semibold text-slate-900">: {waliKelasNama}</span>
             </div>
             <div>
-              <span className="text-slate-500 w-28 inline-block">Total Hari Aktif</span>
-              <span className="font-semibold text-slate-900">: {totalHariAktif} Hari Pelaksanaan</span>
+              <span className="text-slate-500 w-32 inline-block">Target Pelaksanaan</span>
+              <span className="font-bold text-slate-900">: {totalHariEvaluasi} Hari ({startDate} s.d {endDate})</span>
             </div>
             <div>
-              <span className="text-slate-500 w-28 inline-block">Capaian Umum</span>
-              <span className="font-bold text-emerald-800">: {predikatUmum} ({rataRataKepatuhan}%)</span>
+              <span className="text-slate-500 w-32 inline-block">Keaktifan Siswa</span>
+              <span className="font-semibold text-slate-900">: {totalHariSiswaAktif} Hari Mengisi Jurnal</span>
+            </div>
+            <div className="col-span-2 pt-1 border-t border-slate-200 flex items-center justify-between">
+              <div>
+                <span className="text-slate-500 w-32 inline-block">Capaian Umum</span>
+                <span className="font-bold text-emerald-800">: {predikatUmum} ({rataRataKepatuhan}%)</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">Evaluasi Berstandar Adil: {totalHariEvaluasi} Hari Periode</span>
             </div>
           </div>
 
@@ -225,7 +330,7 @@ export const RaporKarakterModal: React.FC<RaporKarakterModalProps> = ({
                   <th className="py-2.5 px-3 w-10 text-center border-r border-slate-300">No</th>
                   <th className="py-2.5 px-3 min-w-45 border-r border-slate-300">7 Kebiasaan Anak Hebat</th>
                   <th className="py-2.5 px-3 text-center w-20 border-r border-slate-300">Terlaksana</th>
-                  <th className="py-2.5 px-3 text-center w-16 border-r border-slate-300">Kepatuhan</th>
+                  <th className="py-2.5 px-3 text-center w-24 border-r border-slate-300">Kepatuhan</th>
                   <th className="py-2.5 px-3 text-center w-24 border-r border-slate-300">Predikat</th>
                   <th className="py-2.5 px-3">Catatan Perkembangan Karakter</th>
                 </tr>

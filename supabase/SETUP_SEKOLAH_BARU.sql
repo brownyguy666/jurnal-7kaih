@@ -288,3 +288,30 @@ insert into profil_sekolah (id, nama, npsn, alamat, kabupaten, provinsi)
 values ('main', 'SMPN 2 Glagah', '20525649', 'Jl. Kenjo No.45, Glagah, Banyuwangi, Jawa Timur', 'Kabupaten Banyuwangi', 'Jawa Timur')
 on conflict (id) do nothing;
 
+-- ==============================================================================
+-- 11. TABEL KOMUNIKASI & BIMBINGAN SISWA-GURU
+-- ==============================================================================
+create table if not exists pesan_komunikasi (
+  id text primary key,
+  pengirim_id text not null,
+  pengirim_nama text not null,
+  pengirim_role text not null,
+  penerima_id text not null,
+  penerima_nama text not null,
+  penerima_role text not null,
+  kelas_id text,
+  kelas_nama text,
+  subjek text not null,
+  pesan text not null,
+  sudah_dibaca boolean default false,
+  created_at timestamptz default now()
+);
+
+alter table pesan_komunikasi enable row level security;
+
+create policy "Allow read pesan_komunikasi" on pesan_komunikasi for select using (true);
+create policy "Allow insert pesan_komunikasi" on pesan_komunikasi for insert with check (true);
+create policy "Allow update pesan_komunikasi" on pesan_komunikasi for update using (true);
+create policy "Allow delete pesan_komunikasi" on pesan_komunikasi for delete using (true);
+
+
