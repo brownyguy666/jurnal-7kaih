@@ -225,6 +225,9 @@ on conflict (id) do update set
 
 -- ==============================================================================
 -- SEED DATA AWAL: 18 KELAS STANDAR (7A - 9F)
+-- 📌 CATATAN: Ini adalah contoh rombel awal. Berapa pun jumlah rombel sekolah Anda 
+-- (3 rombel, 6 rombel, 12 rombel, 24 rombel, dsb.), sistem akan OTOMATIS
+-- menyesuaikan daftar kelas saat Anda mengimpor data siswa via Excel/CSV!
 -- ==============================================================================
 insert into kelas (nama_kelas, tingkat)
 values 

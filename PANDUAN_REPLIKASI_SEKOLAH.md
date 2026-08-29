@@ -74,7 +74,8 @@ Agar alamat web sekolah terlihat resmi dan profesional (misalnya `jurnal.smpn1gi
 3. Setelah berhasil masuk ke Dashboard Superadmin:
    - Masuk ke tab **"Kelola, Rename & Password Staf"** $\to$ Edit akun `Super Administrator Sekolah` untuk mengganti nama Anda dan memperbarui password baru yang aman.
    - Masuk ke tab **"Kelola, Rename & Password Siswa"** $\to$ Klik tombol **"Import Siswa (CSV/Excel)"** untuk memasukkan data seluruh siswa sekolah Anda dari Dapodik secara massal.
-   - Buat akun untuk Kepala Sekolah, Waka Kurikulum, Kesiswaan, Guru BK, dan 18 Wali Kelas.
+   - 🎯 **Penyesuaian Rombel Otomatis**: Berapa pun jumlah rombel sekolah Anda (misal **3 rombel**, **6 rombel**, **12 rombel**, **18 rombel**, atau **24 rombel**), sistem akan **secara otomatis membaca nama-nama kelas di file Excel Anda**, membuat kelas baru yang belum ada, dan membersihkan kelas kosong lama jika Anda mencentang opsi *"Otomatis sesuaikan rombel"*.
+   - Buat akun staf untuk Kepala Sekolah, Waka Kurikulum, Kesiswaan, Guru BK, dan Wali Kelas sesuai rombel yang Anda miliki.
 
 ---
 

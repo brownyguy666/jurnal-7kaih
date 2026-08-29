@@ -366,6 +366,43 @@ export class MockDatabase {
     }
   }
 
+  static ensureKelasExist(kelasNames: string[]): Kelas[] {
+    const current = this.getKelas();
+    const existingMap = new Map(current.map((k) => [k.nama_kelas.toUpperCase().trim(), k]));
+    const toAdd: Kelas[] = [];
+
+    kelasNames.forEach((name) => {
+      const clean = name.toUpperCase().trim();
+      if (clean && !existingMap.has(clean)) {
+        const numMatch = clean.match(/\d+/);
+        const tingkat = numMatch ? Math.min(Math.max(parseInt(numMatch[0], 10), 1), 12) : 7;
+        const newK: Kelas = {
+          id: `k-${clean.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+          nama_kelas: clean,
+          tingkat
+        };
+        existingMap.set(clean, newK);
+        toAdd.push(newK);
+      }
+    });
+
+    if (toAdd.length > 0) {
+      const updated = [...current, ...toAdd];
+      setStored(STORAGE_KEYS.KELAS, updated);
+      return updated;
+    }
+    return current;
+  }
+
+  static cleanupUnusedKelas(activeClassNames: string[]): void {
+    const current = this.getKelas();
+    const activeSet = new Set(activeClassNames.map((n) => n.toUpperCase().trim()));
+    const filtered = current.filter((k) => activeSet.has(k.nama_kelas.toUpperCase().trim()));
+    if (filtered.length > 0) {
+      setStored(STORAGE_KEYS.KELAS, filtered);
+    }
+  }
+
   static importStaf(newStaff: StafSekolah[], replaceAll: boolean = false): void {
     if (replaceAll) {
       const current = this.getStaf();

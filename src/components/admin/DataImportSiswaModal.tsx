@@ -68,6 +68,32 @@ export function matchKelas(rawKelas: string, kelasList: Kelas[]): Kelas | undefi
   return match;
 }
 
+/**
+ * Ekstraksi nama kelas bersih yang fleksibel untuk sekolah apa pun (misal: "7A", "8-1", "X-IPA", dll)
+ */
+export function extractCleanKelasName(rawKelas: string, kelasList: Kelas[]): string {
+  const matched = matchKelas(rawKelas, kelasList);
+  if (matched) return matched.nama_kelas;
+
+  if (!rawKelas) return '7A';
+
+  let clean = String(rawKelas).trim().toUpperCase()
+    .replace(/^KELAS\s*/i, '')
+    .replace(/^TINGKAT\s*/i, '')
+    .replace(/^ROMBEL\s*/i, '')
+    .trim();
+
+  if (clean.startsWith('VII-') || clean.startsWith('VII ') || clean.startsWith('VII')) {
+    clean = '7' + clean.replace(/^VII[\s\-_.]*/i, '');
+  } else if (clean.startsWith('VIII-') || clean.startsWith('VIII ') || clean.startsWith('VIII')) {
+    clean = '8' + clean.replace(/^VIII[\s\-_.]*/i, '');
+  } else if (clean.startsWith('IX-') || clean.startsWith('IX ') || clean.startsWith('IX')) {
+    clean = '9' + clean.replace(/^IX[\s\-_.]*/i, '');
+  }
+
+  return clean || '7A';
+}
+
 export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
   isOpen,
   onClose,
@@ -78,6 +104,7 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
   const [parsedRows, setParsedRows] = useState<ParsedSiswaRow[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [replaceAll, setReplaceAll] = useState(true); // Default true agar data dummy tergantikan otomatis
+  const [syncClasses, setSyncClasses] = useState(true); // Otomatis sesuaikan jumlah kelas (3, 6, 12, 18, 24 rombel)
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -196,6 +223,7 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
           const dob = normalizeDate(rawDob);
 
           const matchedK = matchKelas(rawKelas, kelasList);
+          const targetKelasName = matchedK ? matchedK.nama_kelas : extractCleanKelasName(rawKelas, kelasList);
 
           let isValid = true;
           let reason: string | undefined;
@@ -212,8 +240,8 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
             nisn: rawNisn,
             nama: rawNama,
             kelas: rawKelas,
-            matchedKelasName: matchedK?.nama_kelas || '7A',
-            matchedKelasId: matchedK?.id || 'k-7a',
+            matchedKelasName: targetKelasName,
+            matchedKelasId: matchedK?.id,
             tanggal_lahir: dob,
             isValid,
             errorReason: reason
@@ -245,7 +273,7 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
         id: `s-imp-${Date.now()}-${idx}`,
         nisn: r.nisn,
         nama: r.nama,
-        kelas_id: r.matchedKelasId || 'k-7a',
+        kelas_id: r.matchedKelasId || `k-${r.matchedKelasName?.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
         kelas_name: r.matchedKelasName || r.kelas || '7A',
         tanggal_lahir: r.tanggal_lahir,
         sudah_ganti_password: false
@@ -253,7 +281,7 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
       return item as Siswa;
     });
 
-    await JournalService.importSiswa(studentsToImport, replaceAll);
+    const result = await JournalService.importSiswa(studentsToImport, replaceAll, syncClasses);
     const modeText = replaceAll ? 'menggantikan seluruh data dummy sebelumnya' : 'menambahkan ke data yang ada';
     
     // Hitung distribusi kelas
@@ -264,11 +292,15 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
     });
 
     const summaryDist = Object.entries(classCountMap)
-      .slice(0, 4)
+      .slice(0, 5)
       .map(([k, cnt]) => `${k}: ${cnt}`)
       .join(', ');
 
-    setSuccessMessage(`Berhasil mengimpor ${studentsToImport.length} data siswa ke database cloud (${modeText})! Tersebar di kelas (${summaryDist}...).`);
+    const classStatsText = result.newClassesCount > 0 
+      ? ` (${result.newClassesCount} rombel baru otomatis dibuat)` 
+      : '';
+
+    setSuccessMessage(`Berhasil mengimpor ${studentsToImport.length} data siswa (${modeText})! Rombel otomatis disinkronkan${classStatsText}.`);
     setIsProcessing(false);
     
     setTimeout(() => {
@@ -370,6 +402,25 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
             </span>
           </div>
 
+          {/* Opsi Sinkronisasi Rombel Otomatis */}
+          <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200 text-indigo-950 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="sync-kelas-toggle"
+                checked={syncClasses}
+                onChange={(e) => setSyncClasses(e.target.checked)}
+                className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              />
+              <label htmlFor="sync-kelas-toggle" className="cursor-pointer font-bold text-xs">
+                Otomatis sesuaikan rombel (Buat kelas baru & bersihkan rombel kosong di luar file)
+              </label>
+            </div>
+            <span className="text-[10px] text-indigo-700 bg-indigo-100 px-2.5 py-0.5 rounded-full font-bold">
+              Fleksibel Rombel
+            </span>
+          </div>
+
           {/* Upload Dropzone */}
           <div className="border-2 border-dashed border-slate-200 hover:border-purple-400 rounded-3xl p-6 text-center transition bg-slate-50/50">
             <input
@@ -411,14 +462,58 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
           )}
 
           {/* Preview Parsed Data */}
-          {parsedRows.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                <span>Preview Data Terdeteksi ({parsedRows.length} Siswa)</span>
-                <span className="text-emerald-600">
-                  {parsedRows.filter((r) => r.isValid).length} Siap Diimpor
-                </span>
-              </div>
+          {parsedRows.length > 0 && (() => {
+            const detectedClasses = Array.from(new Set(parsedRows.map((r) => r.matchedKelasName).filter(Boolean))).sort();
+            const newClasses = detectedClasses.filter((c) => !kelasList.some((k) => k.nama_kelas.toUpperCase() === c?.toUpperCase()));
+
+            return (
+              <div className="space-y-3">
+                {/* Rombel Badge Overview */}
+                <div className="p-3.5 rounded-2xl bg-purple-50 border border-purple-200 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-purple-900">
+                      Terdeteksi {detectedClasses.length} Rombel / Kelas dari File:
+                    </span>
+                    {newClasses.length > 0 ? (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
+                        +{newClasses.length} Rombel Baru Otomatis Dibuat
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-purple-600 font-semibold">
+                        Semua rombel sesuai
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {detectedClasses.map((c) => {
+                      const isExisting = kelasList.some((k) => k.nama_kelas.toUpperCase() === c?.toUpperCase());
+                      return (
+                        <span
+                          key={c}
+                          className={`px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 ${
+                            isExisting
+                              ? 'bg-white text-purple-800 border border-purple-200 shadow-2xs'
+                              : 'bg-emerald-600 text-white shadow-xs'
+                          }`}
+                        >
+                          <span>{c}</span>
+                          {!isExisting && (
+                            <span className="text-[9px] bg-emerald-700 text-emerald-100 px-1 rounded-sm font-extrabold">
+                              BARU
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                  <span>Preview Data Terdeteksi ({parsedRows.length} Siswa)</span>
+                  <span className="text-emerald-600">
+                    {parsedRows.filter((r) => r.isValid).length} Siap Diimpor
+                  </span>
+                </div>
 
               <div className="max-h-48 overflow-y-auto rounded-2xl border border-slate-200">
                 <table className="w-full text-left text-[11px]">
@@ -455,7 +550,8 @@ export const DataImportSiswaModal: React.FC<DataImportSiswaModalProps> = ({
                 </table>
               </div>
             </div>
-          )}
+          );
+        })()}
         </div>
 
         {/* Footer Actions */}

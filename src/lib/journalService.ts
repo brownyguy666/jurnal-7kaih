@@ -422,14 +422,31 @@ export class JournalService {
   }
 
   /**
-   * Impor Massal Siswa ke Cloud Supabase & Local Cache dengan UUID Resolver
+   * Impor Massal Siswa ke Cloud Supabase & Local Cache dengan Auto-Class Generator Dinamis
    */
-  static async importSiswa(students: Siswa[], replaceAll: boolean): Promise<void> {
+  static async importSiswa(
+    students: Siswa[], 
+    replaceAll: boolean, 
+    syncClasses: boolean = true
+  ): Promise<{ importedCount: number; newClassesCount: number; removedClassesCount: number }> {
+    // 1. Ekstrak seluruh nama kelas unik dari siswa yang diimpor
+    const uniqueImportedClassNames = Array.from(new Set(
+      students.map(s => ((s as any).kelas_name || s.kelas_id?.replace(/^k-/, '') || '7A').toUpperCase().trim())
+    )).filter(Boolean);
+
+    // 2. Sinkronkan MockDatabase
+    MockDatabase.ensureKelasExist(uniqueImportedClassNames);
+    if (replaceAll && syncClasses) {
+      MockDatabase.cleanupUnusedKelas(uniqueImportedClassNames);
+    }
     MockDatabase.importSiswa(students, replaceAll);
+
+    let newClassesCount = 0;
+    let removedClassesCount = 0;
 
     if (isSupabaseConfigured) {
       try {
-        const { data: dbKelasList } = await supabase.from('kelas').select('id, nama_kelas');
+        const { data: dbKelasList } = await supabase.from('kelas').select('id, nama_kelas, tingkat');
         const kelasUuidMap = new Map<string, string>();
         
         if (dbKelasList) {
@@ -438,19 +455,63 @@ export class JournalService {
           });
         }
 
-        const defaultKelas7AUuid = kelasUuidMap.get('7A') || dbKelasList?.[0]?.id;
+        // 3. Deteksi kelas baru di CSV yang belum ada di database, lalu insert otomatis
+        const missingClassNames = uniqueImportedClassNames.filter(name => !kelasUuidMap.has(name));
+        if (missingClassNames.length > 0) {
+          const classesToInsert = missingClassNames.map(name => {
+            const numMatch = name.match(/\d+/);
+            const tingkat = numMatch ? Math.min(Math.max(parseInt(numMatch[0], 10), 1), 12) : 7;
+            return {
+              nama_kelas: name,
+              tingkat
+            };
+          });
 
-        if (replaceAll) {
-          await supabase.from('siswa').delete().neq('nama', '___RESERVED_NEVER_MATCH___');
+          const { data: insertedClasses, error: insertErr } = await supabase
+            .from('kelas')
+            .insert(classesToInsert)
+            .select('id, nama_kelas');
+
+          if (insertedClasses) {
+            newClassesCount = insertedClasses.length;
+            insertedClasses.forEach(k => {
+              kelasUuidMap.set(k.nama_kelas.toUpperCase().trim(), k.id);
+            });
+          }
+          if (insertErr) {
+            console.warn('Gagal auto-insert kelas baru:', insertErr.message);
+          }
         }
 
+        // 4. Jika replaceAll & syncClasses aktif, hapus kelas kosong lama yang tidak ada di CSV
+        if (replaceAll) {
+          await supabase.from('siswa').delete().neq('nama', '___RESERVED_NEVER_MATCH___');
+
+          if (syncClasses && dbKelasList) {
+            const classesToDelete = dbKelasList.filter(
+              k => !uniqueImportedClassNames.includes(k.nama_kelas.toUpperCase().trim())
+            );
+            for (const c of classesToDelete) {
+              try {
+                await supabase.from('staf_sekolah').update({ kelas_id: null }).eq('kelas_id', c.id);
+                const { error: delErr } = await supabase.from('kelas').delete().eq('id', c.id);
+                if (!delErr) {
+                  removedClassesCount++;
+                }
+              } catch (e) {
+                console.warn('Gagal hapus kelas kosong lama:', c.nama_kelas, e);
+              }
+            }
+          }
+        }
+
+        const defaultKelasUuid = Array.from(kelasUuidMap.values())[0];
+
+        // 5. Buat payload siswa dengan resolved UUID yang akurat
         const payload = students.map(s => {
           let resolvedKelasId = s.kelas_id;
-          
-          if (!resolvedKelasId || resolvedKelasId.startsWith('k-') || resolvedKelasId.length < 30) {
-            const cleanName = (s as any).kelas_name || resolvedKelasId?.replace('k-', '').toUpperCase() || '7A';
-            resolvedKelasId = kelasUuidMap.get(cleanName) || defaultKelas7AUuid;
-          }
+          const cleanName = ((s as any).kelas_name || resolvedKelasId?.replace(/^k-/, '') || '7A').toUpperCase().trim();
+          resolvedKelasId = kelasUuidMap.get(cleanName) || defaultKelasUuid;
 
           return {
             nisn: String(s.nisn).trim(),
@@ -470,14 +531,28 @@ export class JournalService {
           }
         }
 
-        const { data: refreshedSiswa } = await supabase.from('siswa').select('*').limit(5000);
+        // 6. Refresh data siswa & kelas di cache lokal
+        const [{ data: refreshedSiswa }, { data: refreshedKelas }] = await Promise.all([
+          supabase.from('siswa').select('*').limit(5000),
+          supabase.from('kelas').select('*').order('nama_kelas')
+        ]);
+
         if (refreshedSiswa) {
           MockDatabase.syncSiswaFromRemote(refreshedSiswa as Siswa[]);
+        }
+        if (refreshedKelas) {
+          MockDatabase.syncKelasFromRemote(refreshedKelas as Kelas[]);
         }
       } catch (e) {
         console.error('Gagal sync import siswa ke Supabase Cloud:', e);
       }
     }
+
+    return {
+      importedCount: students.length,
+      newClassesCount,
+      removedClassesCount
+    };
   }
 
   /**
