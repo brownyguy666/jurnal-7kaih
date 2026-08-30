@@ -21,13 +21,15 @@ import {
   Pencil,
   MessageSquareHeart,
   Trash2,
-  MessageCircle
+  MessageCircle,
+  UserPlus
 } from 'lucide-react';
 import { Kebiasaan, Kelas, Siswa, StafSekolah, EntriJurnal, SuaraSiswa } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
 import { getTodayDateString } from '../../lib/timeCalculator';
 import { MockDatabase } from '../../lib/mockStore';
 import { DataImportSiswaModal } from './DataImportSiswaModal';
+import { TambahSiswaModal } from './TambahSiswaModal';
 import { DataImportStafModal } from './DataImportStafModal';
 import { KebiasaanConfigModal } from './KebiasaanConfigModal';
 import { PasswordManagerModal } from './PasswordManagerModal';
@@ -88,6 +90,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
   const [selectedClassForReport, setSelectedClassForReport] = useState<Kelas | null>(null);
   const [isSchoolProfileModalOpen, setIsSchoolProfileModalOpen] = useState(false);
   const [isKomunikasiModalOpen, setIsKomunikasiModalOpen] = useState(false);
+  const [isTambahSiswaManualOpen, setIsTambahSiswaManualOpen] = useState(false);
 
   const loadAllData = async (forceRefresh: boolean = false) => {
     try {
@@ -427,14 +430,24 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
               </div>
             </div>
 
-            {/* Tombol Import CSV/XLSX Siswa */}
-            <button
-              onClick={() => setIsImportSiswaOpen(true)}
-              className="px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition flex items-center gap-2 shrink-0 self-end sm:self-center"
-            >
-              <UploadCloud className="w-4 h-4" />
-              <span>Import Siswa (CSV/Excel)</span>
-            </button>
+            {/* Tombol Tambah Siswa Manual & Import CSV/XLSX */}
+            <div className="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-center">
+              <button
+                onClick={() => setIsTambahSiswaManualOpen(true)}
+                className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition flex items-center gap-2"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>+ Tambah Siswa Manual</span>
+              </button>
+
+              <button
+                onClick={() => setIsImportSiswaOpen(true)}
+                className="px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition flex items-center gap-2"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span>Import Siswa (CSV/Excel)</span>
+              </button>
+            </div>
           </div>
 
           {/* Tabel Siswa */}
@@ -700,6 +713,16 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         onClose={() => setIsImportSiswaOpen(false)}
         kelasList={kelasList}
         onImportSuccess={loadAllData}
+      />
+
+      <TambahSiswaModal
+        isOpen={isTambahSiswaManualOpen}
+        onClose={() => setIsTambahSiswaManualOpen(false)}
+        kelasList={kelasList}
+        onSuccess={async (newStudent) => {
+          await loadAllData(true);
+          alert(`Siswa ${newStudent.nama} (NISN: ${newStudent.nisn}) berhasil ditambahkan ke kelas!`);
+        }}
       />
 
       <DataImportStafModal

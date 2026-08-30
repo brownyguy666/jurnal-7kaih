@@ -333,6 +333,28 @@ export class MockDatabase {
     return true;
   }
 
+  static addSiswa(data: {
+    id?: string;
+    nisn: string;
+    nama: string;
+    kelas_id: string;
+    tanggal_lahir: string;
+    sudah_ganti_password?: boolean;
+  }): Siswa {
+    const allSiswa = this.getSiswa();
+    const newId = data.id || `siswa-${Date.now()}`;
+    const newStudent: Siswa = {
+      id: newId,
+      nisn: data.nisn,
+      nama: data.nama,
+      kelas_id: data.kelas_id,
+      tanggal_lahir: data.tanggal_lahir,
+      sudah_ganti_password: data.sudah_ganti_password || false
+    };
+    setStored(STORAGE_KEYS.SISWA, [newStudent, ...allSiswa]);
+    return newStudent;
+  }
+
   static deleteSiswa(siswaId: string): boolean {
     const allSiswa = this.getSiswa();
     const filtered = allSiswa.filter((s) => s.id !== siswaId);

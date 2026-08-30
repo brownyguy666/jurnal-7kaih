@@ -956,6 +956,88 @@ export class JournalService {
   }
 
   /**
+   * Menambahkan 1 Siswa Baru secara Manual (Superadmin)
+   * Berguna untuk siswa mutasi / pindahan yang belum tercatat di Dapodik awal
+   */
+  static async addSiswa(
+    studentData: {
+      id?: string;
+      nisn: string;
+      nama: string;
+      kelas_id: string;
+      tanggal_lahir: string;
+      sudah_ganti_password?: boolean;
+    }
+  ): Promise<{ success: boolean; data?: Siswa; message?: string }> {
+    try {
+      const cleanNisn = String(studentData.nisn || '').trim();
+      const cleanNama = String(studentData.nama || '').trim();
+
+      if (!cleanNisn) {
+        return { success: false, message: 'NISN / Nomor Induk Siswa wajib diisi!' };
+      }
+      if (!cleanNama) {
+        return { success: false, message: 'Nama lengkap siswa wajib diisi!' };
+      }
+      if (!studentData.kelas_id) {
+        return { success: false, message: 'Rombel / Kelas wajib dipilih!' };
+      }
+      if (!studentData.tanggal_lahir) {
+        return { success: false, message: 'Tanggal lahir wajib diisi (untuk password login siswa)!' };
+      }
+
+      // 1. Cek duplikasi NISN
+      const existing = await JournalService.getSiswa();
+      if (existing.some(s => s.nisn.toLowerCase() === cleanNisn.toLowerCase())) {
+        return { success: false, message: `Siswa dengan NISN "${cleanNisn}" sudah terdaftar!` };
+      }
+
+      let createdStudent: Siswa;
+
+      if (isSupabaseConfigured) {
+        const payload = {
+          nisn: cleanNisn,
+          nama: cleanNama,
+          kelas_id: studentData.kelas_id,
+          tanggal_lahir: studentData.tanggal_lahir,
+          sudah_ganti_password: false
+        };
+
+        const { data, error } = await supabase
+          .from('siswa')
+          .insert(payload)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Failed to insert student into Supabase:', error.message);
+          return { success: false, message: `Gagal menyimpan ke database Supabase: ${error.message}` };
+        }
+
+        createdStudent = data as Siswa;
+      } else {
+        createdStudent = {
+          id: studentData.id || `siswa-${Date.now()}`,
+          nisn: cleanNisn,
+          nama: cleanNama,
+          kelas_id: studentData.kelas_id,
+          tanggal_lahir: studentData.tanggal_lahir,
+          sudah_ganti_password: false
+        };
+      }
+
+      // Update mockstore dan clear cache
+      MockDatabase.addSiswa(createdStudent);
+      JournalService.clearSiswaCache();
+
+      return { success: true, data: createdStudent };
+    } catch (err: any) {
+      console.error('Error adding single student:', err);
+      return { success: false, message: err?.message || 'Terjadi kesalahan saat menambahkan siswa' };
+    }
+  }
+
+  /**
    * Menghapus Siswa dari Database / Kelas (Superadmin)
    */
   static async deleteSiswa(siswaId: string): Promise<boolean> {
