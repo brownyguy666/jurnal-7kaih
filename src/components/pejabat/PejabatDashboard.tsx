@@ -81,14 +81,14 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
   const [piagamData, setPiagamData] = useState<PiagamData | null>(null);
   const [studentForRapor, setStudentForRapor] = useState<Siswa | null>(null);
 
-  const loadData = async () => {
+  const loadData = async (forceRefresh: boolean = false) => {
     try {
       const [allKelas, allStaf, allSiswa, habits, allEntries, allFeedbacks, allArahan, allSuara] = await Promise.all([
         JournalService.getKelas(),
         JournalService.getStaf(),
-        JournalService.getSiswa(),
+        JournalService.getSiswa(undefined, forceRefresh),
         JournalService.getKebiasaan(),
-        JournalService.getEntriJurnal(),
+        JournalService.getEntriJurnal(undefined, undefined, forceRefresh),
         JournalService.getFeedback(),
         JournalService.getArahanWaliKelas(),
         JournalService.getSuaraSiswaList()
@@ -227,7 +227,7 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
           </button>
 
           <button
-            onClick={loadData}
+            onClick={() => loadData(true)}
             title="Muat Ulang"
             className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
           >
@@ -422,7 +422,7 @@ export const PejabatDashboard: React.FC<PejabatDashboardProps> = ({ staf }) => {
           kelasList={kelasList}
           stafList={stafList}
           currentStaf={staf}
-          onRefreshData={loadData}
+          onRefreshData={() => loadData(true)}
         />
       )}
 

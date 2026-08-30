@@ -35,7 +35,7 @@ export async function uploadBuktiFoto(file: Blob, path: string): Promise<string 
     const { error } = await supabase.storage
       .from('bukti_foto')
       .upload(path, file, {
-        cacheControl: '3600',
+        cacheControl: '31536000', // Cache 1 tahun di browser dan CDN (menghemat egress storage drastis)
         upsert: true,
       });
 

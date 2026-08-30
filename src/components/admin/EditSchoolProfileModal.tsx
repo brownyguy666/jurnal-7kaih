@@ -116,7 +116,7 @@ export const EditSchoolProfileModal: React.FC<EditSchoolProfileModalProps> = ({
 
       supabase.storage
         .from('bukti_foto')
-        .upload(storagePath, file, { upsert: true })
+        .upload(storagePath, file, { upsert: true, cacheControl: '31536000' })
         .then(({ data: uploadData, error: uploadErr }) => {
           if (uploadData && !uploadErr) {
             const { data: urlData } = supabase.storage.from('bukti_foto').getPublicUrl(storagePath);

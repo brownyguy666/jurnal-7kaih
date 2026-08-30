@@ -17,20 +17,37 @@ import {
 } from '../types/database';
 
 export class JournalService {
+  // Cache in-memory dengan TTL 3 menit untuk memangkas Egress Supabase
+  private static entriCache: Map<string, { data: EntriJurnal[]; timestamp: number }> = new Map();
+  private static siswaCache: Map<string, { data: Siswa[]; timestamp: number }> = new Map();
+  private static readonly CACHE_TTL_MS = 3 * 60 * 1000; // 3 menit
+
+  static clearEntriCache(): void {
+    JournalService.entriCache.clear();
+  }
+
+  static clearSiswaCache(): void {
+    JournalService.siswaCache.clear();
+  }
+
   /**
    * Melakukan inisialisasi sinkronisasi dari Supabase Cloud ke Local Cache
+   * Optimasi Egress: Hanya ambil master metadata (kebiasaan, kelas, staf)
+   * dan hanya dijalankan 1 kali per tab browser session.
+   * Entri jurnal TIDAK diambil di sini karena berukuran megabytes dan hanya dimuat sesuai kebutuhan user/role.
    */
   static async initCloudSync(): Promise<void> {
     if (!isSupabaseConfigured) return;
+    
+    // Cek sessionStorage agar tidak re-fetch metadata setiap refresh sub-halaman
+    const isAlreadySynced = sessionStorage.getItem('jurnal_baseline_synced') === 'true';
+    if (isAlreadySynced) return;
+
     try {
-      const [kebRes, kelasRes, siswaRes, stafRes, entriRes, arahanRes, fbRes] = await Promise.all([
+      const [kebRes, kelasRes, stafRes] = await Promise.all([
         supabase.from('kebiasaan').select('*').order('urutan', { ascending: true }),
         supabase.from('kelas').select('*').order('nama_kelas', { ascending: true }),
-        supabase.from('siswa').select('*').order('nama', { ascending: true }).limit(5000),
-        supabase.from('staf_sekolah').select('*').order('nama', { ascending: true }).limit(500),
-        supabase.from('entri_jurnal').select('*').order('waktu_submit', { ascending: false }).limit(10000),
-        supabase.from('arahan_wali_kelas').select('*').order('created_at', { ascending: false }).limit(500),
-        supabase.from('feedback').select('*').order('created_at', { ascending: false }).limit(1000)
+        supabase.from('staf_sekolah').select('*').order('nama', { ascending: true }).limit(500)
       ]);
 
       if (kebRes.data && kebRes.data.length > 0) {
@@ -39,21 +56,11 @@ export class JournalService {
       if (kelasRes.data && kelasRes.data.length > 0) {
         MockDatabase.syncKelasFromRemote(kelasRes.data as Kelas[]);
       }
-      if (siswaRes.data && siswaRes.data.length > 0) {
-        MockDatabase.syncSiswaFromRemote(siswaRes.data as Siswa[]);
-      }
       if (stafRes.data && stafRes.data.length > 0) {
         MockDatabase.syncStafFromRemote(stafRes.data as StafSekolah[]);
       }
-      if (entriRes.data && entriRes.data.length > 0) {
-        MockDatabase.syncEntriFromRemote(entriRes.data as EntriJurnal[]);
-      }
-      if (arahanRes.data && arahanRes.data.length > 0) {
-        MockDatabase.syncArahanFromRemote(arahanRes.data as ArahanWaliKelas[]);
-      }
-      if (fbRes.data && fbRes.data.length > 0) {
-        MockDatabase.syncFeedbackFromRemote(fbRes.data as Feedback[]);
-      }
+
+      sessionStorage.setItem('jurnal_baseline_synced', 'true');
     } catch (e) {
       console.warn('initCloudSync warning:', e);
     }
@@ -117,9 +124,25 @@ export class JournalService {
   }
 
   /**
-   * Mengambil data Siswa (hingga 5000 data tanpa batas limit 500)
+   * Mengambil data Siswa dengan in-memory cache
    */
-  static async getSiswa(kelasId?: string): Promise<Siswa[]> {
+  static async getSiswa(kelasId?: string, forceRefresh: boolean = false): Promise<Siswa[]> {
+    const cacheKey = kelasId || 'all';
+
+    if (!forceRefresh) {
+      const cached = JournalService.siswaCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp < JournalService.CACHE_TTL_MS)) {
+        return cached.data;
+      }
+      if (cacheKey !== 'all') {
+        const allCached = JournalService.siswaCache.get('all');
+        if (allCached && (Date.now() - allCached.timestamp < JournalService.CACHE_TTL_MS)) {
+          const clean = kelasId!.replace(/^k-/i, '').toUpperCase();
+          return allCached.data.filter(s => s.kelas_id === kelasId || s.kelas_id?.replace(/^k-/i, '').toUpperCase() === clean);
+        }
+      }
+    }
+
     if (isSupabaseConfigured) {
       try {
         let query = supabase
@@ -133,6 +156,10 @@ export class JournalService {
         }
         const { data, error } = await query;
         if (!error && data) {
+          JournalService.siswaCache.set(cacheKey, {
+            data: data as Siswa[],
+            timestamp: Date.now()
+          });
           if (!kelasId || kelasId === 'all') {
             MockDatabase.syncSiswaFromRemote(data as Siswa[]);
           }
@@ -173,10 +200,34 @@ export class JournalService {
   }
 
   /**
-   * Mengambil Entri Jurnal dari Cloud Supabase & Local Cache dengan Pagination Lengkap
-   * Mengatasi batas 1.000 baris PostgREST agar data seluruh tanggal tidak terpotong
+   * Mengambil Entri Jurnal dari Cloud Supabase & Local Cache dengan Pagination & Smart Memory Cache
+   * Optimasi Egress:
+   * 1. Siswa hanya memuat entri miliknya sendiri (~15 KB vs 3.6 MB)
+   * 2. Memory cache 3 menit mencegah re-fetch berulang kali saat berpindah tab
+   * 3. Filter semester berjalan (tanggal >= 2026-07-01) untuk query umum
    */
-  static async getEntriJurnal(tanggal?: string, siswaId?: string): Promise<EntriJurnal[]> {
+  static async getEntriJurnal(tanggal?: string, siswaId?: string, forceRefresh: boolean = false): Promise<EntriJurnal[]> {
+    const cacheKey = `${tanggal || 'all'}_${siswaId || 'all'}`;
+
+    // 1. Cek in-memory cache
+    if (!forceRefresh) {
+      const cached = JournalService.entriCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp < JournalService.CACHE_TTL_MS)) {
+        return cached.data;
+      }
+      
+      // Jika data 'all_all' sudah ada di memori, saring dari memori tanpa request network ke Supabase
+      if (cacheKey !== 'all_all') {
+        const allCached = JournalService.entriCache.get('all_all');
+        if (allCached && (Date.now() - allCached.timestamp < JournalService.CACHE_TTL_MS)) {
+          let filtered = allCached.data;
+          if (tanggal) filtered = filtered.filter(e => e.tanggal === tanggal);
+          if (siswaId) filtered = filtered.filter(e => e.siswa_id === siswaId);
+          return filtered;
+        }
+      }
+    }
+
     if (isSupabaseConfigured) {
       try {
         let allData: EntriJurnal[] = [];
@@ -192,7 +243,12 @@ export class JournalService {
             .range(from, from + pageSize - 1);
 
           if (tanggal) query = query.eq('tanggal', tanggal);
-          if (siswaId) query = query.eq('siswa_id', siswaId);
+          if (siswaId) {
+            query = query.eq('siswa_id', siswaId);
+          } else if (!tanggal) {
+            // Optimasi Egress: Batasi pada tahun ajaran aktif berjalan (mulai 1 Juli 2026)
+            query = query.gte('tanggal', '2026-07-01');
+          }
 
           const { data, error } = await query;
           if (error) {
@@ -212,7 +268,12 @@ export class JournalService {
           }
         }
 
-        if (allData.length > 0) {
+        if (allData.length > 0 || siswaId || tanggal) {
+          JournalService.entriCache.set(cacheKey, {
+            data: allData,
+            timestamp: Date.now()
+          });
+
           MockDatabase.syncEntriFromRemote(allData);
           return allData;
         }
@@ -232,6 +293,7 @@ export class JournalService {
   static async submitEntriJurnal(
     entry: Omit<EntriJurnal, 'id' | 'waktu_submit'>
   ): Promise<EntriJurnal> {
+    JournalService.clearEntriCache();
     const localEntry = MockDatabase.addEntriJurnal(entry);
     if (isSupabaseConfigured) {
       try {
@@ -271,6 +333,7 @@ export class JournalService {
    * Menghapus Entri Jurnal (Wali Kelas / Superadmin)
    */
   static async deleteEntriJurnal(entriId: string, stafId: string, alasan: string): Promise<boolean> {
+    JournalService.clearEntriCache();
     MockDatabase.deleteEntriJurnal(entriId, stafId, alasan);
     if (isSupabaseConfigured) {
       try {
@@ -545,6 +608,7 @@ export class JournalService {
         if (refreshedKelas) {
           MockDatabase.syncKelasFromRemote(refreshedKelas as Kelas[]);
         }
+        JournalService.clearSiswaCache();
       } catch (e) {
         console.error('Gagal sync import siswa ke Supabase Cloud:', e);
       }
@@ -895,6 +959,8 @@ export class JournalService {
    * Menghapus Siswa dari Database / Kelas (Superadmin)
    */
   static async deleteSiswa(siswaId: string): Promise<boolean> {
+    JournalService.clearSiswaCache();
+    JournalService.clearEntriCache();
     MockDatabase.deleteSiswa(siswaId);
     if (isSupabaseConfigured) {
       try {

@@ -89,14 +89,14 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
   const [isSchoolProfileModalOpen, setIsSchoolProfileModalOpen] = useState(false);
   const [isKomunikasiModalOpen, setIsKomunikasiModalOpen] = useState(false);
 
-  const loadAllData = async () => {
+  const loadAllData = async (forceRefresh: boolean = false) => {
     try {
       const [allKelas, allStaf, allSiswa, habits, allEntries, allSuara] = await Promise.all([
         JournalService.getKelas(),
         JournalService.getStaf(),
-        JournalService.getSiswa(),
+        JournalService.getSiswa(undefined, forceRefresh),
         JournalService.getKebiasaan(),
-        JournalService.getEntriJurnal(),
+        JournalService.getEntriJurnal(undefined, undefined, forceRefresh),
         JournalService.getSuaraSiswaList()
       ]);
 
@@ -197,7 +197,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
             <span>⚙️ Profil & Logo Sekolah</span>
           </button>
           <button
-            onClick={loadAllData}
+            onClick={() => loadAllData(true)}
             title="Refresh Data Cloud"
             className="p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition border border-white/15 active:scale-95"
           >
@@ -338,7 +338,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
           kebiasaanList={kebiasaanList}
           selectedDate={selectedDate}
           onDateChange={setSelectedDate}
-          onRefreshData={loadAllData}
+          onRefreshData={() => loadAllData(true)}
           onSelectClassReport={(k) => setSelectedClassForReport(k)}
         />
       )}
@@ -388,7 +388,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
           kelasList={kelasList}
           stafList={stafList}
           currentStaf={staf}
-          onRefreshData={loadAllData}
+          onRefreshData={() => loadAllData(true)}
         />
       )}
 

@@ -1,13 +1,14 @@
 /**
  * Mengompresi file gambar di sisi client menggunakan HTML Canvas
+ * Membatasi resolusi proporsional (landscape maupun portrait HP) dan kualitas JPEG
  * @param file File gambar asli
- * @param maxWidth Lebar maksimal (default 1280px)
- * @param quality Kualitas JPEG (0.1 - 1.0, default 0.75)
+ * @param maxDimension Dimensi terpanjang maksimal (default 960px)
+ * @param quality Kualitas JPEG (0.1 - 1.0, default 0.65)
  */
 export async function compressImage(
   file: File | Blob,
-  maxWidth: number = 1280,
-  quality: number = 0.75
+  maxDimension: number = 960,
+  quality: number = 0.65
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -22,10 +23,15 @@ export async function compressImage(
         let width = img.width;
         let height = img.height;
 
-        // Hitung aspect ratio jika melebihi maxWidth
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
+        // Hitung skala proporsional berbasis dimensi terpanjang (responsif untuk foto portrait maupun landscape)
+        if (width > maxDimension || height > maxDimension) {
+          if (width >= height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
         }
 
         canvas.width = width;

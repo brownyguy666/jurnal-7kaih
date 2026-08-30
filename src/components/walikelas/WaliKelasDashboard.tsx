@@ -72,13 +72,13 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
     return PeriodAggregationService.getDateRange(period, selectedDate);
   }, [period, selectedDate]);
 
-  const loadData = async () => {
+  const loadData = async (forceRefresh: boolean = false) => {
     try {
       const [allKelas, allSiswa, habits, allEntries, allFeedbacks, allStaf, allSuara] = await Promise.all([
         JournalService.getKelas(),
-        JournalService.getSiswa(),
+        JournalService.getSiswa(undefined, forceRefresh),
         JournalService.getKebiasaan(),
-        JournalService.getEntriJurnal(),
+        JournalService.getEntriJurnal(undefined, undefined, forceRefresh),
         JournalService.getFeedback(),
         JournalService.getStaf(),
         JournalService.getSuaraSiswaList()
@@ -291,7 +291,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
           </button>
 
           <button
-            onClick={loadData}
+            onClick={() => loadData(true)}
             title="Muat Ulang Data"
             className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
           >
@@ -601,7 +601,7 @@ export const WaliKelasDashboard: React.FC<WaliKelasDashboardProps> = ({ staf }) 
               kelasList={kelasList.length > 0 ? kelasList : (currentKelas ? [currentKelas] : [])}
               stafList={stafList}
               currentStaf={staf}
-              onRefreshData={loadData}
+              onRefreshData={() => loadData(true)}
             />
           </div>
         </div>

@@ -152,8 +152,8 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
       const previewUrl = URL.createObjectURL(file);
       setPhotoPreview(previewUrl);
 
-      // 3. Kompresi gambar
-      const compressed = await compressImage(file, 1280, 0.8);
+      // 3. Kompresi gambar (resolusi optimal 960px & kualitas 0.65 hemat kuota 80%)
+      const compressed = await compressImage(file, 960, 0.65);
       setPhotoBlob(compressed);
     } catch (err) {
       console.error(err);

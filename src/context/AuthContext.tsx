@@ -175,6 +175,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    JournalService.clearEntriCache();
+    JournalService.clearSiswaCache();
     saveUserSession(null);
   };
 
