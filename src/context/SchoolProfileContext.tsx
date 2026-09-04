@@ -6,6 +6,7 @@ import {
   getLocalSchoolProfile 
 } from '../lib/schoolProfile';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { fetchRemoteStorageConfig } from '../lib/storageConfig';
 
 interface SchoolProfileContextType {
   profile: SchoolProfile;
@@ -20,11 +21,14 @@ export const SchoolProfileProvider: React.FC<{ children: React.ReactNode }> = ({
   const [profile, setProfile] = useState<SchoolProfile>(getLocalSchoolProfile);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Ambil data terbaru dari Supabase saat awal muat
+  // Ambil data profil sekolah dan konfigurasi storage dari Supabase saat awal muat
   useEffect(() => {
     const fetchRemoteProfile = async () => {
       try {
         if (isSupabaseConfigured) {
+          // Sync storage config (Google Drive Apps Script Web App URL) di latar belakang
+          fetchRemoteStorageConfig().catch(() => {});
+
           let remoteData: any = null;
 
           // 1. Coba dari tabel profil_sekolah jika ada

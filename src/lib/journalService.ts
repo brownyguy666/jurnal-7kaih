@@ -1,5 +1,6 @@
 import { isSupabaseConfigured, supabase } from './supabase';
 import { MockDatabase } from './mockStore';
+import { fetchRemoteStorageConfig } from './storageConfig';
 import { 
   ArahanWaliKelas, 
   EntriJurnal, 
@@ -47,7 +48,8 @@ export class JournalService {
       const [kebRes, kelasRes, stafRes] = await Promise.all([
         supabase.from('kebiasaan').select('*').order('urutan', { ascending: true }),
         supabase.from('kelas').select('*').order('nama_kelas', { ascending: true }),
-        supabase.from('staf_sekolah').select('*').order('nama', { ascending: true }).limit(500)
+        supabase.from('staf_sekolah').select('*').order('nama', { ascending: true }).limit(500),
+        fetchRemoteStorageConfig().catch(() => null)
       ]);
 
       if (kebRes.data && kebRes.data.length > 0) {
@@ -65,6 +67,7 @@ export class JournalService {
       console.warn('initCloudSync warning:', e);
     }
   }
+
 
   /**
    * Mengambil data Kebiasaan

@@ -1,5 +1,10 @@
 import { uploadBuktiFoto } from './supabase';
-import { getLocalStorageConfig, StorageConfig } from './storageConfig';
+import { 
+  getLocalStorageConfig, 
+  getActiveStorageConfig, 
+  fetchRemoteStorageConfig, 
+  StorageConfig 
+} from './storageConfig';
 
 /**
  * Template Kode Google Apps Script siap pakai
@@ -250,7 +255,18 @@ export async function uploadBuktiFotoUnified(
   path: string,
   customConfig?: StorageConfig
 ): Promise<string | null> {
-  const config = customConfig || getLocalStorageConfig();
+  let config = customConfig || getActiveStorageConfig();
+
+  // Jika provider masih belum gdrive atau url gdrive masih kosong di browser lokal,
+  // coba fetch remote config Supabase untuk memastikan sinkronisasi dari Admin
+  if (config.provider !== 'gdrive' || !config.gdriveWebAppUrl) {
+    try {
+      const remoteConfig = await fetchRemoteStorageConfig();
+      if (remoteConfig && remoteConfig.provider === 'gdrive' && remoteConfig.gdriveWebAppUrl) {
+        config = remoteConfig;
+      }
+    } catch (_) {}
+  }
 
   // 1. Opsi Google Drive (Prioritas untuk hemat kuota 100%)
   if (config.provider === 'gdrive' && config.gdriveWebAppUrl) {
@@ -274,3 +290,4 @@ export async function uploadBuktiFotoUnified(
   // 3. Opsi Default / Fallback: Supabase Storage
   return await uploadBuktiFoto(blob, path);
 }
+

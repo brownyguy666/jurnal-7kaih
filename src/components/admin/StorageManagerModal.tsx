@@ -29,10 +29,13 @@ import {
 } from '../../lib/photoBackupManager';
 import { 
   getLocalStorageConfig, 
+  getActiveStorageConfig,
+  fetchRemoteStorageConfig,
   saveStorageConfig, 
   StorageConfig, 
   StorageProviderType 
 } from '../../lib/storageConfig';
+import { isSupabaseConfigured } from '../../lib/supabase';
 import { 
   GOOGLE_APPS_SCRIPT_TEMPLATE, 
   testGoogleAppsScriptConnection 
@@ -62,7 +65,7 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
   const [activeTab, setActiveTab] = useState<'status' | 'backup' | 'clean' | 'restore' | 'gdrive'>('status');
 
   // Storage Config State
-  const [config, setConfig] = useState<StorageConfig>(getLocalStorageConfig);
+  const [config, setConfig] = useState<StorageConfig>(getActiveStorageConfig);
   const [gdriveInputUrl, setGdriveInputUrl] = useState(config.gdriveWebAppUrl || '');
   const [selectedProvider, setSelectedProvider] = useState<StorageProviderType>(config.provider);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; suggestion?: string } | null>(null);
@@ -92,11 +95,40 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
   const [restoreResult, setRestoreResult] = useState<{ restoredCount: number; totalCount: number; errors: string[] } | null>(null);
 
   useEffect(() => {
-    const current = getLocalStorageConfig();
-    setConfig(current);
-    setGdriveInputUrl(current.gdriveWebAppUrl || '');
-    setSelectedProvider(current.provider);
+    let isMounted = true;
+    const loadModalConfig = async () => {
+      // 1. Ambil dari in-memory / local storage seketika
+      const current = getActiveStorageConfig();
+      if (isMounted) {
+        setConfig(current);
+        setGdriveInputUrl(current.gdriveWebAppUrl || '');
+        setSelectedProvider(current.provider);
+      }
+
+      // 2. Tarik data terbaru dari Cloud Supabase agar tersinkron lintas perangkat/browser
+      if (isSupabaseConfigured) {
+        try {
+          const remote = await fetchRemoteStorageConfig();
+          if (isMounted && remote) {
+            setConfig(remote);
+            setGdriveInputUrl(remote.gdriveWebAppUrl || '');
+            setSelectedProvider(remote.provider);
+          }
+        } catch (e) {
+          console.warn('Gagal fetch remote storage config di modal:', e);
+        }
+      }
+    };
+
+    if (isOpen) {
+      loadModalConfig();
+    }
+
+    return () => {
+      isMounted = false;
+    };
   }, [isOpen]);
+
 
   // Statistik Foto
   const validPhotoEntries = entries.filter(
@@ -140,15 +172,25 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
 
   // Handler Simpan Konfigurasi Storage
   const handleSaveStorageSettings = async () => {
+    if (selectedProvider === 'gdrive' && !gdriveInputUrl.trim()) {
+      alert('Silakan masukkan URL Web App Google Apps Script terlebih dahulu.');
+      return;
+    }
+
     const newConfig: StorageConfig = {
       ...config,
       provider: selectedProvider,
       gdriveWebAppUrl: gdriveInputUrl.trim()
     };
-    await saveStorageConfig(newConfig);
+    const success = await saveStorageConfig(newConfig);
     setConfig(newConfig);
-    alert('Konfigurasi penyimpanan berhasil disimpan!');
+    if (success) {
+      alert('Konfigurasi penyimpanan berhasil disimpan dan disinkronkan ke Cloud! Seluruh foto baru siswa sekarang akan otomatis tersimpan di Google Drive.');
+    } else {
+      alert('Pengaturan disimpan secara lokal. Pastikan koneksi Supabase terhubung.');
+    }
   };
+
 
   // Handler Tes Koneksi Google Apps Script
   const handleTestConnection = async () => {

@@ -40,14 +40,31 @@ export function getLocalStorageConfig(): StorageConfig {
   return DEFAULT_STORAGE_CONFIG;
 }
 
+// In-Memory active config cache
+let activeStorageConfig: StorageConfig = getLocalStorageConfig();
+
 /**
- * Menyimpan konfigurasi storage ke LocalStorage dan Supabase Storage jika terhubung
+ * Mengambil konfigurasi storage aktif dari in-memory cache
+ */
+export function getActiveStorageConfig(): StorageConfig {
+  if (!activeStorageConfig.gdriveWebAppUrl) {
+    const local = getLocalStorageConfig();
+    if (local.gdriveWebAppUrl) {
+      activeStorageConfig = local;
+    }
+  }
+  return activeStorageConfig;
+}
+
+/**
+ * Menyimpan konfigurasi storage ke LocalStorage, in-memory cache, dan Supabase Storage jika terhubung
  */
 export async function saveStorageConfig(config: StorageConfig): Promise<boolean> {
   try {
+    activeStorageConfig = { ...config };
     localStorage.setItem(STORAGE_CONFIG_KEY, JSON.stringify(config));
 
-    // Simpan juga ke Supabase Storage agar tersinkronisasi di semua perangkat admin
+    // Simpan juga ke Supabase Storage agar tersinkronisasi ke seluruh siswa dan perangkat
     if (isSupabaseConfigured) {
       try {
         const jsonBlob = new Blob([JSON.stringify(config, null, 2)], {
@@ -76,7 +93,7 @@ export async function saveStorageConfig(config: StorageConfig): Promise<boolean>
  */
 export async function fetchRemoteStorageConfig(): Promise<StorageConfig> {
   if (!isSupabaseConfigured) {
-    return getLocalStorageConfig();
+    return getActiveStorageConfig();
   }
 
   try {
@@ -87,8 +104,9 @@ export async function fetchRemoteStorageConfig(): Promise<StorageConfig> {
     if (data && !error) {
       const text = await data.text();
       const parsed = JSON.parse(text);
-      if (parsed && parsed.provider) {
+      if (parsed && (parsed.provider || parsed.gdriveWebAppUrl)) {
         const merged = { ...DEFAULT_STORAGE_CONFIG, ...parsed };
+        activeStorageConfig = merged;
         localStorage.setItem(STORAGE_CONFIG_KEY, JSON.stringify(merged));
         return merged;
       }
@@ -97,5 +115,6 @@ export async function fetchRemoteStorageConfig(): Promise<StorageConfig> {
     // Gunakan konfigurasi lokal jika belum ada di remote
   }
 
-  return getLocalStorageConfig();
+  return getActiveStorageConfig();
 }
+
