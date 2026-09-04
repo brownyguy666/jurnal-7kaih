@@ -131,6 +131,35 @@ Operator dapat mengedit file tersebut langsung di GitHub untuk menyesuaikan:
 
 ---
 
+## 🔄 Langkah 8: Cara Memperbarui Fitur Aplikasi (Sinkronisasi dari Pusat)
+
+Ketika tim pengembang **SMPN 2 Glagah** merilis fitur baru, perbaikan performa, atau pembaruan regulasi di repositori pusat (`brownyguy666/jurnal-7kaih`), sekolah Anda dapat memperbarui platform web sekolah dengan sangat mudah:
+
+### 🌟 Cara 1: Update 1-Klik via GitHub Web (Paling Praktis)
+1. Buka halaman repositori GitHub sekolah Anda (misal: `https://github.com/sekolah-anda/jurnal-7kaih`).
+2. Tepat di bawah nama repositori, jika ada pembaruan dari pusat, GitHub akan menampilkan notifikasi:
+   > *"This branch is X commits behind brownyguy666/jurnal-7kaih:main."*
+3. Klik tombol **`Sync fork`** &rarr; lalu klik tombol hijau **`Update branch`**.
+4. **Selesai!** 
+   - GitHub Anda akan langsung menarik kode fitur terbaru.
+   - Vercel sekolah Anda akan **secara otomatis mendeteksi perubahan tersebut dan langsung men-deploy ulang website sekolah Anda dalam waktu ~1 menit**.
+   - Pengaturan Supabase (*Environment Variables*) dan nama sekolah Anda **100% aman dan tidak akan berubah**!
+
+### 🤖 Cara 2: Otomatis 100% Setiap Malam (GitHub Actions)
+Repositori ini telah dilengkapi skrip otomatisasi di [`.github/workflows/sync-upstream.yml`](.github/workflows/sync-upstream.yml):
+1. Buka tab **Actions** di repositori GitHub sekolah Anda.
+2. Jika ada tombol bertuliskan *"I understand my workflows, go ahead and enable them"*, klik tombol tersebut untuk mengaktifkan workflow otomatis.
+3. Sistem akan memeriksa dan menyinkronkan pembaruan dari repositori pusat setiap hari pada pukul **00:00 WIB**.
+
+### 🗄️ Bagaimana Jika Ada Pembaruan Database (SQL)?
+Seluruh data peserta didik, riwayat kebiasaan, dan poin di Supabase sekolah Anda **berdiri sendiri dan tidak akan terhapus** saat aplikasi diperbarui. Jika suatu rilis menghadirkan tabel atau kolom baru:
+1. Buka dashboard Supabase sekolah Anda &rarr; menu **SQL Editor**.
+2. Salin seluruh isi file [`supabase/SETUP_SEKOLAH_BARU.sql`](supabase/SETUP_SEKOLAH_BARU.sql) terbaru &rarr; tempel (*paste*).
+3. Klik tombol hijau **Run**. Skrip telah dirancang *idempotent* sehingga otomatis menambahkan kolom/tabel baru tanpa mengganggu data yang sudah tersimpan.
+
+---
+
 ### 🎉 Selesai & Siap Operasional!
 Sekolah Anda sekarang memiliki platform digital mandiri untuk memantau pembiasaan karakter 7KAIH bagi seluruh peserta didik tanpa biaya server! Jika ada pertanyaan atau butuh bantuan saat diseminasi, silakan hubungi tim pengembang melalui tab *Issues* di repositori ini.
+
 

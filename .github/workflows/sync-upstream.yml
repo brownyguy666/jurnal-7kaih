@@ -1,0 +1,27 @@
+name: Sync Upstream (Pembaruan Otomatis dari Pusat)
+
+on:
+  schedule:
+    - cron: '0 17 * * *' # Setiap pukul 00:00 WIB (17:00 UTC)
+  workflow_dispatch: # Memungkinkan operator klik tombol 'Run workflow' secara manual di tab Actions
+
+jobs:
+  sync_latest_from_upstream:
+    name: Sinkronisasi Fitur Terbaru dari Pusat
+    runs-on: ubuntu-latest
+    # Hanya berjalan pada repositori sekolah hasil fork / salinan, tidak berjalan di repositori induk
+    if: github.repository != 'brownyguy666/jurnal-7kaih'
+    steps:
+      - name: Checkout repo sekolah
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Tarik pembaruan dari brownyguy666/jurnal-7kaih
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
+        with:
+          upstream_sync_repo: brownyguy666/jurnal-7kaih
+          upstream_sync_branch: main
+          target_sync_branch: main
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          test_mode: false
