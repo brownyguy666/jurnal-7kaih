@@ -133,29 +133,28 @@ Operator dapat mengedit file tersebut langsung di GitHub untuk menyesuaikan:
 
 ## 🔄 Langkah 8: Cara Memperbarui Fitur Aplikasi (Sinkronisasi dari Pusat)
 
-Ketika tim pengembang **SMPN 2 Glagah** merilis fitur baru, perbaikan performa, atau pembaruan regulasi di repositori pusat (`brownyguy666/jurnal-7kaih`), sekolah Anda dapat memperbarui platform web sekolah dengan sangat mudah:
+Ketika tim pengembang **SMPN 2 Glagah** merilis fitur baru, perbaikan performa, atau pembaruan regulasi di repositori pusat (`brownyguy666/jurnal-7kaih`), sekolah Anda dapat memperbarui platform web sekolah dengan cara berikut (tergantung metode deploy yang Anda pilih):
 
-### 🌟 Cara 1: Update 1-Klik via GitHub Web (Paling Praktis)
-1. Buka halaman repositori GitHub sekolah Anda (misal: `https://github.com/sekolah-anda/jurnal-7kaih`).
-2. Tepat di bawah nama repositori, jika ada pembaruan dari pusat, GitHub akan menampilkan notifikasi:
-   > *"This branch is X commits behind brownyguy666/jurnal-7kaih:main."*
-3. Klik tombol **`Sync fork`** &rarr; lalu klik tombol hijau **`Update branch`**.
-4. **Selesai!** 
-   - GitHub Anda akan langsung menarik kode fitur terbaru.
-   - Vercel sekolah Anda akan **secara otomatis mendeteksi perubahan tersebut dan langsung men-deploy ulang website sekolah Anda dalam waktu ~1 menit**.
-   - Pengaturan Supabase (*Environment Variables*) dan nama sekolah Anda **100% aman dan tidak akan berubah**!
-
-### 🤖 Cara 2: Otomatis 100% Setiap Malam (GitHub Actions)
-Repositori ini telah dilengkapi skrip otomatisasi di [`.github/workflows/sync-upstream.yml`](.github/workflows/sync-upstream.yml):
+### 🅰️ Jika Deploy Melalui Tombol 1-Klik Vercel (Clone Standalone)
+Tombol *Deploy with Vercel* membuat salinan repositori mandiri baru di akun GitHub Anda (misal `jurnal-7kaih-copy`). Untuk menarik fitur terbaru:
 1. Buka tab **Actions** di repositori GitHub sekolah Anda.
-2. Jika ada tombol bertuliskan *"I understand my workflows, go ahead and enable them"*, klik tombol tersebut untuk mengaktifkan workflow otomatis.
-3. Sistem akan memeriksa dan menyinkronkan pembaruan dari repositori pusat setiap hari pada pukul **00:00 WIB**.
+2. Klik workflow **`Sync Upstream (Pembaruan Otomatis dari Pusat)`** di bilah kiri.
+3. Klik tombol **`Run workflow`** (dropdown hijau) &rarr; lalu klik tombol **`Run workflow`**.
+4. **Selesai!** GitHub Actions akan otomatis menarik pembaruan dari `brownyguy666/jurnal-7kaih`, menggabungkannya ke branch `main` Anda, dan Vercel akan **otomatis men-deploy versi terbaru dalam 1 menit!**
+   > *Workflow ini juga berjalan **otomatis setiap malam pukul 00:00 WIB**, sehingga platform sekolah Anda selalu up-to-date tanpa perlu disentuh.*
+
+### 🅱️ Jika Deploy Melalui Fork Manual GitHub
+Jika Anda menduplikasi dengan mengklik tombol **Fork** di pojok kanan atas GitHub pusat:
+1. Buka halaman repositori GitHub sekolah Anda.
+2. Tepat di bawah nama repositori, jika ada pembaruan dari pusat, klik tombol **`Sync fork`** &rarr; klik hijau **`Update branch`**.
+3. Vercel Anda otomatis mendeteksi pembaruan dan langsung men-deploy ulang.
 
 ### 🗄️ Bagaimana Jika Ada Pembaruan Database (SQL)?
 Seluruh data peserta didik, riwayat kebiasaan, dan poin di Supabase sekolah Anda **berdiri sendiri dan tidak akan terhapus** saat aplikasi diperbarui. Jika suatu rilis menghadirkan tabel atau kolom baru:
 1. Buka dashboard Supabase sekolah Anda &rarr; menu **SQL Editor**.
 2. Salin seluruh isi file [`supabase/SETUP_SEKOLAH_BARU.sql`](supabase/SETUP_SEKOLAH_BARU.sql) terbaru &rarr; tempel (*paste*).
 3. Klik tombol hijau **Run**. Skrip telah dirancang *idempotent* sehingga otomatis menambahkan kolom/tabel baru tanpa mengganggu data yang sudah tersimpan.
+
 
 ---
 
