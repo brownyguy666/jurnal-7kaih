@@ -87,11 +87,23 @@ export function blobToBase64(blob: Blob): Promise<string> {
 export async function testGoogleAppsScriptConnection(webAppUrl: string): Promise<{
   success: boolean;
   message: string;
+  suggestion?: string;
 }> {
-  if (!webAppUrl || !webAppUrl.startsWith('https://script.google.com/macros/s/')) {
+  const cleanUrl = webAppUrl.trim();
+
+  if (!cleanUrl || !cleanUrl.startsWith('https://script.google.com/macros/s/')) {
     return {
       success: false,
-      message: 'Format URL Web App Google Apps Script tidak valid. Harus diawali dengan https://script.google.com/macros/s/'
+      message: 'Format URL Web App Google Apps Script tidak valid. Harus diawali dengan https://script.google.com/macros/s/',
+      suggestion: 'Pastikan menyalin URL dari tombol Deploy > New deployment (atau Manage deployments).'
+    };
+  }
+
+  if (cleanUrl.includes('/edit') || cleanUrl.includes('/dev')) {
+    return {
+      success: false,
+      message: 'URL yang dimasukkan adalah URL editor atau developer mode (' + (cleanUrl.includes('/edit') ? '/edit' : '/dev') + ').',
+      suggestion: 'Salin Web App URL yang berakhiran "/exec" dari dialog Deploy.'
     };
   }
 
@@ -102,31 +114,60 @@ export async function testGoogleAppsScriptConnection(webAppUrl: string): Promise
     canvas.height = 1;
     const testBase64 = canvas.toDataURL('image/jpeg', 0.5);
 
-    const response = await fetch(webAppUrl, {
-      method: 'POST',
-      body: JSON.stringify({
-        base64: testBase64,
-        fileName: 'test_koneksi_' + Date.now() + '.jpg',
-        contentType: 'image/jpeg'
-      })
+    const payload = JSON.stringify({
+      base64: testBase64,
+      fileName: 'test_koneksi_' + Date.now() + '.jpg',
+      contentType: 'image/jpeg'
     });
 
-    const json = await response.json();
-    if (json.status === 'success' && json.url) {
+    // PENTING: Gunakan 'Content-Type': 'text/plain;charset=utf-8' dan redirect: 'follow'
+    // Format text/plain adalah CORS-safelisted request sehingga browser TIDAK mengirimkan OPTIONS preflight
+    // yang tidak didukung oleh Google Apps Script.
+    const response = await fetch(cleanUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      redirect: 'follow',
+      body: payload
+    });
+
+    const rawText = await response.text();
+    let json: any = null;
+    try {
+      json = JSON.parse(rawText);
+    } catch (_) {
+      if (rawText.includes('accounts.google.com') || rawText.includes('Sign in') || rawText.includes('ServiceLogin')) {
+        return {
+          success: false,
+          message: 'Google Apps Script dialihkan ke halaman login akun (Akses Privat).',
+          suggestion: 'Di script.google.com > Deploy > Manage deployments > Edit > Ubah "Who has access" dari "Only myself" / "Organisasi" menjadi "Anyone" (Siapa saja). Lalu klik Deploy.'
+        };
+      }
+      return {
+        success: false,
+        message: 'Respons dari Google Apps Script bukan format JSON: ' + rawText.slice(0, 100),
+        suggestion: 'Pastikan Anda telah menyalin dan menempel seluruh kode skrip terbaru di script.google.com.'
+      };
+    }
+
+    if (json && json.status === 'success' && json.url) {
       return {
         success: true,
-        message: 'Koneksi ke Google Drive Berhasil! URL: ' + json.url
+        message: 'Koneksi ke Google Drive Berhasil! File uji coba tersimpan dengan URL: ' + json.url
       };
     } else {
       return {
         success: false,
-        message: json.message || 'Google Apps Script merespons tetapi gagal menyimpan file.'
+        message: json?.message || 'Google Apps Script merespons tetapi gagal menyimpan file.',
+        suggestion: 'Periksa log eksekusi di script.google.com > Executions untuk melihat detail kendala.'
       };
     }
   } catch (err: any) {
     return {
       success: false,
-      message: 'Gagal menghubungi Google Apps Script: ' + (err.message || 'Periksa apakah Deployment diset ke "Anyone"')
+      message: 'Gagal menghubungi Google Apps Script: ' + (err.message || 'Failed to fetch'),
+      suggestion: 'Penyebab umum "Failed to fetch": (1) Pilihan "Who has access" saat Deploy belum diatur ke "Anyone" (Siapa saja), atau (2) Jika menggunakan akun Belajar.id/organisasi, kebijakan admin membatasi deployment publik — coba buat skrip menggunakan akun Gmail pribadi (@gmail.com) yang gratis 15 GB dan bebas batasan domain.'
     };
   }
 }
@@ -141,22 +182,27 @@ async function uploadToGoogleDrive(
 ): Promise<string | null> {
   try {
     const base64 = await blobToBase64(blob);
-    const payload = {
+    const payload = JSON.stringify({
       base64,
       fileName,
       contentType: blob.type || 'image/webp'
-    };
+    });
 
     const response = await fetch(webAppUrl, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      redirect: 'follow',
+      body: payload
     });
 
-    const result = await response.json();
-    if (result.status === 'success' && result.url) {
+    const rawText = await response.text();
+    const result = JSON.parse(rawText);
+    if (result && result.status === 'success' && result.url) {
       return result.url;
     }
-    console.error('Google Apps Script upload error:', result.message);
+    console.error('Google Apps Script upload error:', result?.message);
     return null;
   } catch (err) {
     console.error('Error saat upload ke Google Apps Script:', err);

@@ -65,7 +65,7 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
   const [config, setConfig] = useState<StorageConfig>(getLocalStorageConfig);
   const [gdriveInputUrl, setGdriveInputUrl] = useState(config.gdriveWebAppUrl || '');
   const [selectedProvider, setSelectedProvider] = useState<StorageProviderType>(config.provider);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; suggestion?: string } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
   const [isCopiedCode, setIsCopiedCode] = useState(false);
 
@@ -949,18 +949,28 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
 
                 {testResult && (
                   <div
-                    className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                    className={`p-3.5 rounded-xl text-xs space-y-1.5 ${
                       testResult.success
-                        ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
-                        : 'bg-rose-50 border border-rose-200 text-rose-800'
+                        ? 'bg-emerald-50 border border-emerald-200 text-emerald-900'
+                        : 'bg-rose-50 border border-rose-200 text-rose-900'
                     }`}
                   >
-                    {testResult.success ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    ) : (
-                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                    )}
-                    <span>{testResult.message}</span>
+                    <div className="flex items-start gap-2">
+                      {testResult.success ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      )}
+                      <div className="flex-1">
+                        <strong className="block font-bold">{testResult.message}</strong>
+                        {testResult.suggestion && (
+                          <div className="mt-1 text-[11px] opacity-90 whitespace-pre-line bg-white/70 p-2.5 rounded-lg border border-rose-200/60 text-slate-800">
+                            <strong>💡 Saran Solusi:</strong>
+                            <div className="mt-0.5">{testResult.suggestion}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
