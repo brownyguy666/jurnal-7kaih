@@ -819,7 +819,7 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
                   type="file"
                   accept=".zip"
                   onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
-                  className="text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer"
+                  className="text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer"
                 />
               </div>
 
@@ -846,10 +846,11 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
               {/* Hasil Restore */}
               {restoreResult && (
                 <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs space-y-1">
-                  <strong className="block font-bold flex items-center gap-1.5">
+                  <strong className="font-bold flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     Pemulihan Selesai
                   </strong>
+
                   <p>
                     Berhasil memulihkan {restoreResult.restoredCount} dari {restoreResult.totalCount} foto.
                   </p>

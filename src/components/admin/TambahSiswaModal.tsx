@@ -120,8 +120,9 @@ export const TambahSiswaModal: React.FC<TambahSiswaModalProps> = ({
       <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-6">
         
         {/* Header Modal */}
-        <div className="p-5 sm:p-6 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
+        <div className="p-5 sm:p-6 bg-linear-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
+
             <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-white shadow-inner">
               <UserPlus className="w-5 h-5 text-emerald-100" />
             </div>
