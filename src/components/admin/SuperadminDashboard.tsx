@@ -46,6 +46,7 @@ import { SuperadminLeaderboardView } from './SuperadminLeaderboardView';
 import { StudentProgressOverview } from '../common/StudentProgressOverview';
 import { SuaraSiswaModerationView } from '../common/SuaraSiswaModerationView';
 import { StorageManagerModal } from './StorageManagerModal';
+import { APP_VERSION } from '../../lib/version';
 
 interface SuperadminDashboardProps {
   staf: StafSekolah;
@@ -176,6 +177,9 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 text-purple-200 text-xs font-semibold backdrop-blur-sm border border-purple-400/30 mb-2">
             <ShieldCheck className="w-3.5 h-3.5 text-purple-300" />
             <span>Hak Akses Tertinggi • Super Administrator</span>
+            <span className="px-1.5 py-0.5 rounded-md bg-purple-400/30 text-white font-mono text-[10px] font-bold">
+              v{APP_VERSION}
+            </span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             Panel Kendali Superadmin {profile.nama}

@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { LogOut, KeyRound, ChevronDown } from 'lucide-react';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { useSchoolProfile } from '../../context/SchoolProfileContext';
+import { APP_VERSION } from '../../lib/version';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -89,7 +90,7 @@ export const Navbar: React.FC = () => {
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-[11px] text-slate-400 font-medium">{profile.nama}</span>
                   <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-                    v0.9.2
+                    v{APP_VERSION}
                   </span>
                 </div>
               </div>

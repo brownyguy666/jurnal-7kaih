@@ -1,6 +1,6 @@
 # 🇮🇩 Jurnal 7 KAIH
 ### SMP Negeri 2 Glagah — Banyuwangi, Jawa Timur
-> **Versi: `v0.9.1` (Official Production)**  
+> **Versi: `v1.1.0` (Official Production)**  
 > Platform Web Pencatatan & Evaluasi Pembiasaan Karakter Luhur Peserta Didik Berbasis Cloud Database Realtime.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/brownyguy666/jurnal-7kaih)
@@ -159,6 +159,29 @@ npm run build
 ---
 
 ## 📜 Catatan Perubahan & Riwayat Rilis (Changelog)
+
+### [v1.1.0] - 2026-09-04 *(Solusi Krisis Kuota Supabase Egress 96%, Kompresi WebP Hemat 90%, Backup & Restore Foto ZIP, dan Integrasi Google Drive)*
+- **Solusi Egress & Penyimpanan Google Drive Bebas Biaya**:
+  - Dukungan Google Drive via Google Apps Script Web App (15 GB gratis per akun Google atau Unlimited di akun `@guru.smp.belajar.id`), memangkas beban egress Supabase hingga 0 Byte.
+  - Failover otomatis multi-provider (`supabase`, `gdrive`, `cloudinary`) di panel Superadmin.
+- **Kompresi Modern WebP Sisi Klien**:
+  - Optimalisasi gambar ke format WebP 720px kualitas 0.55 (~25–45 KB, hemat kuota data dan storage 90%).
+- **Mesin Cadangan & Pemulihan Foto Murid (.ZIP)**:
+  - Unduh seluruh foto bukti jurnal siswa terorganisir per kelas dan nama siswa beserta file `manifest_backup.json`.
+  - Pembersihan berkas fisik server aman (*Reclaim Server Storage*) dengan mempertahankan nilai, catatan, refleksi, dan poin siswa 100%.
+  - Fitur pemulihan foto (*Restore from ZIP*) untuk mengunggah dan menyinkronkan kembali foto arsip kapan saja.
+- **Panel Manajemen Penyimpanan Superadmin**:
+  - Modal 5-in-1 untuk pantauan kuota, backup ZIP, pembersihan foto berkala, pemulihan, dan panduan aktivasi Google Drive.
+
+---
+
+### [v1.0.0] - 2026-08-30 *(Komunikasi Siswa-Guru Dua Arah, Multi-Tanggapan Dewan Guru, Sinkronisasi Cloud Profil Sekolah, Rentang Tanggal Leaderboard, & Rapor Karakter Berkeadilan)*
+- **Komunikasi Dua Arah Siswa & Guru / Pimpinan**: Modul pesan apresiasi, motivasi, bimbingan konseling, dan konsultasi pembiasaan dengan kotak masuk & indikator belum dibaca.
+- **Multi-Tanggapan Dewan Guru**: Seluruh guru (Wali Kelas, BK, Kurikulum, KS) dapat memberikan tanggapan bersusun pada suara/aspirasi siswa.
+- **Sinkronisasi Profil Sekolah Multi-Device**: Sinkronisasi identitas sekolah & logo via Supabase Storage bucket `bukti_foto/config/school_profile.json` dan database.
+- **Filter Rentang Tanggal Leaderboard & Rapor Karakter Berkeadilan**: Evaluasi objektif berdasarkan jumlah hari kalender periode evaluasi.
+
+---
 
 ### [v0.9.1] - 2026-08-26 *(Sinkronisasi Realtime Suara & Curhat Siswa, Migrasi Cloud Schema, & Pembersihan Mock)*
 - **Sinkronisasi Cloud Realtime Suara Siswa**:

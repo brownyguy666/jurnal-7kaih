@@ -14,6 +14,7 @@ import {
   X
 } from 'lucide-react';
 import { useSchoolProfile } from '../context/SchoolProfileContext';
+import { APP_VERSION } from '../lib/version';
 
 interface ErrorModalState {
   isOpen: boolean;
@@ -201,7 +202,7 @@ export const LoginView: React.FC = () => {
                 <span>Program Resmi Kemendikdasmen RI</span>
               </div>
               <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-                v0.9.2 Official
+                v{APP_VERSION} Official
               </span>
             </div>
 
@@ -382,8 +383,13 @@ export const LoginView: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <footer className="p-4 text-center text-xs text-slate-400">
-        &copy; {new Date().getFullYear()} {profile.nama} ({profile.npsn}) • {profile.alamat} {profile.telepon ? `• Telp: ${profile.telepon}` : ''}
+      <footer className="p-4 text-center text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-center gap-1.5 flex-wrap">
+        <span>&copy; {new Date().getFullYear()} {profile.nama} ({profile.npsn})</span>
+        <span className="hidden sm:inline">•</span>
+        <span>{profile.alamat}</span>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700 font-mono text-[10px] font-bold">
+          v{APP_VERSION}
+        </span>
       </footer>
 
       {/* Pop-up Modal Pemberitahuan Kesalahan Login */}

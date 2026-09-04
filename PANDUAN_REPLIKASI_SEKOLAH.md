@@ -1,7 +1,7 @@
 # 📖 Panduan Praktis Replikasi Aplikasi Jurnal 7KAIH untuk Sekolah Lain
-### Panduan Langkah Demi Langkah bagi Operator Sekolah / Guru TIK
+### Panduan Langkah Demi Langkah bagi Operator Sekolah / Guru TIK (Rilis Resmi: `v1.1.0`)
 
-Panduan ini disusun untuk mempermudah sekolah lain yang ingin mereplikasi dan menjalankan aplikasi **Jurnal 7 Kebiasaan Anak Indonesia Hebat (7KAIH)** secara mandiri dengan database, domain, dan identitas sekolah masing-masing tanpa biaya langganan server (**100% Gratis menggunakan Supabase & Vercel Free Tier**).
+Panduan ini disusun untuk mempermudah sekolah lain yang ingin mereplikasi dan menjalankan aplikasi **Jurnal 7 Kebiasaan Anak Indonesia Hebat (7KAIH)** versi `v1.1.0` secara mandiri dengan database, domain, dan identitas sekolah masing-masing tanpa biaya langganan server (**100% Gratis menggunakan Supabase, Vercel, & Google Drive**).
 
 ---
 

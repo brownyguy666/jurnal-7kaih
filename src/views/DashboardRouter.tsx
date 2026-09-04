@@ -6,9 +6,12 @@ import { WaliKelasDashboard } from '../components/walikelas/WaliKelasDashboard';
 import { PejabatDashboard } from '../components/pejabat/PejabatDashboard';
 import { SuperadminDashboard } from '../components/admin/SuperadminDashboard';
 import { ChangePasswordModal } from '../components/common/ChangePasswordModal';
+import { useSchoolProfile } from '../context/SchoolProfileContext';
+import { APP_VERSION } from '../lib/version';
 
 export const DashboardRouter: React.FC = () => {
   const { user } = useAuth();
+  const { profile } = useSchoolProfile();
   const [showMandatoryPasswordChange, setShowMandatoryPasswordChange] = useState(false);
 
   useEffect(() => {
@@ -49,7 +52,12 @@ export const DashboardRouter: React.FC = () => {
       {/* Footer */}
       <footer className="py-6 border-t border-slate-200 bg-white text-center text-xs text-slate-400">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>&copy; {new Date().getFullYear()} Jurnal 7 KAIH • SMP Negeri 2 Glagah</span>
+          <div className="flex items-center gap-2">
+            <span>&copy; {new Date().getFullYear()} Jurnal 7 KAIH • {profile.nama}</span>
+            <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-mono text-[10px] font-bold border border-slate-200">
+              v{APP_VERSION}
+            </span>
+          </div>
           <span>Kementerian Pendidikan Dasar dan Menengah RI</span>
         </div>
       </footer>

@@ -3,6 +3,7 @@ import { EntriJurnal, Siswa, Kelas, Kebiasaan } from '../types/database';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { JournalService } from './journalService';
 import { uploadBuktiFotoUnified } from './storageService';
+import { APP_VERSION } from './version';
 
 export interface BackupProgress {
   current: number;
@@ -151,8 +152,8 @@ export async function createPhotoBackupZip({
 
   // Tambahkan file manifest_backup.json ke dalam ZIP
   const manifest: BackupManifest = {
-    version: '1.0',
-    app: 'Jurnal 7 KAIH SMPN 2 Glagah',
+    version: APP_VERSION,
+    app: 'Jurnal 7 KAIH',
     createdAt: new Date().toISOString(),
     totalPhotos: manifestItems.length,
     items: manifestItems
