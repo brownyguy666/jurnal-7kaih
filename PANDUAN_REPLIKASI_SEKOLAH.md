@@ -136,12 +136,23 @@ Operator dapat mengedit file tersebut langsung di GitHub untuk menyesuaikan:
 Ketika tim pengembang **SMPN 2 Glagah** merilis fitur baru, perbaikan performa, atau pembaruan regulasi di repositori pusat (`brownyguy666/jurnal-7kaih`), sekolah Anda dapat memperbarui platform web sekolah dengan cara berikut (tergantung metode deploy yang Anda pilih):
 
 ### 🅰️ Jika Deploy Melalui Tombol 1-Klik Vercel (Clone Standalone)
-Tombol *Deploy with Vercel* membuat salinan repositori mandiri baru di akun GitHub Anda (misal `jurnal-7kaih-copy`). Untuk menarik fitur terbaru:
+Tombol *Deploy with Vercel* membuat salinan repositori mandiri baru di akun GitHub Anda (misal `jurnal-7kaih-copy`).
+
+#### 1. Persiapan Awal (Hanya Perlu Dilakukan 1 Kali Saja):
+Secara bawaan (*default*), GitHub membatasi izin robot Actions hanya sebatas membaca (*Read-only*). Agar workflow dapat menyimpan pembaruan kode ke repositori sekolah Anda:
+1. Di repositori GitHub sekolah Anda, klik tab **Settings** (di menu paling kanan atas).
+2. Pada menu bilah kiri, cari kelompok **Code and automation** &rarr; klik **Actions** &rarr; lalu klik **General**.
+3. Gulir ke bagian paling bawah ke judul **"Workflow permissions"**.
+4. Pilih opsi **`Read and write permissions`**.
+5. Centang juga opsi **`Allow GitHub Actions to create and approve pull requests`** (opsional tapi dianjurkan).
+6. Klik tombol hijau **Save**.
+
+#### 2. Cara Menjalankan Pembaruan:
 1. Buka tab **Actions** di repositori GitHub sekolah Anda.
 2. Klik workflow **`Sync Upstream (Pembaruan Otomatis dari Pusat)`** di bilah kiri.
-3. Klik tombol **`Run workflow`** (dropdown hijau) &rarr; lalu klik tombol **`Run workflow`**.
-4. **Selesai!** GitHub Actions akan otomatis menarik pembaruan dari `brownyguy666/jurnal-7kaih`, menggabungkannya ke branch `main` Anda, dan Vercel akan **otomatis men-deploy versi terbaru dalam 1 menit!**
-   > *Workflow ini juga berjalan **otomatis setiap malam pukul 00:00 WIB**, sehingga platform sekolah Anda selalu up-to-date tanpa perlu disentuh.*
+3. Klik tombol **`Run workflow`** (dropdown abu-abu/hijau di sebelah kanan) &rarr; lalu klik tombol hijau **`Run workflow`**.
+4. **Selesai!** GitHub Actions akan otomatis menarik pembaruan dari `brownyguy666/jurnal-7kaih`, menggabungkannya ke branch `main` Anda, dan Vercel akan **otomatis men-deploy versi terbaru dalam waktu ~1 menit!**
+   > *Workflow ini juga berjalan **otomatis setiap malam pukul 00:00 WIB**, sehingga platform sekolah Anda selalu up-to-date tanpa perlu disentuh manual lagi.*
 
 ### 🅱️ Jika Deploy Melalui Fork Manual GitHub
 Jika Anda menduplikasi dengan mengklik tombol **Fork** di pojok kanan atas GitHub pusat:
