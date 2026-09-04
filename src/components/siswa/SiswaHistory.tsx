@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, MessageSquare, ShieldCheck, Clock, Camera, AlertTriangle, Eye } from 'lucide-react';
+import { Calendar, MessageSquare, ShieldCheck, Clock, Camera, AlertTriangle, Eye, Archive } from 'lucide-react';
 import { EntriJurnal, Feedback, Kebiasaan } from '../../types/database';
 import { StatusBadge, FlagBadge } from '../common/StatusBadge';
 
@@ -112,14 +112,22 @@ export const SiswaHistory: React.FC<SiswaHistoryProps> = ({
                   >
                     {/* Thumbnail Foto */}
                     <div className="relative w-24 h-24 rounded-xl overflow-hidden bg-slate-100 shrink-0">
-                      <img
-                        src={entry.foto_url}
-                        alt="Bukti"
-                        className="w-full h-full object-cover"
-                      />
+                      {entry.foto_url?.includes('[TERARSIP]') ? (
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-purple-50 text-purple-600 p-2 text-center">
+                          <Archive className="w-6 h-6 mb-1" />
+                          <span className="text-[10px] font-bold leading-tight">Foto Diarsipkan</span>
+                        </div>
+                      ) : (
+                        <img
+                          src={entry.foto_url}
+                          alt="Bukti"
+                          loading="lazy"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                       <button
                         onClick={() => onViewPhoto(entry)}
-                        className="absolute inset-0 bg-black/30 hover:bg-black/40 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition"
+                        className="absolute inset-0 bg-black/30 hover:bg-black/40 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition cursor-pointer"
                       >
                         <Eye className="w-5 h-5" />
                       </button>

@@ -22,7 +22,8 @@ import {
   MessageSquareHeart,
   Trash2,
   MessageCircle,
-  UserPlus
+  UserPlus,
+  HardDrive
 } from 'lucide-react';
 import { Kebiasaan, Kelas, Siswa, StafSekolah, EntriJurnal, SuaraSiswa } from '../../types/database';
 import { JournalService } from '../../lib/journalService';
@@ -44,6 +45,7 @@ import { ArahanWaliKelasModal } from '../pejabat/ArahanWaliKelasModal';
 import { SuperadminLeaderboardView } from './SuperadminLeaderboardView';
 import { StudentProgressOverview } from '../common/StudentProgressOverview';
 import { SuaraSiswaModerationView } from '../common/SuaraSiswaModerationView';
+import { StorageManagerModal } from './StorageManagerModal';
 
 interface SuperadminDashboardProps {
   staf: StafSekolah;
@@ -91,6 +93,7 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
   const [isSchoolProfileModalOpen, setIsSchoolProfileModalOpen] = useState(false);
   const [isKomunikasiModalOpen, setIsKomunikasiModalOpen] = useState(false);
   const [isTambahSiswaManualOpen, setIsTambahSiswaManualOpen] = useState(false);
+  const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
 
   const loadAllData = async (forceRefresh: boolean = false) => {
     try {
@@ -183,6 +186,14 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setIsStorageModalOpen(true)}
+            className="px-4 py-2.5 rounded-2xl bg-linear-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-white font-bold text-xs shadow-lg shadow-rose-600/25 transition flex items-center gap-2 active:scale-95 cursor-pointer"
+            title="Kelola kuota Supabase, unduh backup foto ZIP, bersihkan storage & Google Drive"
+          >
+            <HardDrive className="w-4 h-4 text-white" />
+            <span>💾 Backup & Kuota Foto</span>
+          </button>
           <button
             onClick={() => setIsKomunikasiModalOpen(true)}
             className="px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-600/25 transition flex items-center gap-2 active:scale-95 cursor-pointer"
@@ -328,6 +339,15 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         >
           <Sliders className="w-4 h-4" />
           <span>Konfigurasi 7 Kebiasaan</span>
+        </button>
+
+        <button
+          onClick={() => setIsStorageModalOpen(true)}
+          className="px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition flex items-center gap-2 whitespace-nowrap bg-linear-to-r from-rose-50 to-amber-50 text-rose-700 hover:bg-rose-100 border border-rose-200 cursor-pointer"
+          title="Buka panel manajemen penyimpanan dan kuota foto"
+        >
+          <HardDrive className="w-4 h-4 text-rose-600" />
+          <span>💾 Backup & Kuota Foto</span>
         </button>
       </div>
 
@@ -802,6 +822,16 @@ export const SuperadminDashboard: React.FC<SuperadminDashboardProps> = ({ staf }
         kelasList={kelasList}
         siswaList={siswaList}
         stafList={stafList}
+      />
+
+      <StorageManagerModal
+        isOpen={isStorageModalOpen}
+        onClose={() => setIsStorageModalOpen(false)}
+        entries={entries}
+        siswaList={siswaList}
+        kelasList={kelasList}
+        kebiasaanList={kebiasaanList}
+        onDataRefresh={() => loadAllData(true)}
       />
     </div>
   );

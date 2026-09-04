@@ -26,7 +26,7 @@ import {
   getCurrentActivePrayer,
   BanyuwangiPrayerService
 } from '../../lib/timeCalculator';
-import { uploadBuktiFoto } from '../../lib/supabase';
+import { uploadBuktiFotoUnified } from '../../lib/storageService';
 
 interface HabitEntryModalProps {
   kebiasaan: Kebiasaan | null;
@@ -62,6 +62,7 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
   const [sumberFoto, setSumberFoto] = useState<SumberFoto>('kamera');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
+  const [photoExt, setPhotoExt] = useState<string>('webp');
   const [waktuAmbilFoto, setWaktuAmbilFoto] = useState<Date>(new Date());
   const [flagFoto, setFlagFoto] = useState<boolean>(false);
   const [alasanFlag, setAlasanFlag] = useState<string | null>(null);
@@ -113,9 +114,10 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
       const previewUrl = URL.createObjectURL(file);
       setPhotoPreview(previewUrl);
 
-      // Kompresi di client
-      const compressed = await compressImage(file, 1280, 0.8);
-      setPhotoBlob(compressed);
+      // Kompresi di client (WebP 720px hemat kuota hingga 90%)
+      const compressed = await compressImage(file, 720, 0.55);
+      setPhotoBlob(compressed.blob);
+      setPhotoExt(compressed.extension);
     } catch (err) {
       console.error(err);
       setErrorMessage('Gagal memproses foto dari kamera');
@@ -152,9 +154,10 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
       const previewUrl = URL.createObjectURL(file);
       setPhotoPreview(previewUrl);
 
-      // 3. Kompresi gambar (resolusi optimal 960px & kualitas 0.65 hemat kuota 80%)
-      const compressed = await compressImage(file, 960, 0.65);
-      setPhotoBlob(compressed);
+      // 3. Kompresi gambar (resolusi optimal 720px & kualitas 0.55 WebP hemat kuota 90%)
+      const compressed = await compressImage(file, 720, 0.55);
+      setPhotoBlob(compressed.blob);
+      setPhotoExt(compressed.extension);
     } catch (err) {
       console.error(err);
       setErrorMessage('Gagal membaca metadata gambar');
@@ -203,11 +206,11 @@ export const HabitEntryModal: React.FC<HabitEntryModalProps> = ({
     try {
       let finalFotoUrl = photoPreview || '';
 
-      // Upload ke storage jika ada blob
+      // Upload ke storage jika ada blob (otomatis sesuai provider aktif: Google Drive, Cloudinary, atau Supabase)
       if (photoBlob) {
-        const fileExt = 'jpg';
+        const fileExt = photoExt || 'webp';
         const fileName = `${studentId}/${kebiasaan.id}_${Date.now()}.${fileExt}`;
-        const uploadedUrl = await uploadBuktiFoto(photoBlob, fileName);
+        const uploadedUrl = await uploadBuktiFotoUnified(photoBlob, fileName);
         if (uploadedUrl) {
           finalFotoUrl = uploadedUrl;
         }

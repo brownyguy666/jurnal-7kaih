@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Camera, Upload, AlertTriangle, Calendar, Clock, User, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Camera, Upload, AlertTriangle, Calendar, Clock, User, ShieldCheck, Archive } from 'lucide-react';
 import { EntriJurnal } from '../../types/database';
 import { StatusBadge } from './StatusBadge';
 
@@ -15,6 +15,9 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
   onClose
 }) => {
   if (!isOpen || !entry) return null;
+
+  const [imageError, setImageError] = useState(false);
+  const isArchived = !entry.foto_url || entry.foto_url.includes('[TERARSIP]') || entry.foto_url === 'archived';
 
   const formattedSubmitTime = new Date(entry.waktu_submit).toLocaleString('id-ID', {
     day: 'numeric',
@@ -58,29 +61,44 @@ export const PhotoViewerModal: React.FC<PhotoViewerModalProps> = ({
 
         {/* Content */}
         <div className="overflow-y-auto p-4 sm:p-6 space-y-4">
-          {/* Gambar Foto */}
-          <div className="relative rounded-2xl overflow-hidden bg-slate-900 flex items-center justify-center max-h-[380px]">
-            <img
-              src={entry.foto_url}
-              alt="Bukti Foto Jurnal"
-              className="max-h-[380px] w-auto object-contain rounded-xl"
-            />
-            <div className="absolute top-3 left-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-900/80 text-white backdrop-blur-sm border border-white/20">
-                {entry.sumber_foto === 'kamera' ? (
-                  <>
-                    <Camera className="w-3.5 h-3.5 text-emerald-400" />
-                    Kamera Langsung
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-3.5 h-3.5 text-blue-400" />
-                    Unggah Galeri
-                  </>
-                )}
-              </span>
+          {/* Gambar Foto atau Tampilan Arsip */}
+          {isArchived || imageError ? (
+            <div className="rounded-2xl p-8 bg-slate-900 border border-slate-800 text-center flex flex-col items-center justify-center min-h-[220px]">
+              <div className="w-14 h-14 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-3 border border-purple-500/30">
+                <Archive className="w-7 h-7" />
+              </div>
+              <h4 className="text-white font-bold text-base mb-1">
+                Foto Bukti Telah Diarsipkan
+              </h4>
+              <p className="text-slate-400 text-xs max-w-md leading-relaxed">
+                Berkas foto fisik jurnal ini telah dibackup dan dibersihkan dari server cloud oleh pihak sekolah demi efisiensi kuota server. Poin kebiasaan, waktu pengisian, dan catatan refleksi siswa tetap tercatat sah dan aman.
+              </p>
             </div>
-          </div>
+          ) : (
+            <div className="relative rounded-2xl overflow-hidden bg-slate-900 flex items-center justify-center max-h-[380px]">
+              <img
+                src={entry.foto_url}
+                alt="Bukti Foto Jurnal"
+                className="max-h-[380px] w-auto object-contain rounded-xl"
+                onError={() => setImageError(true)}
+              />
+              <div className="absolute top-3 left-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-900/80 text-white backdrop-blur-sm border border-white/20">
+                  {entry.sumber_foto === 'kamera' ? (
+                    <>
+                      <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                      Kamera Langsung
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5 text-blue-400" />
+                      Unggah Galeri
+                    </>
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Audit Peringatan Fraud jika ada */}
           {entry.flag_foto_mencurigakan ? (

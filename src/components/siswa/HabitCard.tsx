@@ -11,7 +11,8 @@ import {
   PlusCircle, 
   Clock, 
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  Archive
 } from 'lucide-react';
 import { EntriJurnal, Kebiasaan } from '../../types/database';
 import { StatusBadge, FlagBadge } from '../common/StatusBadge';
@@ -188,11 +189,18 @@ export const HabitCard: React.FC<HabitCardProps> = ({
                     onClick={() => onViewPhoto(entry)}
                     className="flex items-center gap-2.5 text-left hover:text-emerald-700 transition flex-1 min-w-0"
                   >
-                    <img
-                      src={entry.foto_url}
-                      alt="Thumbnail"
-                      className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
-                    />
+                    {entry.foto_url?.includes('[TERARSIP]') ? (
+                      <div className="w-9 h-9 rounded-lg bg-purple-100 text-purple-600 border border-purple-200 flex items-center justify-center shrink-0">
+                        <Archive className="w-4 h-4" />
+                      </div>
+                    ) : (
+                      <img
+                        src={entry.foto_url}
+                        alt="Thumbnail"
+                        loading="lazy"
+                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
+                      />
+                    )}
                     <div className="min-w-0">
                       <span className="font-semibold text-slate-800 block truncate max-w-32.5 sm:max-w-40">
                         {entry.sub_tipe || entry.nama_kegiatan || `Entri #${entry.urutan_ke}`}

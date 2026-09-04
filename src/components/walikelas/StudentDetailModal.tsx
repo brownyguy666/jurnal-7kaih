@@ -12,7 +12,8 @@ import {
   Clock,
   Printer,
   FileText,
-  BookOpen
+  BookOpen,
+  Archive
 } from 'lucide-react';
 import { EntriJurnal, Feedback, Kebiasaan, Siswa } from '../../types/database';
 import { StatusBadge, FlagBadge } from '../common/StatusBadge';
@@ -116,11 +117,19 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
                           onClick={() => onViewPhoto(entry)}
                           className="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-100 shrink-0 cursor-pointer group"
                         >
-                          <img
-                            src={entry.foto_url}
-                            alt="Bukti"
-                            className="w-full h-full object-cover group-hover:scale-105 transition"
-                          />
+                          {entry.foto_url?.includes('[TERARSIP]') ? (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-purple-50 text-purple-600 p-1 text-center">
+                              <Archive className="w-5 h-5 mb-0.5" />
+                              <span className="text-[9px] font-bold">Arsip</span>
+                            </div>
+                          ) : (
+                            <img
+                              src={entry.foto_url}
+                              alt="Bukti"
+                              loading="lazy"
+                              className="w-full h-full object-cover group-hover:scale-105 transition"
+                            />
+                          )}
                           <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 text-white transition">
                             <Eye className="w-4 h-4" />
                           </div>
