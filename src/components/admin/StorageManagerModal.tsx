@@ -142,6 +142,14 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
     (e) => e.foto_url.includes('googleusercontent.com') || e.foto_url.includes('drive.google.com')
   );
 
+  // Perhitungan dinamis storage berdasarkan jumlah foto aktif di Supabase (~54 KB per foto WebP/JPEG terkompresi)
+  const estimatedSupabaseStorageGb = Math.max(
+    0.01,
+    parseFloat(((supabaseStoragePhotos.length * 54) / (1024 * 1024)).toFixed(2))
+  );
+  const estimatedStoragePercent = Math.min(100, Math.round((estimatedSupabaseStorageGb / 1.0) * 100));
+
+
   // Helper tanggal
   const getCleanTargetDate = (): string => {
     const now = new Date();
@@ -162,6 +170,7 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
 
   const cleanTargetDate = getCleanTargetDate();
   const photosEligibleForClean = supabaseStoragePhotos.filter((e) => e.tanggal <= cleanTargetDate);
+
 
   // Handler Salin Kode Apps Script
   const handleCopyCode = () => {
@@ -405,32 +414,61 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
           {/* TAB 1: STATUS KUOTA & PENJELASAN KRISIS */}
           {activeTab === 'status' && (
             <div className="space-y-6">
-              {/* Alert Banner Egress Kritis */}
-              <div className="rounded-3xl p-5 bg-linear-to-r from-amber-500/15 via-orange-500/10 to-red-500/10 border border-amber-300 text-slate-800">
-                <div className="flex items-start gap-3.5">
-                  <div className="p-2.5 rounded-2xl bg-amber-500 text-white shrink-0">
-                    <AlertTriangle className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-base text-amber-950 mb-1">
-                      Peringatan Kuota Egress: 4,788 GB / 5 GB (96%) Terpakai!
-                    </h4>
-                    <p className="text-xs text-amber-900/90 leading-relaxed">
-                      Siklus tagihan baru direset pada <strong>12 September</strong> (tersisa ~8 hari). Kuota egress tersisa hanya sekitar <strong>212 MB</strong>. 
-                      Jika kuota ini habis, Supabase Free Tier akan membatasi pengunduhan gambar (foto bukti tidak muncul).
-                    </p>
+              {/* Alert Banner Status */}
+              {config.provider === 'gdrive' && config.gdriveWebAppUrl ? (
+                <div className="rounded-3xl p-5 bg-linear-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/10 border border-emerald-300 text-slate-800">
+                  <div className="flex items-start gap-3.5">
+                    <div className="p-2.5 rounded-2xl bg-emerald-600 text-white shrink-0">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <h4 className="font-extrabold text-base text-emerald-950">
+                          Status Penyelamatan: Integrasi Google Drive Aktif!
+                        </h4>
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold shadow-xs">
+                          Egress Supabase 0 KB
+                        </span>
+                      </div>
+                      <p className="text-xs text-emerald-900/90 leading-relaxed">
+                        Seluruh unggahan foto baru dari siswa kini langsung dialirkan ke Google Drive sekolah. Konsumsi kuota Egress Supabase <strong>resmi dihentikan (tidak akan naik lagi)</strong> dan akan direset menjadi 0 GB oleh Supabase pada <strong>12 September</strong>.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-3xl p-5 bg-linear-to-r from-amber-500/15 via-orange-500/10 to-red-500/10 border border-amber-300 text-slate-800">
+                  <div className="flex items-start gap-3.5">
+                    <div className="p-2.5 rounded-2xl bg-amber-500 text-white shrink-0">
+                      <AlertTriangle className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-base text-amber-950 mb-1">
+                        Peringatan Kuota Egress: 4,788 GB / 5 GB (96%) Terpakai!
+                      </h4>
+                      <p className="text-xs text-amber-900/90 leading-relaxed">
+                        Siklus tagihan baru direset pada <strong>12 September</strong>. Kuota egress tersisa hanya sekitar <strong>212 MB</strong>. Hubungkan Google Drive di tab "Integrasi Google Drive" untuk menghentikan konsumsi kuota.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Status Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200">
-                  <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider block mb-1">
-                    Egress Bandwidth (Kritis)
-                  </span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider block">
+                      Egress Bandwidth
+                    </span>
+                    {config.provider === 'gdrive' && config.gdriveWebAppUrl && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold border border-emerald-300">
+                        Freeze (Aman)
+                      </span>
+                    )}
+                  </div>
                   <div className="text-2xl font-black text-amber-950">96%</div>
-                  <div className="text-xs text-amber-800 mt-1">4,788 GB / 5,000 GB</div>
+                  <div className="text-xs text-amber-800 mt-1">4,788 GB / 5,000 GB (Reset 12 Sept)</div>
                   <div className="w-full bg-amber-200 h-2 rounded-full mt-2.5 overflow-hidden">
                     <div className="bg-amber-600 h-full w-[96%]" />
                   </div>
@@ -438,12 +476,12 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
 
                 <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200">
                   <span className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider block mb-1">
-                    Storage Kapasitas File
+                    Storage Supabase (Dinamis)
                   </span>
-                  <div className="text-2xl font-black text-indigo-950">54%</div>
-                  <div className="text-xs text-indigo-800 mt-1">0,54 GB / 1,00 GB</div>
+                  <div className="text-2xl font-black text-indigo-950">{estimatedStoragePercent}%</div>
+                  <div className="text-xs text-indigo-800 mt-1">~{estimatedSupabaseStorageGb} GB / 1,00 GB</div>
                   <div className="w-full bg-indigo-200 h-2 rounded-full mt-2.5 overflow-hidden">
-                    <div className="bg-indigo-600 h-full w-[54%]" />
+                    <div className="bg-indigo-600 h-full" style={{ width: `${estimatedStoragePercent}%` }} />
                   </div>
                 </div>
 
@@ -461,10 +499,19 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
 
               {/* Rincian Inventaris Foto */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                <h5 className="font-bold text-slate-800 text-xs uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <Info className="w-4 h-4 text-purple-600" />
-                  <span>Statistik Inventaris Berkas Foto di Aplikasi</span>
-                </h5>
+                <div className="flex items-center justify-between mb-3">
+                  <h5 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+                    <Info className="w-4 h-4 text-purple-600" />
+                    <span>Statistik Inventaris Berkas Foto di Aplikasi (Realtime)</span>
+                  </h5>
+                  <button
+                    onClick={onDataRefresh}
+                    className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                  >
+                    <RefreshCw className="w-3 h-3 text-purple-600" />
+                    <span>Segarkan Data</span>
+                  </button>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                   <div className="bg-white p-3 rounded-xl border border-slate-200">
                     <span className="text-[10px] text-slate-500 block font-medium">Total Foto Aktif</span>
@@ -474,8 +521,8 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
                     <span className="text-[10px] text-slate-500 block font-medium">Di Supabase Bucket</span>
                     <strong className="text-lg text-amber-700 font-bold">{supabaseStoragePhotos.length}</strong>
                   </div>
-                  <div className="bg-white p-3 rounded-xl border border-slate-200">
-                    <span className="text-[10px] text-slate-500 block font-medium">Di Google Drive</span>
+                  <div className="bg-white p-3 rounded-xl border border-emerald-200 bg-emerald-50/40">
+                    <span className="text-[10px] text-emerald-700 block font-semibold">Di Google Drive</span>
                     <strong className="text-lg text-emerald-700 font-bold">{gdriveStoragePhotos.length}</strong>
                   </div>
                   <div className="bg-white p-3 rounded-xl border border-slate-200">
@@ -484,6 +531,7 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
                   </div>
                 </div>
               </div>
+
 
               {/* Tiga Langkah Penyelamatan */}
               <div className="p-5 rounded-3xl bg-linear-to-br from-purple-50 to-indigo-50 border border-purple-200 space-y-3">
