@@ -819,8 +819,9 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
                   type="file"
                   accept=".zip"
                   onChange={(e) => setRestoreFile(e.target.files?.[0] || null)}
-                  className="text-xs text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer"
+                  className="text-xs file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:font-bold file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer"
                 />
+
               </div>
 
               {/* Progress Restore */}
