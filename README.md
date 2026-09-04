@@ -95,6 +95,7 @@ Sistem mencatat pembiasaan siswa dengan urutan baku resmi Kementerian Pendidikan
   - **Evaluasi Progress & Date Range**: Analisis kepatuhan dengan kustomisasi tanggal mulai s.d. tanggal selesai serta bulk peringatan ke seluruh wali kelas.
   - **Import Massal Dapodik/Excel**: Unggah dan sinkronkan data siswa & staf baru via file Excel/CSV dengan pemetaan kolom cerdas.
   - **Konfigurasi 7 Kebiasaan**: Kustomisasi jam target, toleransi waktu, dan kuota input harian untuk setiap butir kebiasaan.
+  - **💾 Manajemen Kuota, Backup ZIP & Google Drive**: Unduh cadangan seluruh foto murid (.ZIP), pembersihan aman storage server tanpa menghapus catatan/poin siswa, restore foto dari ZIP, dan integrasi Google Drive (100% gratis, 0 Byte Egress Supabase).
 
 ---
 
@@ -105,9 +106,10 @@ Sistem mencatat pembiasaan siswa dengan urutan baku resmi Kementerian Pendidikan
 | **Frontend Framework** | React 19 + TypeScript + Vite |
 | **Styling & UI** | Tailwind CSS + Lucide React Icons |
 | **Cloud Database** | PostgreSQL via Supabase Cloud (RLS Active) |
-| **Storage Bukti Foto** | Supabase Storage Bucket (`bukti_foto`) |
+| **Penyimpanan Foto (Dual Mode)** | Supabase Storage (`bukti_foto`) & Google Drive (via Google Apps Script Web App - 0% Egress) |
+| **Image Compression** | HTML5 Canvas WebP Ultra-Compressor (Hemat kuota 90%) |
+| **Backup & Restore Engine** | `jszip` (Client-side ZIP Packaging & Manifest Extraction) |
 | **Anti-Kecurangan** | `exifr` (EXIF Metadata Reader) |
-| **Image Compression** | HTML5 Canvas Client-Side Compressor |
 | **Spreadsheet Engine** | `xlsx` (SheetJS) |
 | **Visual Effects** | `canvas-confetti` |
 

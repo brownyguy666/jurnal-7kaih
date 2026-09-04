@@ -79,15 +79,58 @@ Agar alamat web sekolah terlihat resmi dan profesional (misalnya `jurnal.smpn1gi
 
 ---
 
-## ⚙️ Langkah 5: Penyesuaian Nama Sekolah & Titik Koordinat Sholat
+## ⚙️ Langkah 5: Setup Penyimpanan Foto Bebas Biaya (Google Drive) - Wajib untuk Menghindari Batas Kuota Supabase
 
-File profil sekolah tersimpan di file: [`src/lib/schoolProfile.ts`](src/lib/schoolProfile.ts)
-Operator dapat mengedit file tersebut langsung di GitHub untuk menyesuaikan:
-- Nama Sekolah & NPSN
-- Alamat & Kabupaten/Kota
-- **Latitude & Longitude**: Agar hisab jadwal sholat 5 waktu dinamis mengacu presisi ke lokasi astronomis kota sekolah Anda!
+> [!IMPORTANT]
+> **Mengapa Langkah Ini Sangat Penting bagi Sekolah?**
+> Supabase Free Tier membatasi *Egress* (bandwidth unduh) maksimal **5 GB per bulan**. Jika di sekolah Anda terdapat 300 - 800 murid yang mengunggah foto jurnal setiap hari dan dilihat oleh para wali kelas, kuota 5 GB Supabase bisa cepat habis.
+> 
+> Dengan menghubungkan **Google Drive** (kapasitas 15 GB gratis di Gmail atau **Kapasitas Besar / Unlimited** di akun Google Workspace for Education `@guru.smp.belajar.id`), **seluruh foto bukti jurnal akan disimpan langsung di Google Drive dan dimuat dari CDN Google**. Supabase Anda menjadi **0 Byte Egress & 0 Byte Storage** sehingga platform dapat berjalan gratis selamanya!
+
+### Cara Setup Google Drive (Hanya Butuh 3 Menit):
+1. Login ke web jurnal sekolah Anda sebagai **Superadmin**.
+2. Klik tombol **`💾 Backup & Kuota Foto`** di bagian atas dasbor &rarr; pilih tab **`Integrasi Google Drive (Gratis)`**.
+3. Klik tombol hijau **`📋 Salin Kode Skrip`**.
+4. Buka [https://script.google.com/home/start](https://script.google.com/home/start) dengan akun Google sekolah (misal akun `@guru.smp.belajar.id` atau Gmail Anda).
+5. Klik **New Project** (Proyek Baru) di pojok kiri atas.
+6. Hapus semua kode bawaan di editor, lalu **Paste (Tempel)** kode skrip yang telah Anda salin tadi.
+7. **Beri Otorisasi Sekali**:
+   - Di bilah menu atas (samping tombol Deploy), pastikan fungsi terpilih adalah `doGet`, lalu klik tombol **Jalankan (Run)**.
+   - Akan muncul jendela *"Otorisasi Diperlukan"* &rarr; Klik **Tinjau Izin** &rarr; Pilih akun Google Anda &rarr; Klik tulisan kecil **Lanjutan (Advanced)** di kiri bawah &rarr; Klik **Buka Project (tidak aman)** &rarr; Klik **Izinkan (Allow)**.
+8. **Terapkan Sebagai Web App**:
+   - Klik tombol biru **Deploy** (kanan atas) &rarr; pilih **New deployment**.
+   - Klik ikon roda gigi (gear) di samping *Select type* &rarr; pilih **Web app**.
+   - Pada bagian **Execute as (Jalankan sebagai)**: pilih **Me (Saya)**.
+   - Pada bagian **Who has access (Yang memiliki akses)**: pilih **Anyone (Siapa saja)**. *(Wajib agar siswa dapat mengirimkan foto jurnal tanpa perlu login akun Google)*.
+   - Klik tombol **Deploy**.
+9. **Salin URL Aplikasi Web**:
+   - Salin URL yang berada di bawah judul **Aplikasi web** *(URL yang diawali `https://script.google.com/macros/s/...` dan berakhiran `/exec`)*.
+10. Kembali ke aplikasi Jurnal sekolah Anda, **Tempel URL** tersebut ke kolom yang disediakan, klik **Uji Coba Koneksi**, lalu klik **Simpan Pengaturan Provider**.
+11. 🎉 **Selesai!** Folder `Jurnal_7KAIH_Foto` otomatis terbentuk di Google Drive Anda dan seluruh foto baru murid akan aman tersimpan di sana!
 
 ---
 
-### 🎉 Selesai!
-Sekolah Anda sekarang memiliki platform digital mandiri untuk memantau pembiasaan karakter 7KAIH bagi seluruh peserta didik! Jika ada kendala, silakan diskusikan melalui tab *Issues* di repositori ini.
+## 💾 Langkah 6: Prosedur Pemeliharaan & Backup Foto Rutin (.ZIP)
+
+Untuk menjaga performa dan arsip offline sekolah:
+1. Di Dashboard Superadmin, buka menu **`💾 Backup & Kuota Foto`** &rarr; tab **`Unduh Backup ZIP`**.
+2. Operator dapat mengunduh cadangan seluruh foto murid (per bulan atau per kelas) dalam format `.zip` terstruktur rapi:
+   `[Kelas]/[Nama_Siswa]/[Tanggal]_[Kebiasaan].jpg` beserta metadata lengkap `manifest_backup.json`.
+3. Di tab **`Bersihkan Foto Server`**, operator dapat menghapus foto fisik lama (> 7 hari atau > 14 hari) di Supabase Storage untuk mengosongkan kapasitas. **Catatan refleksi, status waktu, dan poin siswa 100% aman (tidak hilang)**.
+4. Jika sewaktu-waktu foto ingin dikembalikan ke server, cukup unggah file ZIP tersebut di tab **`Restore dari ZIP`**.
+
+---
+
+## 📍 Langkah 7: Penyesuaian Nama Sekolah & Titik Koordinat Sholat
+
+File profil sekolah tersimpan di file: [`src/lib/schoolProfile.ts`](src/lib/schoolProfile.ts)
+Operator dapat mengedit file tersebut langsung di GitHub untuk menyesuaikan:
+- Nama Sekolah, NPSN, Motto, dan Kontak Resmi
+- **Latitude & Longitude**: Agar hisab jadwal sholat 5 waktu dinamis mengacu presisi ke lokasi astronomis kota sekolah Anda!
+- Atau dapat diubah langsung secara visual melalui tombol **`⚙️ Profil & Logo Sekolah`** di Dashboard Superadmin tanpa menyentuh kode!
+
+---
+
+### 🎉 Selesai & Siap Operasional!
+Sekolah Anda sekarang memiliki platform digital mandiri untuk memantau pembiasaan karakter 7KAIH bagi seluruh peserta didik tanpa biaya server! Jika ada pertanyaan atau butuh bantuan saat diseminasi, silakan hubungi tim pengembang melalui tab *Issues* di repositori ini.
+

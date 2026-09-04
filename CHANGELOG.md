@@ -2,6 +2,37 @@
 
 Semua pembaruan, perbaikan, dan penambahan fitur aplikasi Jurnal 7 KAIH (7 Karakter Anak Indonesia Hebat) dicatat secara kronologis di bawah ini.
 
+## [v1.1.0] - 2026-09-04 *(Solusi Krisis Kuota Supabase Egress 96%, Kompresi WebP Hemat 90%, Backup & Restore Foto ZIP, dan Integrasi Bebas Biaya Google Drive)*
+
+### 🌟 Fitur Baru & Peningkatan Skalabilitas untuk Replikasi Sekolah
+1. **Solusi Egress & Storage Supabase Multi-Provider (`storageService.ts`, `storageConfig.ts`)**:
+   - Menghubungkan Google Drive sebagai provider penyimpanan alternatif melalui Google Apps Script Web App (100% gratis, kapasitas 15 GB di Gmail atau Unlimited di akun `@guru.smp.belajar.id`).
+   - Seluruh foto bukti jurnal siswa dapat disimpan langsung ke Google Drive dan dimuat dari CDN Google, memangkas konsumsi Egress & Storage Supabase menjadi **0 Byte**.
+   - Menyediakan failover otomatis ke Supabase Storage jika terjadi kendala koneksi provider eksternal.
+   - Pilihan provider (`supabase` vs `gdrive` vs `cloudinary`) dapat diatur sewaktu-waktu dengan 1 klik oleh Superadmin.
+
+2. **Kompresi Modern WebP Sisi Klien Hemat Kuota 90% (`imageCompressor.ts`)**:
+   - Mengubah pipeline kompresi gambar dari JPEG 1280px kualitas 0.8 (~400 KB) menjadi WebP 720px kualitas 0.55 (~25–45 KB).
+   - Memangkas ukuran berkas foto secara drastis saat diunggah oleh siswa maupun saat diunduh oleh guru/wali kelas, menghemat kuota internet siswa dan bandwidth server hingga 90%.
+
+3. **Mesin Cadangan Foto Murid (.ZIP) & Metadata Manifest (`photoBackupManager.ts`)**:
+   - Superadmin dapat mengunduh seluruh foto jurnal murid dalam satu file `.zip` terstruktur rapi: `[Kelas]/[Nama_Siswa]/[Tanggal]_[Kebiasaan].jpg`.
+   - Menyertakan file `manifest_backup.json` yang menyimpan metadata lengkap NISN, nama siswa, tanggal, ID entri, refleksi cerita, status waktu, dan tautan asli.
+   - Dilengkapi filter rentang tanggal (Semua Waktu, Bulan Berjalan, Rentang Kustom) dan filter rombel kelas.
+
+4. **Pembersihan Server Aman (*Reclaim Server Storage*)**:
+   - Superadmin dapat menghapus berkas foto fisik di Supabase Storage (> 7 hari, > 14 hari, > 30 hari, atau tanggal kustom) untuk mengosongkan kapasitas 540 MB.
+   - **Menjamin integritas data siswa**: Catatan cerita, refleksi, poin pembiasaan, serta rekaman waktu siswa **100% aman (tidak hilang)**; foto ditandai dengan status `[TERARSIP]` dan menampilkan banner ramah saat dibuka di modal foto.
+
+5. **Fitur Pemulihan Foto (*Restore from ZIP*)**:
+   - Superadmin dapat mengunggah kembali file `.zip` hasil cadangan kapan saja untuk memulihkan foto fisik ke storage dan menyinkronkan kembali URL di database.
+
+6. **Panel Terpadu Manajemen Penyimpanan Superadmin (`StorageManagerModal.tsx`)**:
+   - Panel antarmuka 5-in-1: Krisis Kuota & Status, Unduh Backup ZIP, Bersihkan Foto Server, Restore dari ZIP, dan Integrasi Google Drive.
+   - Tombol 1-klik salin kode Google Apps Script siap pakai dan fitur uji coba koneksi interaktif.
+
+---
+
 ## [v1.0.0] - 2026-08-30 *(Komunikasi Siswa-Guru Dua Arah, Multi-Tanggapan Dewan Guru, Sinkronisasi Cloud Profil Sekolah, Rentang Tanggal Leaderboard, & Rapor Karakter Berkeadilan)*
 
 ### 🌟 Fitur Baru & Peningkatan Besar
