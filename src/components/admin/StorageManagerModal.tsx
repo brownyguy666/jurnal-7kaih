@@ -521,10 +521,11 @@ export const StorageManagerModal: React.FC<StorageManagerModalProps> = ({
                     <span className="text-[10px] text-slate-500 block font-medium">Di Supabase Bucket</span>
                     <strong className="text-lg text-amber-700 font-bold">{supabaseStoragePhotos.length}</strong>
                   </div>
-                  <div className="bg-white p-3 rounded-xl border border-emerald-200 bg-emerald-50/40">
+                  <div className="bg-emerald-50/40 p-3 rounded-xl border border-emerald-200">
                     <span className="text-[10px] text-emerald-700 block font-semibold">Di Google Drive</span>
                     <strong className="text-lg text-emerald-700 font-bold">{gdriveStoragePhotos.length}</strong>
                   </div>
+
                   <div className="bg-white p-3 rounded-xl border border-slate-200">
                     <span className="text-[10px] text-slate-500 block font-medium">Foto Terarsip Offline</span>
                     <strong className="text-lg text-purple-700 font-bold">{archivedPhotoEntries.length}</strong>
